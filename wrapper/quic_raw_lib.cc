@@ -94,6 +94,7 @@ class RawClientImpl : public RQuicClientInterface,
  public:
   RawClientImpl()
       : stream_{nullptr},
+        session_{nullptr},
         mtx_{},
         message_loop_{nullptr},
         run_loop_{nullptr},
@@ -130,16 +131,25 @@ class RawClientImpl : public RQuicClientInterface,
   void waitForClose() override {
     if (client_thread_) {
       client_thread_->join();
+      client_thread_.reset();
     }
   }
 
   // Implement RQuicClientInterface
   void send(const char* data, uint32_t len) override {
+    if (stream_) {
+      send(stream_->id(), data, len);
+    }
+  }
+
+  // Implement RQuicClientInterface
+  void send(uint32_t stream_id, const char* data, uint32_t len) override {
     std::unique_lock<std::mutex> lck(mtx_);
     if (message_loop_) {
       std::string s_data(data, len);
       message_loop_->task_runner()->PostTask(FROM_HERE,
-          base::BindOnce(&RawClientImpl::SendOnStream, base::Unretained(this), s_data, false));
+          base::BindOnce(&RawClientImpl::SendOnStream,
+              base::Unretained(this), stream_id, s_data, false));
     }
   }
 
@@ -149,10 +159,15 @@ class RawClientImpl : public RQuicClientInterface,
   }
 
   // Implement quic::QuicRawStream::Visitor
-  void OnClose(quic::QuicRawStream* stream) override {};
+  void OnClose(quic::QuicRawStream* stream) override {
+    if (stream == stream_) {
+      stream_ = nullptr;
+    }
+  };
   void OnData(quic::QuicRawStream* stream, char* data, size_t len) override {
     if (listener_) {
-      listener_->onData(stream->id(), data, len);
+      // Use 0 for client session
+      listener_->onData(0, stream->id(), data, len);
     }
   }
  private:
@@ -212,7 +227,8 @@ class RawClientImpl : public RQuicClientInterface,
       return;
     }
 
-    stream_ = client.client_session()->CreateOutgoingBidirectionalStream();
+    session_ = client.client_session();
+    stream_ = session_->CreateOutgoingBidirectionalStream();
     stream_->set_visitor(this);
 
     {
@@ -232,12 +248,16 @@ class RawClientImpl : public RQuicClientInterface,
     }
   }
 
-  void SendOnStream(const std::string& data, bool fin) {
-    if (stream_) {
-      stream_->WriteOrBufferData(data, fin, nullptr);
+  void SendOnStream(uint32_t stream_id, const std::string& data, bool fin) {
+    quic::QuicStream* stream = session_->GetOrCreateStream(stream_id);
+    if (stream) {
+      stream->WriteOrBufferData(data, fin, nullptr);
+    } else {
+      cerr << "Failed to get stream: " << stream_id << endl;
     }
   }
   quic::QuicRawStream* stream_;
+  quic::QuicRawClientSession* session_;
   std::mutex mtx_;
   base::MessageLoopForIO* message_loop_;
   base::RunLoop* run_loop_;
@@ -261,7 +281,8 @@ class RawServerImpl : public RQuicServerInterface,
         server_thread_{nullptr},
         listener_{nullptr},
         server_port_{0},
-        stream_{nullptr} {}
+        stream_{nullptr},
+        next_session_id_{0} {}
 
   ~RawServerImpl() override {
     stop();
@@ -292,6 +313,7 @@ class RawServerImpl : public RQuicServerInterface,
   void waitForClose() override {
     if (server_thread_) {
       server_thread_->join();
+      server_thread_.reset();
     }
   }
 
@@ -302,14 +324,22 @@ class RawServerImpl : public RQuicServerInterface,
 
   // Implement RQuicServerInterface
   void send(const char* data, uint32_t len) override {
-    std::unique_lock<std::mutex> lck(mtx_);
-    if (message_loop_) {
-      message_loop_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
+    // Send on first session, stream
+    if (stream_) {
+      send(0, stream_->id(), data, len);
     }
+  }
+
+  // Implement RQuicServerInterface
+  void send(uint32_t session_id,
+            uint32_t stream_id,
+            const char* data, uint32_t len) override {
+    std::unique_lock<std::mutex> lck(mtx_);
     if (message_loop_) {
       std::string s_data(data);
       message_loop_->task_runner()->PostTask(FROM_HERE,
-          base::BindOnce(&RawServerImpl::SendOnStream, base::Unretained(this), s_data, false));
+          base::BindOnce(&RawServerImpl::SendOnSession,
+              base::Unretained(this), session_id, stream_id, s_data, false));
     }
   }
 
@@ -320,23 +350,49 @@ class RawServerImpl : public RQuicServerInterface,
 
   // Implement quic::QuicRawDispatcher::Visitor
   void OnSessionCreated(quic::QuicRawServerSession* session) override {
+    session_ids_[session] = next_session_id_;
+    session_ptrs_[next_session_id_] = session;
+    next_session_id_++;
     session->set_visitor(this);
+  }
+  void OnSessionClosed(quic::QuicRawServerSession* session) override {
+    if (session_ids_.count(session) > 0) {
+      uint32_t session_id = session_ids_[session];
+      session_ids_.erase(session);
+      session_ptrs_.erase(session_id);
+    }
   }
 
   // Implement quic::QuicRawServerSession::Visitor
-  void OnIncomingStream(quic::QuicRawStream* stream) override {
+  void OnIncomingStream(quic::QuicRawServerSession* session,
+                        quic::QuicRawStream* stream) override {
+    if (session_ids_.count(session) > 0) {
+      uint32_t session_id = session_ids_[session];
+      stream_sessions_[stream] = session_id;
+    } else {
+      cerr << "No mapping sessions for incoming stream" << endl;
+    }
     stream->set_visitor(this);
     if (!stream_) {
-      // cout << "incoming stream:" << stream->id() << endl;
       stream_ = stream;
     }
   }
 
   // Implement quic::QuicRawStream::Visitor
-  void OnClose(quic::QuicRawStream* stream) override {};
+  void OnClose(quic::QuicRawStream* stream) override {
+    if (stream_sessions_.count(stream)) {
+      stream_sessions_.erase(stream);
+    } else {
+      cerr << "No mapping session for closing stream" << endl;
+    }
+    if (stream == stream_) {
+      stream_ = nullptr;
+    }
+  }
   void OnData(quic::QuicRawStream* stream, char* data, size_t len) override {
     if (listener_) {
-      listener_->onData(stream->id(), data, len);
+      uint32_t session_id = stream_sessions_[stream];
+      listener_->onData(session_id, stream->id(), data, len);
     }
   }
 
@@ -387,9 +443,16 @@ class RawServerImpl : public RQuicServerInterface,
     }
   }
 
-  void SendOnStream(const std::string& data, bool fin) {
-    if (stream_) {
-      stream_->WriteOrBufferData(data, fin, nullptr);
+  void SendOnSession(uint32_t session_id, uint32_t stream_id,
+                     const std::string& data, bool fin) {
+    if (session_ptrs_.count(session_id) > 0) {
+      quic::QuicStream* stream =
+          session_ptrs_[session_id]->GetOrCreateStream(stream_id);
+      if (stream) {
+        stream->WriteOrBufferData(data, fin, nullptr);
+      } else {
+        cerr << "Failed to get stream: " << stream_id << endl;
+      }
     }
   }
 
@@ -402,6 +465,10 @@ class RawServerImpl : public RQuicServerInterface,
   RQuicListener* listener_;
   int server_port_;
   quic::QuicRawStream* stream_;
+  uint32_t next_session_id_;
+  std::unordered_map<quic::QuicRawServerSession*, uint32_t> session_ids_;
+  std::unordered_map<uint32_t, quic::QuicRawServerSession*> session_ptrs_;
+  std::unordered_map<quic::QuicRawStream*, uint32_t> stream_sessions_;
 };
 
 bool raw_factory_intialized = false;

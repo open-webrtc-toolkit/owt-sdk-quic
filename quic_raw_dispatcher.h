@@ -22,6 +22,7 @@ class QuicRawDispatcher : public QuicDispatcher {
 
     // Called when new session created
     virtual void OnSessionCreated(QuicRawServerSession* session) = 0;
+    virtual void OnSessionClosed(QuicRawServerSession* session) = 0;
 
    protected:
     virtual ~Visitor() {}
@@ -41,6 +42,12 @@ class QuicRawDispatcher : public QuicDispatcher {
 
   void OnRstStreamReceived(const QuicRstStreamFrame& frame) override;
 
+  // QuicSession::Visitor interface implementation (via inheritance of
+  // QuicDispatcher)
+  void OnConnectionClosed(QuicConnectionId connection_id,
+                          QuicErrorCode error,
+                          const QuicString& error_details) override;
+
   void set_visitor(Visitor* visitor) { visitor_ = visitor; }
 
  protected:
@@ -53,6 +60,7 @@ class QuicRawDispatcher : public QuicDispatcher {
  private:
   // The map of the reset error code with its counter.
   std::map<QuicRstStreamErrorCode, int> rst_error_map_;
+  std::unordered_map<QuicConnectionId, QuicRawServerSession*> sessions_;
   Visitor* visitor_;
 };
 

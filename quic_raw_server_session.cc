@@ -177,7 +177,7 @@ QuicRawStream* QuicRawServerSession::CreateIncomingStream(QuicStreamId id) {
       id, this, BIDIRECTIONAL);
   ActivateStream(QuicWrapUnique(stream));
   if (visitor_) {
-    visitor_->OnIncomingStream(stream);
+    visitor_->OnIncomingStream(this, stream);
   }
   return stream;
 }

@@ -31,7 +31,9 @@ class QUIC_EXPORT_PRIVATE QuicRawServerSession
     Visitor& operator=(const Visitor&) = delete;
 
     // Called when new incoming stream created
-    virtual void OnIncomingStream(QuicRawStream* stream) = 0;
+    virtual void OnIncomingStream(
+        QuicRawServerSession* session,
+        QuicRawStream* stream) = 0;
 
    protected:
     virtual ~Visitor() {}

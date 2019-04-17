@@ -44,6 +44,18 @@ void QuicRawDispatcher::OnRstStreamReceived(
   }
 }
 
+void QuicRawDispatcher::OnConnectionClosed(QuicConnectionId connection_id,
+                        QuicErrorCode error,
+                        const std::string& error_details) {
+  if (sessions_.count(connection_id) > 0) {
+    if (visitor_) {
+      visitor_->OnSessionClosed(sessions_[connection_id]);
+    }
+    sessions_.erase(connection_id);
+  }
+  QuicDispatcher::OnConnectionClosed(connection_id, error, error_details);
+}
+
 QuicRawServerSession* QuicRawDispatcher::CreateQuicSession(
     QuicConnectionId connection_id,
     const QuicSocketAddress& client_address,
@@ -59,6 +71,7 @@ QuicRawServerSession* QuicRawDispatcher::CreateQuicSession(
       connection, this, config(), GetSupportedVersions(), session_helper(),
       crypto_config(), compressed_certs_cache());
   session->Initialize();
+  sessions_[connection_id] = session;
   if (visitor_) {
     visitor_->OnSessionCreated(session);
   }
