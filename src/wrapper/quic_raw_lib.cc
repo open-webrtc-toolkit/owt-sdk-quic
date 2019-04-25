@@ -42,17 +42,49 @@
 
 namespace net {
 
-using net::CertVerifier;
-using net::CTVerifier;
-using net::MultiLogCTVerifier;
-using quic::ProofVerifier;
-using net::ProofVerifierChromium;
-using quic::QuicStringPiece;
-using net::TransportSecurityState;
 using std::cout;
 using std::cerr;
 using std::endl;
 using std::string;
+
+// FakeProofSource for server
+class FakeProofSource : public quic::ProofSource {
+ public:
+  FakeProofSource() {}
+  ~FakeProofSource() override {}
+
+  void GetProof(const quic::QuicSocketAddress& server_address,
+                const std::string& hostname,
+                const std::string& server_config,
+                quic::QuicTransportVersion transport_version,
+                quic::QuicStringPiece chlo_hash,
+                std::unique_ptr<Callback> callback) override {
+    quic::QuicReferenceCountedPointer<ProofSource::Chain> chain =
+        GetCertChain(server_address, hostname);
+    quic::QuicCryptoProof proof;
+    proof.signature = "fake signature";
+    proof.leaf_cert_scts = "fake timestamp";
+    callback->Run(true, chain, proof, nullptr);
+  }
+
+  quic::QuicReferenceCountedPointer<Chain> GetCertChain(
+      const quic::QuicSocketAddress& server_address,
+      const std::string& hostname) override {
+    std::vector<std::string> certs;
+    certs.push_back("fake cert");
+    return quic::QuicReferenceCountedPointer<ProofSource::Chain>(
+        new ProofSource::Chain(certs));
+  }
+
+  void ComputeTlsSignature(
+      const quic::QuicSocketAddress& server_address,
+      const std::string& hostname,
+      uint16_t signature_algorithm,
+      quic::QuicStringPiece in,
+      std::unique_ptr<SignatureCallback> callback) override {
+    callback->Run(true, "fake signature");
+  }
+};
 
 // FakeProofVerifier for client
 class FakeProofVerifier : public quic::ProofVerifier {
@@ -171,6 +203,26 @@ class RawClientImpl : public RQuicClientInterface,
     }
   }
  private:
+  std::unique_ptr<quic::ProofVerifier> CreateProofVerifier() {
+    std::unique_ptr<quic::ProofVerifier> proof_verifier;
+    bool disable_cert = true;
+    if (disable_cert) {
+      proof_verifier.reset(new FakeProofVerifier());
+    } else {
+      // For secure QUIC we need to verify the cert chain.
+      std::unique_ptr<net::CertVerifier> cert_verifier(net::CertVerifier::CreateDefault());
+      std::unique_ptr<net::TransportSecurityState> transport_security_state(
+          new net::TransportSecurityState);
+      std::unique_ptr<net::MultiLogCTVerifier> ct_verifier(new net::MultiLogCTVerifier());
+      std::unique_ptr<net::CTPolicyEnforcer> ct_policy_enforcer(
+          new net::DefaultCTPolicyEnforcer());
+      proof_verifier.reset(new net::ProofVerifierChromium(
+          cert_verifier.get(), ct_policy_enforcer.get(),
+          transport_security_state.get(), ct_verifier.get()));
+    }
+    return proof_verifier;
+  }
+
   void InitAndRun(std::string host, int port) {
     base::MessageLoopForIO message_loop;
     base::RunLoop run_loop;
@@ -196,26 +248,8 @@ class RawClientImpl : public RQuicClientInterface,
                                  net::PRIVACY_MODE_DISABLED);
     quic::ParsedQuicVersionVector versions = quic::CurrentSupportedVersions();
 
-    // For secure QUIC we need to verify the cert chain.
-    std::unique_ptr<CertVerifier> cert_verifier(CertVerifier::CreateDefault());
-    std::unique_ptr<TransportSecurityState> transport_security_state(
-        new TransportSecurityState);
-    std::unique_ptr<MultiLogCTVerifier> ct_verifier(new MultiLogCTVerifier());
-    std::unique_ptr<net::CTPolicyEnforcer> ct_policy_enforcer(
-        new net::DefaultCTPolicyEnforcer());
-    std::unique_ptr<quic::ProofVerifier> proof_verifier;
-
-    bool disable_cert = true;
-    if (disable_cert) {
-      proof_verifier.reset(new FakeProofVerifier());
-    } else {
-      proof_verifier.reset(new ProofVerifierChromium(
-          cert_verifier.get(), ct_policy_enforcer.get(),
-          transport_security_state.get(), ct_verifier.get()));
-    }
-
     net::QuicRawClient client(quic::QuicSocketAddress(ip_addr, port),
-                                server_id, versions, std::move(proof_verifier));
+                                server_id, versions, CreateProofVerifier());
 
     client.set_initial_max_packet_length(quic::kDefaultMaxPacketSize);
     if (!client.Initialize()) {
@@ -397,13 +431,20 @@ class RawServerImpl : public RQuicServerInterface,
   }
 
  private:
-  std::unique_ptr<quic::ProofSource> CreateProofSource(
-    const base::FilePath& cert_path,
-    const base::FilePath& key_path) {
-    std::unique_ptr<net::ProofSourceChromium> proof_source(
-        new net::ProofSourceChromium());
-    CHECK(proof_source->Initialize(cert_path, key_path, base::FilePath()));
-    return std::move(proof_source);
+  std::unique_ptr<quic::ProofSource> CreateProofSource() {
+    bool disable_cert = true;
+    if (disable_cert) {
+      std::unique_ptr<FakeProofSource> proof_source(
+          new FakeProofSource());
+      return proof_source;
+    } else {
+      std::unique_ptr<net::ProofSourceChromium> proof_source(
+          new net::ProofSourceChromium());
+      CHECK(proof_source->Initialize(
+          base::FilePath(cert_file_),
+          base::FilePath(key_file_), base::FilePath()));
+      return proof_source;
+    }
   }
 
   void InitAndRun(int port) {
@@ -415,7 +456,7 @@ class RawServerImpl : public RQuicServerInterface,
 
     quic::QuicConfig config;
     net::QuicRawServer server(
-        CreateProofSource(base::FilePath(cert_file_), base::FilePath(key_file_)),
+        CreateProofSource(),
         config, quic::QuicCryptoServerConfig::ConfigOptions(),
         quic::AllSupportedVersions());
 
