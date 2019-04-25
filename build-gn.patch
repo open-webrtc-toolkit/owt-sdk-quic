@@ -27,7 +27,7 @@ index c2f0a78..7927d78 100644
  }
  
  if (!is_ios) {
-+  shared_library("testquic") {
++  shared_library("rawquic") {
 +    sources = [
 +      "tools/quic/raw/wrapper/quic_raw_lib.cc",
 +      "tools/quic/raw/wrapper/quic_raw_lib.h",

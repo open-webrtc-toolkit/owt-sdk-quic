@@ -179,5 +179,4 @@ void QuicRawClientSession::OnCryptoHandshakeEvent(
   QuicSession::OnCryptoHandshakeEvent(event);
 }
 
-
 }  // namespace quic
