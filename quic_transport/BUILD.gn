@@ -1,0 +1,40 @@
+source_set("owt_deps_quartc") {
+  # This target is similar as //src/third_party/openscreen/src/third_party/chromium_quic/BUILD.gn.
+  sources = [
+    "//net/third_party/quiche/src/quic/quartc/quartc_factory.cc",
+    "//net/third_party/quiche/src/quic/quartc/quartc_factory.h",
+    "//net/third_party/quiche/src/quic/quartc/quartc_packet_writer.cc",
+    "//net/third_party/quiche/src/quic/quartc/quartc_packet_writer.h",
+    "//net/third_party/quiche/src/quic/quartc/quartc_session.cc",
+    "//net/third_party/quiche/src/quic/quartc/quartc_session.h",
+    "//net/third_party/quiche/src/quic/quartc/quartc_stream.cc",
+    "//net/third_party/quiche/src/quic/quartc/quartc_stream.h",
+    "//net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.h",
+    "//net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.cc",
+  ]
+  include_dirs = [ "//" ]
+  deps = [
+    "//third_party/boringssl",
+    "//base",
+  ]
+  configs += [ "//third_party/protobuf:protobuf_config" ]
+}
+
+shared_library("owt_quic_transport") {
+  deps = [
+    ":owt_deps_quartc",
+    "//net",
+    "//third_party/webrtc_overrides:webrtc_component",
+  ]
+  sources = [
+    "api/p2p_quic_stream.h",
+    "api/p2p_quic_transport.h",
+    "api/quic_definitions.h",
+    "impl/p2p_quic_transport_impl.cc",
+    "impl/p2p_quic_transport_impl.h",
+    "impl/p2p_quic_stream_impl.cc",
+    "impl/p2p_quic_stream_impl.h",
+    "impl/quic_definitions.cc",
+  ]
+  include_dirs = [ "./", "api" ]
+}
