@@ -12,23 +12,25 @@
 // Chromium/src/third_party/blink/renderer/modules/peerconnection/adapters/*
 // with modifications.
 
-#ifndef OWT_QUIC_TRANSPORT_P2P_QUIC_TRANSPORT_H_
-#define OWT_QUIC_TRANSPORT_P2P_QUIC_TRANSPORT_H_
+#ifndef OWT_QUIC_TRANSPORT_P2P_QUIC_TRANSPORT_INTERFACE_H_
+#define OWT_QUIC_TRANSPORT_P2P_QUIC_TRANSPORT_INTERFACE_H_
 
 namespace owt {
 namespace quic {
-class P2PQuicStream;
-class P2PQuicTransport {
+class IceTransportInterface;
+class P2PQuicStreamInterface;
+class P2PQuicTransportInterface {
  public:
   // Delegate for receiving callbacks from the QUIC transport.
   class Delegate {
    public:
     // Called when the remote side has created a new stream.
-    virtual void OnStream(P2PQuicStream* stream) {}
+    virtual void OnStream(P2PQuicStreamInterface* stream) {}
   };
-  //virtual void Stop() = 0;
-  //virtual void Start() = 0;
-  //virtual P2PQuicStream* CreateStream() = 0;
+  virtual ~P2PQuicTransportInterface();
+  // virtual void Stop() = 0;
+  // virtual void Start() = 0;
+  // virtual P2PQuicStream* CreateStream() = 0;
 };
 }  // namespace quic
 }  // namespace owt

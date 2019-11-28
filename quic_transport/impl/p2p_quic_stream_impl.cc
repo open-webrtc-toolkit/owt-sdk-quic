@@ -55,7 +55,7 @@ void P2PQuicStreamImpl::OnBufferChanged(::quic::QuartcStream* stream) {
   LOG(INFO) << "OnBufferChanged.";
 }
 
-void P2PQuicStreamImpl::SetDelegate(P2PQuicStream::Delegate* delegate) {
+void P2PQuicStreamImpl::SetDelegate(P2PQuicStreamInterface::Delegate* delegate) {
   m_delegate = delegate;
 }
 

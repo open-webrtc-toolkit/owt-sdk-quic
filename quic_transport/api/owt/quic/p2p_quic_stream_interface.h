@@ -12,8 +12,8 @@
 // Chromium/src/third_party/blink/renderer/modules/peerconnection/adapters/*
 // with modifications.
 
-#ifndef OWT_QUIC_TRANSPORT_P2P_QUIC_STREAM_H_
-#define OWT_QUIC_TRANSPORT_P2P_QUIC_STREAM_H_
+#ifndef OWT_QUIC_TRANSPORT_P2P_QUIC_STREAM_INTERFACE_H_
+#define OWT_QUIC_TRANSPORT_P2P_QUIC_STREAM_INTERFACE_H_
 
 #include <cstdint>
 #include <vector>
@@ -21,7 +21,7 @@
 namespace owt {
 namespace quic {
 
-class P2PQuicStream {
+class P2PQuicStreamInterface {
  public:
   // Some of these APIs are borrowed from
   // third_party/blink/renderer/modules/peerconnection/adapters/quic_stream_proxy.h.
@@ -35,7 +35,7 @@ class P2PQuicStream {
     // Called when data written with WriteData() has been consumed by QUIC.
     virtual void OnWriteDataConsumed(uint32_t amount) {}
   };
-  virtual ~P2PQuicStream() = default;
+  virtual ~P2PQuicStreamInterface() = default;
   //virtual void Reset() = 0;
   //virtual void WriteData(std::vector<uint8_t> data, bool fin) = 0;
   //virtual void SetDelegate(Delegate* delegate) = 0;

@@ -21,8 +21,8 @@
 #include "net/third_party/quiche/src/quic/core/crypto/quic_crypto_client_config.h"
 #include "net/third_party/quiche/src/quic/quartc/quartc_factory.h"
 #include "net/third_party/quiche/src/quic/quartc/quartc_session.h"
+#include "owt/quic/p2p_quic_transport_interface.h"
 #include "owt/quic/quic_definitions.h"
-#include "owt/quic/p2p_quic_transport.h"
 #include "third_party/webrtc/api/scoped_refptr.h"
 #include "third_party/webrtc/rtc_base/rtc_certificate.h"
 
@@ -30,10 +30,10 @@ namespace owt {
 namespace quic {
 // Some ideas of this class are borrowed from
 // src/third_party/blink/renderer/modules/peerconnection/adapters/p2p_quic_transport_impl.h.
-class P2PQuicTransportImpl : public ::quic::QuartcServerSession,
-                             public P2PQuicTransport {
+// It always acts as a server side endpoint.
+class P2PQuicTransportImpl : public P2PQuicTransportInterface {
  public:
-  static std::unique_ptr<P2PQuicTransportImpl> create(
+  static std::unique_ptr<P2PQuicTransportImpl> Create(
       const ::quic::QuartcSessionConfig& quartcSessionConfig,
       ::quic::Perspective perspective,
       std::shared_ptr<::quic::QuartcPacketTransport> transport,
@@ -43,46 +43,51 @@ class P2PQuicTransportImpl : public ::quic::QuartcServerSession,
       std::shared_ptr<::quic::QuicCryptoServerConfig> cryptoServerConfig,
       ::quic::QuicCompressedCertsCache* const compressedCertsCache,
       base::TaskRunner* runner);
-  virtual std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> getCertificates()
+  virtual std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> GetCertificates()
       const;
-  virtual void start(std::unique_ptr<RTCQuicParameters> remoteParameters);
+  virtual void Start(std::unique_ptr<RTCQuicParameters> remoteParameters);
   // virtual void listen(const std::string& remoteKey);
-  virtual RTCQuicParameters getLocalParameters() const;
+  virtual RTCQuicParameters GetLocalParameters() const;
 
-  void SetDelegate(P2PQuicTransport::Delegate* delegate) {
+  void SetDelegate(P2PQuicTransportInterface::Delegate* delegate) {
     m_delegate = delegate;
   }
 
   explicit P2PQuicTransportImpl(
-      std::unique_ptr<::quic::QuicConnection> connection,
-      const ::quic::QuicConfig& config,
+      std::weak_ptr<IceTransportInterface> ice_transport,
+      const ::quic::QuicConfig& quicConfig,
+      const ::quic::QuicCryptoServerConfig* crypto_config,
+      ::quic::QuicCompressedCertsCache* const compressed_certs_cache,
       ::quic::QuicClock* clock,
-      std::shared_ptr<::quic::QuartcPacketWriter> packetWriter,
-      std::shared_ptr<::quic::QuicCryptoServerConfig> cryptoServerConfig,
-      ::quic::QuicCompressedCertsCache* const compressedCertsCache,
+      ::quic::QuicAlarmFactory* alarm_factory,
+      ::quic::QuicConnectionHelperInterface* connection_helper,
       base::TaskRunner* runner);
   ~P2PQuicTransportImpl() override;
 
  protected:
-  void OnConnectionClosed(const ::quic::QuicConnectionCloseFrame& frame,
-                          ::quic::ConnectionCloseSource source) override;
-  void OnMessageReceived(::quic::QuicStringPiece message) override;
-  // void OnMessageSent(quic::QuicStringPiece message) override;
-  void OnMessageAcked(::quic::QuicMessageId message_id,
-                      ::quic::QuicTime receive_timestamp) override;
-  void OnMessageLost(::quic::QuicMessageId message_id) override;
+  //   void OnConnectionClosed(const ::quic::QuicConnectionCloseFrame& frame,
+  //                           ::quic::ConnectionCloseSource source) override;
+  //   void OnMessageReceived(::quic::QuicStringPiece message) override;
+  //   // void OnMessageSent(quic::QuicStringPiece message) override;
+  //   void OnMessageAcked(::quic::QuicMessageId message_id,
+  //                       ::quic::QuicTime receive_timestamp) override;
+  //   void OnMessageLost(::quic::QuicMessageId message_id) override;
 
  private:
-  static std::unique_ptr<::quic::QuicConnection> createQuicConnection(
+  static std::unique_ptr<::quic::QuicConnection> CreateQuicConnection(
       ::quic::Perspective perspective,
       std::shared_ptr<::quic::QuartcPacketWriter> writer,
       std::shared_ptr<::quic::QuicAlarmFactory> alarmFactory,
       std::shared_ptr<::quic::QuicConnectionHelperInterface> connectionHelper);
+  std::unique_ptr<::quic::QuartcServerSession> quartc_server_session_;
   std::shared_ptr<::quic::QuartcPacketWriter> m_writer;
   std::shared_ptr<::quic::QuicCryptoServerConfig> m_cryptoServerConfig;
-  P2PQuicTransport::Delegate* m_delegate;
-  std::vector<std::unique_ptr<P2PQuicStream>> m_streams;
+  P2PQuicTransportInterface::Delegate* m_delegate;
+  std::vector<std::unique_ptr<P2PQuicStreamInterface>> m_streams;
   base::TaskRunner* m_runner;
+  std::unique_ptr<::quic::QuartcPacketTransport> quartc_packet_transport_;
+  std::unique_ptr<::quic::QuartcPacketWriter> quartc_packet_writer_;
+  std::unique_ptr<::quic::QuartcServerSession> quartc_session_;
 };
 }  // namespace quic
 }  // namespace owt

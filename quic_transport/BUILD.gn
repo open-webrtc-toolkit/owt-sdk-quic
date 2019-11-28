@@ -27,14 +27,18 @@ shared_library("owt_quic_transport") {
     "//third_party/webrtc_overrides:webrtc_component",
   ]
   sources = [
-    "api/p2p_quic_stream.h",
-    "api/p2p_quic_transport.h",
-    "api/quic_definitions.h",
+    "api/owt/quic/p2p_quic_stream.h",
+    "api/owt/quic/p2p_quic_transport.h",
+    "api/owt/quic/quic_definitions.h",
+    "api/owt/quic/quic_transport_factory.h",
+    "api/owt/quic/quic_packet_transport_ice_adapter.h",
     "impl/p2p_quic_transport_impl.cc",
     "impl/p2p_quic_transport_impl.h",
     "impl/p2p_quic_stream_impl.cc",
     "impl/p2p_quic_stream_impl.h",
     "impl/quic_definitions.cc",
+    #"impl/quic_transport_factory.cc",
+    "impl/quic_packet_transport_ice_adapter.cc",
   ]
   include_dirs = [ "./", "api" ]
 }
