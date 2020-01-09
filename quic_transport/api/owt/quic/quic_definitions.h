@@ -19,10 +19,12 @@
 #include <string>
 #include <vector>
 
+#include "export.h"
+
 namespace owt {
 namespace quic {
 
-enum class QuicTransportState : uint8_t {
+enum class OWT_EXPORT QuicTransportState : uint8_t {
   kNew,
   kConnecting,
   kConnected,
@@ -31,7 +33,7 @@ enum class QuicTransportState : uint8_t {
 };
 
 // https://w3c.github.io/webrtc-pc/#dom-rtcdtlsfingerprint
-struct RTCDtlsFingerprint {
+struct OWT_EXPORT RTCDtlsFingerprint {
   RTCDtlsFingerprint();
   virtual ~RTCDtlsFingerprint();
   std::string algorithm;
@@ -39,7 +41,7 @@ struct RTCDtlsFingerprint {
 };
 
 // https://w3c.github.io/webrtc-quic/#dom-rtcquicparameters
-struct RTCQuicParameters {
+struct OWT_EXPORT RTCQuicParameters {
   RTCQuicParameters();
   virtual ~RTCQuicParameters();
   RTCQuicParameters(const RTCQuicParameters&);

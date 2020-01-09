@@ -9,16 +9,17 @@
 #include "base/logging.h"
 #include "base/task_runner.h"
 #include "impl/quic_packet_transport_ice_adapter.h"
-#include "owt/quic/ice_transport_interface.h"
+#include "owt/quic/p2p_quic_transport_interface.h"
 #include "third_party/webrtc/rtc_base/time_utils.h"
 
 namespace owt {
 namespace quic {
 
 QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter(
-    std::weak_ptr<IceTransportInterface> ice_transport,
+    P2PQuicPacketTransportInterface* quic_packet_transport,
     base::TaskRunner* runner) {
-  ice_transport_ = ice_transport;
+  LOG(INFO) <<"QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter";
+  quic_packet_transport_ = quic_packet_transport;
   runner_ = runner;
 }
 
@@ -31,10 +32,7 @@ int QuicPacketTransportIceAdapter::Write(
     size_t buffer_length,
     const ::quic::QuartcPacketTransport::PacketInfo& info) {
   LOG(INFO) << "QuicPacketTransportIceAdapter::write";
-  if (auto ptr = ice_transport_.lock()) {
-    return ptr->SendPacket(buffer, buffer_length);
-  }
-  return 0;
+  return quic_packet_transport_->WritePacket(buffer, buffer_length);
 }
 
 void QuicPacketTransportIceAdapter::SetDelegate(
@@ -44,7 +42,7 @@ void QuicPacketTransportIceAdapter::SetDelegate(
 }
 
 void QuicPacketTransportIceAdapter::DoReadPacket(
-    IceTransportInterface* ice_transport,
+    P2PQuicPacketTransportInterface* quic_packet_transport,
     std::unique_ptr<char[]> buffer,
     size_t buffer_length,
     const int64_t packetTime,
@@ -56,7 +54,7 @@ void QuicPacketTransportIceAdapter::DoReadPacket(
 }
 
 void QuicPacketTransportIceAdapter::OnReadPacket(
-    IceTransportInterface* ice_transport,
+    P2PQuicPacketTransportInterface* quic_packet_transport,
     const char* buffer,
     size_t buffer_length,
     const int64_t packetTime,
@@ -65,15 +63,15 @@ void QuicPacketTransportIceAdapter::OnReadPacket(
   std::unique_ptr<char[]> buffer_copied =
       std::make_unique<char[]>(buffer_length);
   memcpy(buffer_copied.get(), buffer, buffer_length);
-  runner_->PostTask(FROM_HERE,
-                    base::BindOnce(&QuicPacketTransportIceAdapter::DoReadPacket,
-                                   base::Unretained(this), ice_transport,
-                                   std::move(buffer_copied), buffer_length,
-                                   packetTime, flag));
+  runner_->PostTask(
+      FROM_HERE, base::BindOnce(&QuicPacketTransportIceAdapter::DoReadPacket,
+                                base::Unretained(this), quic_packet_transport,
+                                std::move(buffer_copied), buffer_length,
+                                packetTime, flag));
 }
 
 void QuicPacketTransportIceAdapter::OnReadyToSend(
-    IceTransportInterface* ice_transport) {
+    P2PQuicPacketTransportInterface* quic_packet_transport) {
   LOG(INFO) << "QuicPacketTransportIceAdapter::onReadyToSend";
   if (!transport_delegate_) {
     return;

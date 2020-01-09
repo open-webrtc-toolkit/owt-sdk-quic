@@ -21,6 +21,7 @@
 #include "net/third_party/quiche/src/quic/core/crypto/quic_crypto_client_config.h"
 #include "net/third_party/quiche/src/quic/quartc/quartc_factory.h"
 #include "net/third_party/quiche/src/quic/quartc/quartc_session.h"
+#include "owt/quic/p2p_quic_packet_transport_interface.h"
 #include "owt/quic/p2p_quic_transport_interface.h"
 #include "owt/quic/quic_definitions.h"
 #include "third_party/webrtc/api/scoped_refptr.h"
@@ -31,7 +32,10 @@ namespace quic {
 // Some ideas of this class are borrowed from
 // src/third_party/blink/renderer/modules/peerconnection/adapters/p2p_quic_transport_impl.h.
 // It always acts as a server side endpoint.
-class P2PQuicTransportImpl : public P2PQuicTransportInterface {
+class P2PQuicTransportImpl
+    : public P2PQuicTransportInterface,
+      public P2PQuicPacketTransportInterface::ReceiveDelegate,
+      public ::quic::QuicSession::Visitor {
  public:
   static std::unique_ptr<P2PQuicTransportImpl> Create(
       const ::quic::QuartcSessionConfig& quartcSessionConfig,
@@ -47,15 +51,15 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface {
       const;
   virtual void Start(std::unique_ptr<RTCQuicParameters> remoteParameters);
   // virtual void listen(const std::string& remoteKey);
-  virtual RTCQuicParameters GetLocalParameters() const;
+  RTCQuicParameters GetLocalParameters() const override;
 
   void SetDelegate(P2PQuicTransportInterface::Delegate* delegate) {
     m_delegate = delegate;
   }
 
   explicit P2PQuicTransportImpl(
-      std::weak_ptr<IceTransportInterface> ice_transport,
-      const ::quic::QuicConfig& quicConfig,
+      owt::quic::P2PQuicPacketTransportInterface* quic_packet_transport,
+      const ::quic::QuicConfig& quic_config,
       const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicCompressedCertsCache* const compressed_certs_cache,
       ::quic::QuicClock* clock,
@@ -65,13 +69,23 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface {
   ~P2PQuicTransportImpl() override;
 
  protected:
-  //   void OnConnectionClosed(const ::quic::QuicConnectionCloseFrame& frame,
-  //                           ::quic::ConnectionCloseSource source) override;
-  //   void OnMessageReceived(::quic::QuicStringPiece message) override;
-  //   // void OnMessageSent(quic::QuicStringPiece message) override;
-  //   void OnMessageAcked(::quic::QuicMessageId message_id,
-  //                       ::quic::QuicTime receive_timestamp) override;
-  //   void OnMessageLost(::quic::QuicMessageId message_id) override;
+  void OnPacketDataReceived(const char* data, size_t data_len) override;
+
+  // Implementes quic::QuicSession::Visitor.
+  // Called when the connection is closed after the streams have been closed.
+  void OnConnectionClosed(::quic::QuicConnectionId server_connection_id,
+                          ::quic::QuicErrorCode error,
+                          const std::string& error_details,
+                          ::quic::ConnectionCloseSource source) override {}
+  // Called when the session has become write blocked.
+  void OnWriteBlocked(
+      ::quic::QuicBlockedWriterInterface* blocked_writer) override {}
+  // Called when the session receives reset on a stream from the peer.
+  void OnRstStreamReceived(const ::quic::QuicRstStreamFrame& frame) override {}
+  // Called when the session receives a STOP_SENDING for a stream from the
+  // peer.
+  void OnStopSendingReceived(
+      const ::quic::QuicStopSendingFrame& frame) override {}
 
  private:
   static std::unique_ptr<::quic::QuicConnection> CreateQuicConnection(
@@ -79,7 +93,6 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface {
       std::shared_ptr<::quic::QuartcPacketWriter> writer,
       std::shared_ptr<::quic::QuicAlarmFactory> alarmFactory,
       std::shared_ptr<::quic::QuicConnectionHelperInterface> connectionHelper);
-  std::unique_ptr<::quic::QuartcServerSession> quartc_server_session_;
   std::shared_ptr<::quic::QuartcPacketWriter> m_writer;
   std::shared_ptr<::quic::QuicCryptoServerConfig> m_cryptoServerConfig;
   P2PQuicTransportInterface::Delegate* m_delegate;
@@ -88,6 +101,7 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface {
   std::unique_ptr<::quic::QuartcPacketTransport> quartc_packet_transport_;
   std::unique_ptr<::quic::QuartcPacketWriter> quartc_packet_writer_;
   std::unique_ptr<::quic::QuartcServerSession> quartc_session_;
+  ::quic::QuicClock* clock_;
 };
 }  // namespace quic
 }  // namespace owt

@@ -15,11 +15,13 @@
 #ifndef OWT_QUIC_TRANSPORT_P2P_QUIC_TRANSPORT_INTERFACE_H_
 #define OWT_QUIC_TRANSPORT_P2P_QUIC_TRANSPORT_INTERFACE_H_
 
+#include "quic_definitions.h"
+#include "export.h"
+
 namespace owt {
 namespace quic {
-class IceTransportInterface;
 class P2PQuicStreamInterface;
-class P2PQuicTransportInterface {
+class OWT_EXPORT P2PQuicTransportInterface {
  public:
   // Delegate for receiving callbacks from the QUIC transport.
   class Delegate {
@@ -27,7 +29,8 @@ class P2PQuicTransportInterface {
     // Called when the remote side has created a new stream.
     virtual void OnStream(P2PQuicStreamInterface* stream) {}
   };
-  virtual ~P2PQuicTransportInterface();
+  virtual ~P2PQuicTransportInterface() = default;
+  virtual RTCQuicParameters GetLocalParameters() const = 0;
   // virtual void Stop() = 0;
   // virtual void Start() = 0;
   // virtual P2PQuicStream* CreateStream() = 0;

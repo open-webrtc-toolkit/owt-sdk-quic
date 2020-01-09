@@ -17,11 +17,12 @@
 
 #include <cstdint>
 #include <vector>
+#include "export.h"
 
 namespace owt {
 namespace quic {
 
-class P2PQuicStreamInterface {
+class OWT_EXPORT P2PQuicStreamInterface {
  public:
   // Some of these APIs are borrowed from
   // third_party/blink/renderer/modules/peerconnection/adapters/quic_stream_proxy.h.

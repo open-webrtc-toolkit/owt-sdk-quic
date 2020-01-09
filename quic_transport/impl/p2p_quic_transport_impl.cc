@@ -10,15 +10,16 @@
 
 #include "impl/p2p_quic_transport_impl.h"
 #include "impl/quic_packet_transport_ice_adapter.h"
-#include "net/quic/platform/impl/quic_chromium_clock.cc"
+#include "net/quic/platform/impl/quic_chromium_clock.h"
 #include "net/third_party/quiche/src/quic/core/crypto/proof_verifier.h"
 #include "net/third_party/quiche/src/quic/core/quic_connection_id.h"
 #include "net/third_party/quiche/src/quic/core/quic_crypto_client_stream.h"
 #include "net/third_party/quiche/src/quic/core/quic_crypto_stream.h"
 #include "net/third_party/quiche/src/quic/core/quic_types.h"
+#include "net/third_party/quiche/src/quic/core/quic_versions.h"
 #include "net/third_party/quiche/src/quic/core/tls_client_handshaker.h"
 #include "net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.h"
-#include "owt/quic/ice_transport_interface.h"
+#include "owt/quic/p2p_quic_packet_transport_interface.h"
 #include "owt/quic/p2p_quic_stream_interface.h"
 #include "owt/quic/p2p_quic_transport_interface.h"
 #include "third_party/blink/renderer/modules/peerconnection/adapters/p2p_quic_crypto_config_factory_impl.h"
@@ -28,7 +29,7 @@ namespace owt {
 namespace quic {
 
 P2PQuicTransportImpl::P2PQuicTransportImpl(
-    std::weak_ptr<IceTransportInterface> ice_transport,
+    owt::quic::P2PQuicPacketTransportInterface* quic_packet_transport,
     const ::quic::QuicConfig& quic_config,
     const ::quic::QuicCryptoServerConfig* crypto_config,
     ::quic::QuicCompressedCertsCache* const compressed_certs_cache,
@@ -36,8 +37,8 @@ P2PQuicTransportImpl::P2PQuicTransportImpl(
     ::quic::QuicAlarmFactory* alarm_factory,
     ::quic::QuicConnectionHelperInterface* connection_helper,
     base::TaskRunner* runner) {
-  quartc_packet_transport_ =
-      std::make_unique<QuicPacketTransportIceAdapter>(ice_transport, runner);
+  quartc_packet_transport_ = std::make_unique<QuicPacketTransportIceAdapter>(
+      quic_packet_transport, runner);
   quartc_packet_writer_ = std::make_unique<::quic::QuartcPacketWriter>(
       quartc_packet_transport_.get(), 1200);
   char connection_id_bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
@@ -46,14 +47,17 @@ P2PQuicTransportImpl::P2PQuicTransportImpl(
   ::quic::QuicSocketAddress dummy_address(::quic::QuicIpAddress::Any4(),
                                           /*port=*/0);
   std::unique_ptr<::quic::QuicConnection> quic_connection =
-      ::quic::CreateQuicConnection(dummy_id, dummy_address, connection_helper,
-                                   alarm_factory, quartc_packet_writer_.get(),
-                                   ::quic::Perspective::IS_SERVER,
-                                   ::quic::CurrentSupportedVersions());
+      ::quic::CreateQuicConnection(
+          dummy_id, dummy_address, connection_helper, alarm_factory,
+          quartc_packet_writer_.get(), ::quic::Perspective::IS_SERVER,
+          {::quic::QuicVersionReservedForNegotiation()});
   quartc_session_ = std::make_unique<::quic::QuartcServerSession>(
-      std::move(quic_connection), nullptr, quic_config,
+      std::move(quic_connection), this, quic_config,
       ::quic::CurrentSupportedVersions(), clock, crypto_config,
       compressed_certs_cache, new ::quic::QuartcCryptoServerStreamHelper());
+  quartc_packet_transport_->SetDelegate(quartc_session_.get());
+  quic_packet_transport->SetReceiveDelegate(this);
+  clock_ = clock;
 }
 
 // P2PQuicTransportImpl::P2PQuicTransportImpl(
@@ -79,27 +83,27 @@ P2PQuicTransportImpl::P2PQuicTransportImpl(
 //   m_runner = runner;
 // }
 
-std::unique_ptr<P2PQuicTransportImpl> P2PQuicTransportImpl::Create(
-    const ::quic::QuartcSessionConfig& quartcSessionConfig,
-    ::quic::Perspective perspective,
-    std::shared_ptr<::quic::QuartcPacketTransport> transport,
-    ::quic::QuicClock* clock,
-    std::shared_ptr<::quic::QuicAlarmFactory> alarmFactory,
-    std::shared_ptr<::quic::QuicConnectionHelperInterface> helper,
-    std::shared_ptr<::quic::QuicCryptoServerConfig> cryptoServerConfig,
-    ::quic::QuicCompressedCertsCache* const compressedCertsCache,
-    base::TaskRunner* runner) {
-  LOG(INFO) << "Create ::quic::QuartcPacketWriter.";
-  auto writer = std::make_shared<::quic::QuartcPacketWriter>(
-      transport.get(), quartcSessionConfig.max_packet_size);
-  ::quic::QuicConfig quicConfig = ::quic::CreateQuicConfig(quartcSessionConfig);
-  LOG(INFO) << "Create QUIC connection.";
-  std::unique_ptr<::quic::QuicConnection> quicConnection =
-      CreateQuicConnection(perspective, writer, alarmFactory, helper);
-  return std::make_unique<P2PQuicTransportImpl>(
-      std::move(quicConnection), quicConfig, clock, writer, cryptoServerConfig,
-      compressedCertsCache, runner);
-}
+// std::unique_ptr<P2PQuicTransportImpl> P2PQuicTransportImpl::Create(
+//     const ::quic::QuartcSessionConfig& quartcSessionConfig,
+//     ::quic::Perspective perspective,
+//     std::shared_ptr<::quic::QuartcPacketTransport> transport,
+//     ::quic::QuicClock* clock,
+//     std::shared_ptr<::quic::QuicAlarmFactory> alarmFactory,
+//     std::shared_ptr<::quic::QuicConnectionHelperInterface> helper,
+//     std::shared_ptr<::quic::QuicCryptoServerConfig> cryptoServerConfig,
+//     ::quic::QuicCompressedCertsCache* const compressedCertsCache,
+//     base::TaskRunner* runner) {
+//   LOG(INFO) << "Create ::quic::QuartcPacketWriter.";
+//   auto writer = std::make_shared<::quic::QuartcPacketWriter>(
+//       transport.get(), quartcSessionConfig.max_packet_size);
+//   ::quic::QuicConfig quicConfig =
+//   ::quic::CreateQuicConfig(quartcSessionConfig); LOG(INFO) << "Create QUIC
+//   connection."; std::unique_ptr<::quic::QuicConnection> quicConnection =
+//       CreateQuicConnection(perspective, writer, alarmFactory, helper);
+//   return std::make_unique<P2PQuicTransportImpl>(
+//       std::move(quicConnection), quicConfig, clock, writer,
+//       cryptoServerConfig, compressedCertsCache, runner);
+// }
 std::unique_ptr<::quic::QuicConnection>
 P2PQuicTransportImpl::CreateQuicConnection(
     ::quic::Perspective perspective,
@@ -135,7 +139,9 @@ void P2PQuicTransportImpl::Start(
 }
 
 RTCQuicParameters P2PQuicTransportImpl::GetLocalParameters() const {
-  return RTCQuicParameters();
+  RTCQuicParameters parameters;
+  parameters.role = "auto";
+  return parameters;
 }
 
 // void P2PQuicTransportImpl::OnConnectionClosed(
@@ -165,6 +171,20 @@ RTCQuicParameters P2PQuicTransportImpl::GetLocalParameters() const {
 
 P2PQuicTransportImpl::~P2PQuicTransportImpl() {
   LOG(INFO) << "~P2PQuicTransportImpl";
+}
+
+void P2PQuicTransportImpl::OnPacketDataReceived(const char* data,
+                                                size_t data_len) {
+  LOG(INFO) << "OnPacketDataReceived.";
+  ::quic::QuicReceivedPacket packet(data, data_len, clock_->Now());
+  if (quartc_session_ && quartc_session_->connection()) {
+    LOG(INFO) << "connection is not null";
+  } else {
+    LOG(INFO) << "connection is null.";
+  }
+  quartc_session_->ProcessUdpPacket(
+      quartc_session_->connection()->self_address(),
+      quartc_session_->connection()->peer_address(), packet);
 }
 }  // namespace quic
 }  // namespace owt
