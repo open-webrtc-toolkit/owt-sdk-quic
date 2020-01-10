@@ -31,6 +31,7 @@ class OWT_EXPORT P2PQuicTransportInterface {
   };
   virtual ~P2PQuicTransportInterface() = default;
   virtual RTCQuicParameters GetLocalParameters() const = 0;
+  virtual void Listen(const std::string& remoteKey) = 0;
   // virtual void Stop() = 0;
   // virtual void Start() = 0;
   // virtual P2PQuicStream* CreateStream() = 0;

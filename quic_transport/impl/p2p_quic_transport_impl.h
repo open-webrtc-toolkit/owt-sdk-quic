@@ -35,7 +35,8 @@ namespace quic {
 class P2PQuicTransportImpl
     : public P2PQuicTransportInterface,
       public P2PQuicPacketTransportInterface::ReceiveDelegate,
-      public ::quic::QuicSession::Visitor {
+      public ::quic::QuicSession::Visitor,
+      public ::quic::QuartcSession::Delegate {
  public:
   static std::unique_ptr<P2PQuicTransportImpl> Create(
       const ::quic::QuartcSessionConfig& quartcSessionConfig,
@@ -50,8 +51,8 @@ class P2PQuicTransportImpl
   virtual std::vector<rtc::scoped_refptr<rtc::RTCCertificate>> GetCertificates()
       const;
   virtual void Start(std::unique_ptr<RTCQuicParameters> remoteParameters);
-  // virtual void listen(const std::string& remoteKey);
   RTCQuicParameters GetLocalParameters() const override;
+  void Listen(const std::string& remote_key) override;
 
   void SetDelegate(P2PQuicTransportInterface::Delegate* delegate) {
     m_delegate = delegate;
@@ -60,7 +61,6 @@ class P2PQuicTransportImpl
   explicit P2PQuicTransportImpl(
       owt::quic::P2PQuicPacketTransportInterface* quic_packet_transport,
       const ::quic::QuicConfig& quic_config,
-      const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicCompressedCertsCache* const compressed_certs_cache,
       ::quic::QuicClock* clock,
       ::quic::QuicAlarmFactory* alarm_factory,
@@ -87,14 +87,30 @@ class P2PQuicTransportImpl
   void OnStopSendingReceived(
       const ::quic::QuicStopSendingFrame& frame) override {}
 
+  // QuartcSession::Delegate overrides.
+  void OnCryptoHandshakeComplete() override{}
+  void OnConnectionWritable() override{}
+  void OnIncomingStream(::quic::QuartcStream* stream) override{}
+  void OnCongestionControlChange(::quic::QuicBandwidth bandwidth_estimate,
+                                 ::quic::QuicBandwidth pacing_rate,
+                                 ::quic::QuicTime::Delta latest_rtt) override{}
+  void OnConnectionClosed(const ::quic::QuicConnectionCloseFrame& frame,
+                          ::quic::ConnectionCloseSource source) override{}
+  void OnMessageReceived(::quic::QuicStringPiece message) override{}
+  void OnMessageSent(int64_t datagram_id) override{}
+  void OnMessageAcked(int64_t datagram_id, ::quic::QuicTime receive_timestamp) override{}
+  void OnMessageLost(int64_t datagram_id) override{}
+
  private:
   static std::unique_ptr<::quic::QuicConnection> CreateQuicConnection(
       ::quic::Perspective perspective,
       std::shared_ptr<::quic::QuartcPacketWriter> writer,
       std::shared_ptr<::quic::QuicAlarmFactory> alarmFactory,
       std::shared_ptr<::quic::QuicConnectionHelperInterface> connectionHelper);
+  std::unique_ptr<::quic::QuicCryptoServerConfig> CreateServerCryptoConfig();
+
   std::shared_ptr<::quic::QuartcPacketWriter> m_writer;
-  std::shared_ptr<::quic::QuicCryptoServerConfig> m_cryptoServerConfig;
+  std::unique_ptr<::quic::QuicCryptoServerConfig> crypto_server_config_;
   P2PQuicTransportInterface::Delegate* m_delegate;
   std::vector<std::unique_ptr<P2PQuicStreamInterface>> m_streams;
   base::TaskRunner* m_runner;

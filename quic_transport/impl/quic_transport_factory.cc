@@ -21,24 +21,20 @@
 namespace owt {
 namespace quic {
 
-// Length of HKDF input keying material, equal to its number of bytes.
-// https://tools.ietf.org/html/rfc5869#section-2.2.
-const size_t kInputKeyingMaterialLength = 32;
-
 QuicTransportFactory::QuicTransportFactory()
     : exit_manager_(std::make_unique<base::AtExitManager>()),
       io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")),
       random_generator_(::quic::QuicRandom::GetInstance()),
-      alarm_factory_(std::make_unique<net::QuicChromiumAlarmFactory>(
-          io_thread_->task_runner().get(),
-          ::quic::QuicChromiumClock::GetInstance())),
       connection_helper_(std::make_unique<net::QuicChromiumConnectionHelper>(
           ::quic::QuicChromiumClock::GetInstance(),
           random_generator_.get())),
-      quic_crypto_server_config_(CreateServerCryptoConfig()),
       compressed_certs_cache_(std::make_unique<
                               ::quic::QuicCompressedCertsCache>(
           ::quic::QuicCompressedCertsCache::kQuicCompressedCertsCacheSize)) {
+  io_thread_->Start();
+  alarm_factory_ = std::make_unique<net::QuicChromiumAlarmFactory>(
+      io_thread_->task_runner().get(),
+      ::quic::QuicChromiumClock::GetInstance());
   // TODO: Move logging settings to somewhere else.
   Init();
   LOG(INFO) << "Ctor of QuicTransportFactory.";
@@ -51,9 +47,9 @@ QuicTransportFactory::CreateP2PServerTransport(
     P2PQuicPacketTransportInterface* quic_packet_transport) {
   return std::make_unique<P2PQuicTransportImpl>(
       quic_packet_transport, ::quic::QuicConfig(),
-      quic_crypto_server_config_.get(), compressed_certs_cache_.get(),
-      ::quic::QuicChromiumClock::GetInstance(), alarm_factory_.get(),
-      connection_helper_.get(), io_thread_->task_runner().get());
+      compressed_certs_cache_.get(), ::quic::QuicChromiumClock::GetInstance(),
+      alarm_factory_.get(), connection_helper_.get(),
+      io_thread_->task_runner().get());
 }
 void QuicTransportFactory::Init() {
   base::CommandLine::Init(0, nullptr);
@@ -64,21 +60,5 @@ void QuicTransportFactory::Init() {
   InitLogging(settings);
 }
 
-std::unique_ptr<::quic::QuicCryptoServerConfig>
-QuicTransportFactory::CreateServerCryptoConfig() {
-  // Token from
-  // third_party/blink/renderer/modules/peerconnection/adapters/p2p_quic_crypto_config_factory_impl.cc
-  // Generate a random source address token secret every time since this is
-  // a transient client.
-  char source_address_token_secret[kInputKeyingMaterialLength];
-  random_generator_->RandBytes(source_address_token_secret,
-                               kInputKeyingMaterialLength);
-  std::unique_ptr<::quic::ProofSource> proof_source(
-      new ::quic::DummyProofSource);
-  return std::make_unique<::quic::QuicCryptoServerConfig>(
-      std::string(source_address_token_secret, kInputKeyingMaterialLength),
-      random_generator_.get(), std::move(proof_source),
-      ::quic::KeyExchangeSource::Default());
-}
 }  // namespace quic
 }  // namespace owt
