@@ -44,90 +44,9 @@ P2PQuicTransportImpl::P2PQuicTransportImpl(
       quic_packet_transport, runner);
   quartc_packet_writer_ = std::make_unique<::quic::QuartcPacketWriter>(
       quartc_packet_transport_.get(), 1200);
-  char connection_id_bytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  ::quic::QuicConnectionId dummy_id = ::quic::QuicConnectionId(
-      connection_id_bytes, sizeof(connection_id_bytes));
-  ::quic::QuicSocketAddress dummy_address(::quic::QuicIpAddress::Any4(),
-                                          /*port=*/0);
+  alarm_factory_ = alarm_factory;
   crypto_server_config_ = CreateServerCryptoConfig();
-  std::unique_ptr<::quic::QuicConnection> quic_connection =
-      ::quic::CreateQuicConnection(
-          dummy_id, dummy_address, connection_helper, alarm_factory,
-          quartc_packet_writer_.get(), ::quic::Perspective::IS_SERVER,
-          {::quic::QuicVersionReservedForNegotiation()});
-  quartc_session_ = std::make_unique<::quic::QuartcServerSession>(
-      std::move(quic_connection), this, quic_config,
-      ::quic::CurrentSupportedVersions(), clock, crypto_server_config_.get(),
-      compressed_certs_cache, new ::quic::QuartcCryptoServerStreamHelper());
-  quartc_session_->SetDelegate(this);
-  quartc_packet_transport_->SetDelegate(quartc_session_.get());
-  quic_packet_transport->SetReceiveDelegate(this);
   clock_ = clock;
-}
-
-// P2PQuicTransportImpl::P2PQuicTransportImpl(
-//     std::unique_ptr<::quic::QuicConnection> connection,
-//     const ::quic::QuicConfig& config,
-//     ::quic::QuicClock* clock,
-//     std::shared_ptr<::quic::QuartcPacketWriter> packetWriter,
-//     std::shared_ptr<::quic::QuicCryptoServerConfig> cryptoServerConfig,
-//     ::quic::QuicCompressedCertsCache* const compressedCertsCache,
-//     base::TaskRunner* runner)
-//     : ::quic::QuartcServerSession(
-//           std::move(connection),
-//           nullptr,
-//           config,
-//           ::quic::CurrentSupportedVersions(),
-//           clock,
-//           cryptoServerConfig.get(),
-//           compressedCertsCache,
-//           new ::quic::QuartcCryptoServerStreamHelper()) {
-//   m_writer = packetWriter;
-//   m_cryptoServerConfig = cryptoServerConfig;
-//   m_delegate = nullptr;
-//   m_runner = runner;
-// }
-
-// std::unique_ptr<P2PQuicTransportImpl> P2PQuicTransportImpl::Create(
-//     const ::quic::QuartcSessionConfig& quartcSessionConfig,
-//     ::quic::Perspective perspective,
-//     std::shared_ptr<::quic::QuartcPacketTransport> transport,
-//     ::quic::QuicClock* clock,
-//     std::shared_ptr<::quic::QuicAlarmFactory> alarmFactory,
-//     std::shared_ptr<::quic::QuicConnectionHelperInterface> helper,
-//     std::shared_ptr<::quic::QuicCryptoServerConfig> cryptoServerConfig,
-//     ::quic::QuicCompressedCertsCache* const compressedCertsCache,
-//     base::TaskRunner* runner) {
-//   LOG(INFO) << "Create ::quic::QuartcPacketWriter.";
-//   auto writer = std::make_shared<::quic::QuartcPacketWriter>(
-//       transport.get(), quartcSessionConfig.max_packet_size);
-//   ::quic::QuicConfig quicConfig =
-//   ::quic::CreateQuicConfig(quartcSessionConfig); LOG(INFO) << "Create QUIC
-//   connection."; std::unique_ptr<::quic::QuicConnection> quicConnection =
-//       CreateQuicConnection(perspective, writer, alarmFactory, helper);
-//   return std::make_unique<P2PQuicTransportImpl>(
-//       std::move(quicConnection), quicConfig, clock, writer,
-//       cryptoServerConfig, compressedCertsCache, runner);
-// }
-std::unique_ptr<::quic::QuicConnection>
-P2PQuicTransportImpl::CreateQuicConnection(
-    ::quic::Perspective perspective,
-    std::shared_ptr<::quic::QuartcPacketWriter> writer,
-    std::shared_ptr<::quic::QuicAlarmFactory> alarmFactory,
-    std::shared_ptr<::quic::QuicConnectionHelperInterface> connectionHelper) {
-  LOG(INFO) << "P2PQuicTransportImpl::createQuicConnection";
-  // Copied from net/third_party/quiche/src/quic/quartc/quartc_factory.cc.
-  // |dummyId| and |dummyAddress| are used because Quartc network layer will
-  // not use these two.
-  ::quic::QuicConnectionId dummyId;
-  char connectionIdBytes[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-  dummyId =
-      ::quic::QuicConnectionId(connectionIdBytes, sizeof(connectionIdBytes));
-  ::quic::QuicSocketAddress dummyAddress(::quic::QuicIpAddress::Any4(),
-                                         /*port=*/0);
-  return ::quic::CreateQuicConnection(
-      dummyId, dummyAddress, connectionHelper.get(), alarmFactory.get(),
-      writer.get(), perspective, ::quic::CurrentSupportedVersions());
 }
 
 std::vector<rtc::scoped_refptr<rtc::RTCCertificate>>
@@ -136,10 +55,12 @@ P2PQuicTransportImpl::GetCertificates() const {
 }
 
 void P2PQuicTransportImpl::Start(
-    std::unique_ptr<RTCQuicParameters> remoteParameters) {
+    std::unique_ptr<RTCQuicParameters> remote_parameters) {
   LOG(INFO) << "P2PQuicTransportImpl::start.";
-  quartc_session_->StartCryptoHandshake();
-  quartc_session_->Initialize();
+  quartc_endpoint_ = std::make_unique<::quic::QuartcServerEndpoint>(
+      alarm_factory_, clock_, ::quic::QuicRandom::GetInstance(), this,
+      quartc_session_config_);
+  quartc_endpoint_->Connect(quartc_packet_transport_.get());
   LOG(INFO) << "After start crypto handshake.";
 }
 
@@ -178,19 +99,19 @@ P2PQuicTransportImpl::~P2PQuicTransportImpl() {
   LOG(INFO) << "~P2PQuicTransportImpl";
 }
 
-void P2PQuicTransportImpl::OnPacketDataReceived(const char* data,
-                                                size_t data_len) {
-  LOG(INFO) << "OnPacketDataReceived.";
-  ::quic::QuicReceivedPacket packet(data, data_len, clock_->Now());
-  if (quartc_session_ && quartc_session_->connection()) {
-    LOG(INFO) << "connection is not null";
-  } else {
-    LOG(INFO) << "connection is null.";
-  }
-  quartc_session_->ProcessUdpPacket(
-      quartc_session_->connection()->self_address(),
-      quartc_session_->connection()->peer_address(), packet);
-}
+// void P2PQuicTransportImpl::OnPacketDataReceived(const char* data,
+//                                                 size_t data_len) {
+//   LOG(INFO) << "OnPacketDataReceived.";
+//   ::quic::QuicReceivedPacket packet(data, data_len, clock_->Now());
+//   if (quartc_session_ && quartc_session_->connection()) {
+//     LOG(INFO) << "connection is not null";
+//   } else {
+//     LOG(INFO) << "connection is null.";
+//   }
+//   quartc_session_->ProcessUdpPacket(
+//       quartc_session_->connection()->self_address(),
+//       quartc_session_->connection()->peer_address(), packet);
+// }
 
 std::unique_ptr<::quic::QuicCryptoServerConfig>
 P2PQuicTransportImpl::CreateServerCryptoConfig() {
@@ -209,9 +130,21 @@ P2PQuicTransportImpl::CreateServerCryptoConfig() {
       ::quic::KeyExchangeSource::Default());
 }
 
-void P2PQuicTransportImpl::Listen(const std::string& remote_key){
+void P2PQuicTransportImpl::Listen(const std::string& remote_key) {
+  LOG(INFO) << "Pre shared key is " << remote_key.size();
+  quartc_session_config_.pre_shared_key = remote_key;
   crypto_server_config_->set_pre_shared_key(remote_key);
   Start(nullptr);
+}
+
+void P2PQuicTransportImpl::Listen(uint8_t* key, size_t length){
+  std::string remote_key(key, key+length);
+  Listen(remote_key);
+}
+
+void P2PQuicTransportImpl::OnSessionCreated(::quic::QuartcSession* session) {
+  LOG(INFO) << "OnSessionCreated.";
+  session->StartCryptoHandshake();
 }
 }  // namespace quic
 }  // namespace owt

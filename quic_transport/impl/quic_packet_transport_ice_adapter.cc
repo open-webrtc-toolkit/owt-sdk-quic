@@ -21,6 +21,8 @@ QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter(
   LOG(INFO) <<"QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter";
   quic_packet_transport_ = quic_packet_transport;
   runner_ = runner;
+  quic_packet_transport->SetReceiveDelegate(this);
+  quic_packet_transport->SetWriteObserver(this);
 }
 
 QuicPacketTransportIceAdapter::~QuicPacketTransportIceAdapter() {
@@ -39,6 +41,20 @@ void QuicPacketTransportIceAdapter::SetDelegate(
     ::quic::QuartcPacketTransport::Delegate* delegate) {
   LOG(INFO) << "QuicPacketTransportIceAdapter::SetDelegate";
   transport_delegate_ = delegate;
+}
+
+void QuicPacketTransportIceAdapter::OnPacketDataReceived(const char* data,
+                                                         size_t data_len) {
+  if (transport_delegate_) {
+    transport_delegate_->OnTransportReceived(data, data_len);
+  }
+}
+
+void QuicPacketTransportIceAdapter::OnCanWrite() {
+  if (transport_delegate_) {
+    LOG(INFO)<<"OnTransportCanWrite.";
+    transport_delegate_->OnTransportCanWrite();
+  }
 }
 
 void QuicPacketTransportIceAdapter::DoReadPacket(

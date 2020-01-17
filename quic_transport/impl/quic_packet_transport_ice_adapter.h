@@ -20,7 +20,7 @@ namespace quic {
 class P2PQuicPacketTransportInterface;
 
 // P2PQuicPacketTransportInterface uses ICE as its underlying transport channel.
-class QuicPacketTransportIceAdapter : public ::quic::QuartcPacketTransport {
+class QuicPacketTransportIceAdapter : public ::quic::QuartcPacketTransport, public P2PQuicPacketTransportInterface::ReceiveDelegate, public P2PQuicPacketTransportInterface::WriteObserver {
  public:
   QuicPacketTransportIceAdapter(
       P2PQuicPacketTransportInterface* quic_packet_transport,
@@ -31,6 +31,13 @@ class QuicPacketTransportIceAdapter : public ::quic::QuartcPacketTransport {
             size_t buffer_length,
             const PacketInfo& info) override;
   void SetDelegate(::quic::QuartcPacketTransport::Delegate* delegate) override;
+
+ protected:
+  // P2PQuicPacketTransportInterface::ReceiveDelegate override.
+  void OnPacketDataReceived(const char* data, size_t data_len) override;
+
+  // P2PQuicPacketTransportInterface::WriteObserver override.
+  void OnCanWrite() override;
 
  private:
   void OnReadPacket(P2PQuicPacketTransportInterface* quic_packet_transport,
