@@ -34,7 +34,8 @@ namespace quic {
 // src/third_party/blink/renderer/modules/peerconnection/adapters/p2p_quic_transport_impl.h.
 // It always acts as a server side endpoint.
 class P2PQuicTransportImpl : public P2PQuicTransportInterface,
-                             public ::quic::QuartcEndpoint::Delegate {
+                             public ::quic::QuartcEndpoint::Delegate,
+                             public ::quic::QuartcStream::Delegate {
  public:
   static std::unique_ptr<P2PQuicTransportImpl> Create(
       const ::quic::QuartcSessionConfig& quartcSessionConfig,
@@ -54,7 +55,7 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface,
   void Listen(uint8_t* key, size_t length) override;
 
   void SetDelegate(P2PQuicTransportInterface::Delegate* delegate) {
-    m_delegate = delegate;
+    delegate_ = delegate;
   }
 
   explicit P2PQuicTransportImpl(
@@ -71,7 +72,7 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface,
   // QuartcSession::Delegate overrides.
   void OnCryptoHandshakeComplete() override {}
   void OnConnectionWritable() override {}
-  void OnIncomingStream(::quic::QuartcStream* stream) override {}
+  void OnIncomingStream(::quic::QuartcStream* stream) override;
   void OnCongestionControlChange(::quic::QuicBandwidth bandwidth_estimate,
                                  ::quic::QuicBandwidth pacing_rate,
                                  ::quic::QuicTime::Delta latest_rtt) override {}
@@ -84,6 +85,14 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface,
   void OnMessageLost(int64_t datagram_id) override {}
   void OnSessionCreated(::quic::QuartcSession* session) override;
 
+  // QuartcStream::Delegate overrides.
+  size_t OnReceived(::quic::QuartcStream* stream,
+                    iovec* iov,
+                    size_t iov_length,
+                    bool fin) override;
+  void OnClose(::quic::QuartcStream* stream) override {}
+  void OnBufferChanged(::quic::QuartcStream* stream) override {}
+
  private:
   std::unique_ptr<::quic::QuicCryptoServerConfig> CreateServerCryptoConfig();
 
@@ -91,9 +100,9 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface,
   std::unique_ptr<::quic::QuicCryptoServerConfig> crypto_server_config_;
   ::quic::QuartcSessionConfig quartc_session_config_;
   ::quic::QuicAlarmFactory* alarm_factory_;
-  P2PQuicTransportInterface::Delegate* m_delegate;
-  std::vector<std::unique_ptr<P2PQuicStreamInterface>> m_streams;
-  base::TaskRunner* m_runner;
+  P2PQuicTransportInterface::Delegate* delegate_;
+  std::vector<std::unique_ptr<P2PQuicStreamInterface>> streams_;
+  base::TaskRunner* runner_;
   std::unique_ptr<::quic::QuartcPacketTransport> quartc_packet_transport_;
   std::unique_ptr<::quic::QuartcPacketWriter> quartc_packet_writer_;
   std::unique_ptr<::quic::QuartcServerEndpoint> quartc_endpoint_;

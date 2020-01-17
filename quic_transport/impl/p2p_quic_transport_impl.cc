@@ -146,5 +146,19 @@ void P2PQuicTransportImpl::OnSessionCreated(::quic::QuartcSession* session) {
   LOG(INFO) << "OnSessionCreated.";
   session->StartCryptoHandshake();
 }
+
+void P2PQuicTransportImpl::OnIncomingStream(::quic::QuartcStream* stream){
+  LOG(INFO)<<"OnIncomingStream";
+  stream->SetDelegate(this);
+}
+
+size_t P2PQuicTransportImpl::OnReceived(::quic::QuartcStream* stream,
+                                        iovec* iov,
+                                        size_t iov_length,
+                                        bool fin) {
+  LOG(INFO) << "OnReceived.";
+  return iov_length;
+}
+
 }  // namespace quic
 }  // namespace owt
