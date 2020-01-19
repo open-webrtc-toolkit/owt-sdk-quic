@@ -21,12 +21,13 @@ class TaskRunner;
 
 namespace owt {
 namespace quic {
-class P2PQuicStreamImpl : public ::quic::QuartcStream::Delegate {
+class P2PQuicStreamImpl : public P2PQuicStreamInterface,
+                          public ::quic::QuartcStream::Delegate {
  public:
   explicit P2PQuicStreamImpl(::quic::QuartcStream* stream,
                              base::TaskRunner* runner);
   ~P2PQuicStreamImpl() override;
-  void SetDelegate(P2PQuicStreamInterface::Delegate* delegate);
+  void SetDelegate(P2PQuicStreamInterface::Delegate* delegate) override;
   void WriteOrBufferData(::quic::QuicStringPiece data, bool fin);
   void WriteOrBufferData(std::vector<uint8_t> data, bool fin);
 
@@ -41,10 +42,10 @@ class P2PQuicStreamImpl : public ::quic::QuartcStream::Delegate {
 
  private:
   void WriteOrBufferDataOnCurrentThread(std::vector<uint8_t> data, bool fin);
-  ::quic::QuartcStream* m_quartcStream;
-  base::TaskRunner* m_runner;
-  P2PQuicStreamInterface::Delegate* m_delegate;
-  std::queue<std::vector<uint8_t>> m_receivedBuffer;
+  ::quic::QuartcStream* quartc_stream_;
+  base::TaskRunner* runner_;
+  P2PQuicStreamInterface::Delegate* delegate_;
+  std::queue<std::vector<uint8_t>> received_buffer_;
 };
 }  // namespace quic
 }  // namespace owt

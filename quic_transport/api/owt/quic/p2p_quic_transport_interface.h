@@ -27,10 +27,11 @@ class OWT_EXPORT P2PQuicTransportInterface {
   class Delegate {
    public:
     // Called when the remote side has created a new stream.
-    virtual void OnStream(P2PQuicStreamInterface* stream) {}
+    virtual void OnIncomingStream(P2PQuicStreamInterface* stream) = 0;
   };
   virtual ~P2PQuicTransportInterface() = default;
   virtual RTCQuicParameters GetLocalParameters() const = 0;
+  virtual void SetDelegate(Delegate* delegate) = 0;
   virtual void Listen(const std::string& remote_key) = 0;
   virtual void Listen(uint8_t* key, size_t length) = 0;
   // virtual void Stop() = 0;

@@ -20,7 +20,7 @@ namespace owt {
 namespace quic {
 P2PQuicStreamImpl::P2PQuicStreamImpl(::quic::QuartcStream* stream,
                                      base::TaskRunner* runner)
-    : m_quartcStream(stream), m_runner(runner), m_delegate(nullptr) {
+    : quartc_stream_(stream), runner_(runner), delegate_(nullptr) {
   stream->SetDelegate(this);
 }
 
@@ -38,8 +38,8 @@ size_t P2PQuicStreamImpl::OnReceived(::quic::QuartcStream* stream,
         static_cast<const uint8_t*>(iov[i].iov_base),
         static_cast<const uint8_t*>((uint8_t*)iov[i].iov_base +
                                     iov[i].iov_len));
-    if (m_delegate) {
-      m_delegate->OnDataReceived(receivedData,
+    if (delegate_) {
+      delegate_->OnDataReceived(receivedData,
                                  i == iov_length - 1 ? fin : false);
     }
     bytes_consumed += iov[i].iov_len;
@@ -56,20 +56,20 @@ void P2PQuicStreamImpl::OnBufferChanged(::quic::QuartcStream* stream) {
 }
 
 void P2PQuicStreamImpl::SetDelegate(P2PQuicStreamInterface::Delegate* delegate) {
-  m_delegate = delegate;
+  delegate_ = delegate;
 }
 
 void P2PQuicStreamImpl::WriteOrBufferData(::quic::QuicStringPiece data,
                                           bool fin) {
-  m_runner->PostTask(
+  runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&::quic::QuartcStream::WriteOrBufferData,
-                     base::Unretained(m_quartcStream), data, fin, nullptr));
+                     base::Unretained(quartc_stream_), data, fin, nullptr));
   // m_quartcStream->WriteOrBufferData(data, fin, nullptr);
 }
 
 void P2PQuicStreamImpl::WriteOrBufferData(std::vector<uint8_t> data, bool fin) {
-  m_runner->PostTask(
+  runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&P2PQuicStreamImpl::WriteOrBufferDataOnCurrentThread,
                      base::Unretained(this), data, fin));
@@ -78,7 +78,7 @@ void P2PQuicStreamImpl::WriteOrBufferData(std::vector<uint8_t> data, bool fin) {
 void P2PQuicStreamImpl::WriteOrBufferDataOnCurrentThread(
     std::vector<uint8_t> data,
     bool fin) {
-  m_quartcStream->WriteOrBufferData(
+  quartc_stream_->WriteOrBufferData(
       ::quic::QuicStringPiece(reinterpret_cast<char*>(data.data()), data.size()),
       fin, nullptr);
 }

@@ -34,8 +34,7 @@ namespace quic {
 // src/third_party/blink/renderer/modules/peerconnection/adapters/p2p_quic_transport_impl.h.
 // It always acts as a server side endpoint.
 class P2PQuicTransportImpl : public P2PQuicTransportInterface,
-                             public ::quic::QuartcEndpoint::Delegate,
-                             public ::quic::QuartcStream::Delegate {
+                             public ::quic::QuartcEndpoint::Delegate {
  public:
   static std::unique_ptr<P2PQuicTransportImpl> Create(
       const ::quic::QuartcSessionConfig& quartcSessionConfig,
@@ -54,9 +53,7 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface,
   void Listen(const std::string& remote_key) override;
   void Listen(uint8_t* key, size_t length) override;
 
-  void SetDelegate(P2PQuicTransportInterface::Delegate* delegate) {
-    delegate_ = delegate;
-  }
+  void SetDelegate(P2PQuicTransportInterface::Delegate* delegate) override;
 
   explicit P2PQuicTransportImpl(
       owt::quic::P2PQuicPacketTransportInterface* quic_packet_transport,
@@ -84,14 +81,6 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface,
                       ::quic::QuicTime receive_timestamp) override {}
   void OnMessageLost(int64_t datagram_id) override {}
   void OnSessionCreated(::quic::QuartcSession* session) override;
-
-  // QuartcStream::Delegate overrides.
-  size_t OnReceived(::quic::QuartcStream* stream,
-                    iovec* iov,
-                    size_t iov_length,
-                    bool fin) override;
-  void OnClose(::quic::QuartcStream* stream) override {}
-  void OnBufferChanged(::quic::QuartcStream* stream) override {}
 
  private:
   std::unique_ptr<::quic::QuicCryptoServerConfig> CreateServerCryptoConfig();

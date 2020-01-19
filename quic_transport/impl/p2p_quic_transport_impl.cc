@@ -21,6 +21,7 @@
 #include "net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.h"
 #include "owt/quic/p2p_quic_packet_transport_interface.h"
 #include "owt/quic/p2p_quic_stream_interface.h"
+#include "owt/quic_transport/impl/p2p_quic_stream_impl.h"
 #include "owt/quic/p2p_quic_transport_interface.h"
 #include "third_party/blink/renderer/modules/peerconnection/adapters/p2p_quic_crypto_config_factory_impl.h"
 #include "third_party/webrtc/rtc_base/ssl_certificate.h"
@@ -147,17 +148,19 @@ void P2PQuicTransportImpl::OnSessionCreated(::quic::QuartcSession* session) {
   session->StartCryptoHandshake();
 }
 
-void P2PQuicTransportImpl::OnIncomingStream(::quic::QuartcStream* stream){
-  LOG(INFO)<<"OnIncomingStream";
-  stream->SetDelegate(this);
+void P2PQuicTransportImpl::OnIncomingStream(::quic::QuartcStream* stream) {
+  LOG(INFO) << "OnIncomingStream";
+  std::unique_ptr<P2PQuicStreamImpl> quic_stream =
+      std::make_unique<P2PQuicStreamImpl>(stream, runner_);
+  streams_.push_back(std::move(quic_stream));
+  if (delegate_) {
+    delegate_->OnIncomingStream(quic_stream.get());
+  }
 }
 
-size_t P2PQuicTransportImpl::OnReceived(::quic::QuartcStream* stream,
-                                        iovec* iov,
-                                        size_t iov_length,
-                                        bool fin) {
-  LOG(INFO) << "OnReceived.";
-  return iov_length;
+void P2PQuicTransportImpl::SetDelegate(
+    P2PQuicTransportInterface::Delegate* delegate) {
+  delegate_ = delegate;
 }
 
 }  // namespace quic
