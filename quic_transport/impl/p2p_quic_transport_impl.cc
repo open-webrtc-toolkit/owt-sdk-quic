@@ -152,9 +152,10 @@ void P2PQuicTransportImpl::OnIncomingStream(::quic::QuartcStream* stream) {
   LOG(INFO) << "OnIncomingStream";
   std::unique_ptr<P2PQuicStreamImpl> quic_stream =
       std::make_unique<P2PQuicStreamImpl>(stream, runner_);
+  auto* stream_ptr = quic_stream.get();
   streams_.push_back(std::move(quic_stream));
   if (delegate_) {
-    delegate_->OnIncomingStream(quic_stream.get());
+    delegate_->OnIncomingStream(stream_ptr);
   }
 }
 
