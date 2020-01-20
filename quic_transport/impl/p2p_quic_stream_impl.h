@@ -28,8 +28,7 @@ class P2PQuicStreamImpl : public P2PQuicStreamInterface,
                              base::TaskRunner* runner);
   ~P2PQuicStreamImpl() override;
   void SetDelegate(P2PQuicStreamInterface::Delegate* delegate) override;
-  void WriteOrBufferData(::quic::QuicStringPiece data, bool fin);
-  void WriteOrBufferData(std::vector<uint8_t> data, bool fin);
+  void WriteOrBufferData(uint8_t* data, size_t length, bool fin) override;
 
  protected:
   // Implements quic::QuartcStream::Delegate.
@@ -41,7 +40,7 @@ class P2PQuicStreamImpl : public P2PQuicStreamInterface,
   void OnBufferChanged(::quic::QuartcStream* stream) override;
 
  private:
-  void WriteOrBufferDataOnCurrentThread(std::vector<uint8_t> data, bool fin);
+  void WriteOrBufferDataOnCurrentThread(::quic::QuicStringPiece data, bool fin);
   ::quic::QuartcStream* quartc_stream_;
   base::TaskRunner* runner_;
   P2PQuicStreamInterface::Delegate* delegate_;

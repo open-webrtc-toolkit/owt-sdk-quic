@@ -38,7 +38,7 @@ class OWT_EXPORT P2PQuicStreamInterface {
   };
   virtual ~P2PQuicStreamInterface() = default;
   //virtual void Reset() = 0;
-  //virtual void WriteData(std::vector<uint8_t> data, bool fin) = 0;
+  virtual void WriteOrBufferData(uint8_t* data, size_t length, bool fin) = 0;
   virtual void SetDelegate(Delegate* delegate) = 0;
 };
 }  // namespace quic

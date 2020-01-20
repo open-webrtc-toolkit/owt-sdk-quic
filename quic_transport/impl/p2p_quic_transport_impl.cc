@@ -48,6 +48,7 @@ P2PQuicTransportImpl::P2PQuicTransportImpl(
   alarm_factory_ = alarm_factory;
   crypto_server_config_ = CreateServerCryptoConfig();
   clock_ = clock;
+  runner_ = runner;
 }
 
 std::vector<rtc::scoped_refptr<rtc::RTCCertificate>>

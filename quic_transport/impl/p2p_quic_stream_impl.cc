@@ -59,28 +59,22 @@ void P2PQuicStreamImpl::SetDelegate(P2PQuicStreamInterface::Delegate* delegate) 
   delegate_ = delegate;
 }
 
-void P2PQuicStreamImpl::WriteOrBufferData(::quic::QuicStringPiece data,
+void P2PQuicStreamImpl::WriteOrBufferData(uint8_t* data,
+                                          size_t length,
                                           bool fin) {
+  CHECK(runner_);
   runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&::quic::QuartcStream::WriteOrBufferData,
-                     base::Unretained(quartc_stream_), data, fin, nullptr));
-  // m_quartcStream->WriteOrBufferData(data, fin, nullptr);
-}
-
-void P2PQuicStreamImpl::WriteOrBufferData(std::vector<uint8_t> data, bool fin) {
-  runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(&P2PQuicStreamImpl::WriteOrBufferDataOnCurrentThread,
-                     base::Unretained(this), data, fin));
+      base::BindOnce(
+          &P2PQuicStreamImpl::WriteOrBufferDataOnCurrentThread,
+          base::Unretained(this),
+          ::quic::QuicStringPiece(reinterpret_cast<char*>(data), length),fin));
 }
 
 void P2PQuicStreamImpl::WriteOrBufferDataOnCurrentThread(
-    std::vector<uint8_t> data,
-    bool fin) {
-  quartc_stream_->WriteOrBufferData(
-      ::quic::QuicStringPiece(reinterpret_cast<char*>(data.data()), data.size()),
-      fin, nullptr);
+   ::quic::QuicStringPiece data, bool fin) {
+  quartc_stream_->WriteOrBufferData(data,  fin, nullptr);
 }
+
 }  // namespace quic
 }  // namespace owt
