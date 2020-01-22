@@ -19,6 +19,7 @@ QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter(
     P2PQuicPacketTransportInterface* quic_packet_transport,
     base::TaskRunner* runner) {
   LOG(INFO) <<"QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter";
+  CHECK(runner);
   quic_packet_transport_ = quic_packet_transport;
   runner_ = runner;
   quic_packet_transport->SetReceiveDelegate(this);
@@ -45,8 +46,13 @@ void QuicPacketTransportIceAdapter::SetDelegate(
 
 void QuicPacketTransportIceAdapter::OnPacketDataReceived(const char* data,
                                                          size_t data_len) {
+  // TODO: Consider the lifetime of data.
   if (transport_delegate_) {
-    transport_delegate_->OnTransportReceived(data, data_len);
+    runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            &::quic::QuartcPacketTransport::Delegate::OnTransportReceived,
+            base::Unretained(transport_delegate_), data, data_len));
   }
 }
 

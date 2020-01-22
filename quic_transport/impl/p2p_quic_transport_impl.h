@@ -84,6 +84,7 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface,
 
  private:
   std::unique_ptr<::quic::QuicCryptoServerConfig> CreateServerCryptoConfig();
+  void CreateAndConnectQuartcEndpointOnCurrentThread();
 
   std::shared_ptr<::quic::QuartcPacketWriter> packet_writer_;
   std::unique_ptr<::quic::QuicCryptoServerConfig> crypto_server_config_;
