@@ -40,17 +40,8 @@ class QuicPacketTransportIceAdapter : public ::quic::QuartcPacketTransport, publ
   void OnCanWrite() override;
 
  private:
-  void OnReadPacket(P2PQuicPacketTransportInterface* quic_packet_transport,
-                    const char* buffer,
-                    size_t buffer_length,
-                    const int64_t packet_time,
-                    int flag);
-  void OnReadyToSend(P2PQuicPacketTransportInterface* quic_packet_transport);
-  void DoReadPacket(P2PQuicPacketTransportInterface* quic_packet_transport,
-                    std::unique_ptr<char[]> buffer,
-                    size_t buffer_length,
-                    const int64_t packet_time,
-                    int flag);
+  void InvokeOnTransportReceivedOnCurrentThread(char* data,
+                                                size_t data_len);
   P2PQuicPacketTransportInterface* quic_packet_transport_;
   ::quic::QuartcPacketTransport::Delegate* transport_delegate_;
   base::TaskRunner* runner_;

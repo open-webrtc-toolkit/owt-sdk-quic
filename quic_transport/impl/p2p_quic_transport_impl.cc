@@ -80,48 +80,9 @@ RTCQuicParameters P2PQuicTransportImpl::GetLocalParameters() const {
   return parameters;
 }
 
-// void P2PQuicTransportImpl::OnConnectionClosed(
-//     const ::quic::QuicConnectionCloseFrame& frame,
-//     ::quic::ConnectionCloseSource source) {
-//   LOG(INFO) << "P2PQuicTransportImpl::OnConnectionClosed";
-// }
-
-// void P2PQuicTransportImpl::OnMessageReceived(::quic::QuicStringPiece message)
-// {
-//   LOG(INFO) << "P2PQuicTransportImpl::OnMessageReceived";
-// }
-
-// // void P2PQuicTransportImpl::OnMessageSent(int64_t datagram_id) {
-// //   LOG(INFO) << "P2PQuicTransportImpl::OnMessageSent";
-// // }
-
-// void P2PQuicTransportImpl::OnMessageAcked(::quic::QuicMessageId message_id,
-//                                           ::quic::QuicTime receive_timestamp)
-//                                           {
-//   LOG(INFO) << "P2PQuicTransportImpl::OnMessageAcked";
-// }
-
-// void P2PQuicTransportImpl::OnMessageLost(::quic::QuicMessageId message_id) {
-//   LOG(INFO) << "P2PQuicTransportImpl::OnMessageLost";
-// }
-
 P2PQuicTransportImpl::~P2PQuicTransportImpl() {
   LOG(INFO) << "~P2PQuicTransportImpl";
 }
-
-// void P2PQuicTransportImpl::OnPacketDataReceived(const char* data,
-//                                                 size_t data_len) {
-//   LOG(INFO) << "OnPacketDataReceived.";
-//   ::quic::QuicReceivedPacket packet(data, data_len, clock_->Now());
-//   if (quartc_session_ && quartc_session_->connection()) {
-//     LOG(INFO) << "connection is not null";
-//   } else {
-//     LOG(INFO) << "connection is null.";
-//   }
-//   quartc_session_->ProcessUdpPacket(
-//       quartc_session_->connection()->self_address(),
-//       quartc_session_->connection()->peer_address(), packet);
-// }
 
 std::unique_ptr<::quic::QuicCryptoServerConfig>
 P2PQuicTransportImpl::CreateServerCryptoConfig() {
