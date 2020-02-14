@@ -7,11 +7,13 @@
 #ifndef OWT_QUIC_PACKET_TRANSPORT_ICE_ADAPTER_H_
 #define OWT_QUIC_PACKET_TRANSPORT_ICE_ADAPTER_H_
 
+#include "base/synchronization/waitable_event.h"
 #include "net/third_party/quiche/src/quic/quartc/quartc_packet_writer.h"
 #include "owt/quic/p2p_quic_packet_transport_interface.h"
 
 namespace base {
 class TaskRunner;
+class WaitableEvent;
 }
 
 namespace owt {
@@ -20,7 +22,10 @@ namespace quic {
 class P2PQuicPacketTransportInterface;
 
 // P2PQuicPacketTransportInterface uses ICE as its underlying transport channel.
-class QuicPacketTransportIceAdapter : public ::quic::QuartcPacketTransport, public P2PQuicPacketTransportInterface::ReceiveDelegate, public P2PQuicPacketTransportInterface::WriteObserver {
+class QuicPacketTransportIceAdapter
+    : public ::quic::QuartcPacketTransport,
+      public P2PQuicPacketTransportInterface::ReceiveDelegate,
+      public P2PQuicPacketTransportInterface::WriteObserver {
  public:
   QuicPacketTransportIceAdapter(
       P2PQuicPacketTransportInterface* quic_packet_transport,
@@ -41,7 +46,8 @@ class QuicPacketTransportIceAdapter : public ::quic::QuartcPacketTransport, publ
 
  private:
   void InvokeOnTransportReceivedOnCurrentThread(char* data,
-                                                size_t data_len);
+                                                size_t data_len,
+                                                base::WaitableEvent* done);
   P2PQuicPacketTransportInterface* quic_packet_transport_;
   ::quic::QuartcPacketTransport::Delegate* transport_delegate_;
   base::TaskRunner* runner_;

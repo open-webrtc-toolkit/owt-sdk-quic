@@ -59,11 +59,7 @@ P2PQuicTransportImpl::GetCertificates() const {
 void P2PQuicTransportImpl::Start(
     std::unique_ptr<RTCQuicParameters> remote_parameters) {
   LOG(INFO) << "P2PQuicTransportImpl::start.";
-  runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(
-          &P2PQuicTransportImpl::CreateAndConnectQuartcEndpointOnCurrentThread,
-          base::Unretained(this)));
+  CreateAndConnectQuartcEndpointOnCurrentThread();
   LOG(INFO) << "After start crypto handshake.";
 }
 

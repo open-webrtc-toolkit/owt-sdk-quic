@@ -7,6 +7,7 @@
 #include "owt/quic_transport/impl/quic_packet_transport_ice_adapter.h"
 #include "base/bind.h"
 #include "base/logging.h"
+#include "base/synchronization/waitable_event.h"
 #include "base/task_runner.h"
 #include "impl/quic_packet_transport_ice_adapter.h"
 #include "owt/quic/p2p_quic_transport_interface.h"
@@ -18,7 +19,7 @@ namespace quic {
 QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter(
     P2PQuicPacketTransportInterface* quic_packet_transport,
     base::TaskRunner* runner) {
-  LOG(INFO) <<"QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter";
+  LOG(INFO) << "QuicPacketTransportIceAdapter::QuicPacketTransportIceAdapter";
   CHECK(runner);
   quic_packet_transport_ = quic_packet_transport;
   runner_ = runner;
@@ -48,21 +49,24 @@ void QuicPacketTransportIceAdapter::OnPacketDataReceived(const char* data,
                                                          size_t data_len) {
   char data_copy[data_len];
   memcpy(data_copy, data, data_len);
-  runner_->PostTask(FROM_HERE,
-                    base::BindOnce(&QuicPacketTransportIceAdapter::
-                                       InvokeOnTransportReceivedOnCurrentThread,
-                                   base::Unretained(this),
-                                   base::Unretained(data_copy), data_len));
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  runner_->PostTask(
+      FROM_HERE, base::BindOnce(&QuicPacketTransportIceAdapter::
+                                    InvokeOnTransportReceivedOnCurrentThread,
+                                base::Unretained(this),
+                                base::Unretained(data_copy), data_len, &done));
+  done.Wait();
 }
 
 void QuicPacketTransportIceAdapter::InvokeOnTransportReceivedOnCurrentThread(
     char* data,
-    size_t data_len) {
+    size_t data_len,
+    base::WaitableEvent* done) {
   if (transport_delegate_) {
     transport_delegate_->OnTransportReceived(data, data_len);
   }
-  LOG(INFO)<<"Delete data.";
-  //delete data;
+  done->Signal();
 }
 
 void QuicPacketTransportIceAdapter::OnCanWrite() {
