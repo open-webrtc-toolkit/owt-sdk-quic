@@ -1,8 +1,16 @@
-source_set("owt_deps_quartc") {
+source_set("owt_deps_quic") {
   # This target is similar as //src/third_party/openscreen/src/third_party/chromium_quic/BUILD.gn.
   sources = [
+    "//net/quic/platform/impl/quic_default_proof_providers_impl.cc",
+    "//net/quic/platform/impl/quic_default_proof_providers_impl.h",
+    "//net/third_party/quiche/src/quic/core/chlo_extractor.cc",
+    "//net/third_party/quiche/src/quic/core/chlo_extractor.h",
     "//net/third_party/quiche/src/quic/core/quic_dispatcher.cc",
     "//net/third_party/quiche/src/quic/core/quic_dispatcher.h",
+    "//net/third_party/quiche/src/quic/core/quic_time_wait_list_manager.cc",
+    "//net/third_party/quiche/src/quic/core/quic_time_wait_list_manager.h",
+    "//net/third_party/quiche/src/quic/quartc/quartc_connection_helper.cc",
+    "//net/third_party/quiche/src/quic/quartc/quartc_connection_helper.h",
     "//net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.cc",
     "//net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.h",
     "//net/third_party/quiche/src/quic/quartc/quartc_dispatcher.cc",
@@ -17,12 +25,14 @@ source_set("owt_deps_quartc") {
     "//net/third_party/quiche/src/quic/quartc/quartc_session.h",
     "//net/third_party/quiche/src/quic/quartc/quartc_stream.cc",
     "//net/third_party/quiche/src/quic/quartc/quartc_stream.h",
-    "//net/third_party/quiche/src/quic/core/quic_time_wait_list_manager.h",
-    "//net/third_party/quiche/src/quic/core/quic_time_wait_list_manager.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_connection_helper.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_connection_helper.cc",
-    "//net/third_party/quiche/src/quic/core/chlo_extractor.h",
-    "//net/third_party/quiche/src/quic/core/chlo_extractor.cc",
+    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.cc",
+    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h",
+    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.cc",
+    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.h",
+    "//net/tools/quic/quic_simple_server_packet_writer.cc",
+    "//net/tools/quic/quic_simple_server_packet_writer.h",
+    "//net/tools/quic/quic_simple_server_socket.cc",
+    "//net/tools/quic/quic_simple_server_socket.h",
   ]
   include_dirs = [ "//" ]
   deps = [
@@ -34,7 +44,7 @@ source_set("owt_deps_quartc") {
 
 shared_library("owt_quic_transport") {
   deps = [
-    ":owt_deps_quartc",
+    ":owt_deps_quic",
     "//net",
     "//third_party/boringssl",
     "//third_party/webrtc_overrides:webrtc_component",
@@ -45,6 +55,7 @@ shared_library("owt_quic_transport") {
     "api/owt/quic/quic_definitions.h",
     "api/owt/quic/quic_packet_transport_ice_adapter.h",
     "api/owt/quic/quic_transport_factory.h",
+    "api/owt/quic/quic_transport_server_interface.h",
     "impl/p2p_quic_stream_impl.cc",
     "impl/p2p_quic_stream_impl.h",
     "impl/p2p_quic_transport_impl.cc",
@@ -52,6 +63,8 @@ shared_library("owt_quic_transport") {
     "impl/quic_definitions.cc",
     "impl/quic_packet_transport_ice_adapter.cc",
     "impl/quic_transport_factory.cc",
+    "impl/quic_transport_server_impl.cc",
+    "impl/quic_transport_server_impl.h",
   ]
   include_dirs = [
     "./",

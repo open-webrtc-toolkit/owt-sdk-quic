@@ -8,6 +8,8 @@
 #define OWT_QUIC_TRANSPORT_QUIC_TRANSPORT_FACTORY_H_
 
 #include <memory>
+#include <string>
+#include <vector>
 #include "export.h"
 namespace quic {
 class QuicAlarmFactory;
@@ -16,18 +18,20 @@ class QuicClock;
 class QuicRandom;
 class QuicCompressedCertsCache;
 class QuicCryptoServerConfig;
+class ProofSource;
 }  // namespace quic
 
 namespace base {
 class Thread;
 class AtExitManager;
-}
+}  // namespace base
 
 namespace owt {
 namespace quic {
 
 class P2PQuicTransportInterface;
 class P2PQuicPacketTransportInterface;
+class QuicTransportServerInterface;
 
 class OWT_EXPORT QuicTransportFactory {
  public:
@@ -35,6 +39,12 @@ class OWT_EXPORT QuicTransportFactory {
   virtual ~QuicTransportFactory();
   std::unique_ptr<P2PQuicTransportInterface> CreateP2PServerTransport(
       P2PQuicPacketTransportInterface* quic_packet_transport);
+  // `accepted_origins` is removed at this time because ABI compatible issue.
+  std::unique_ptr<QuicTransportServerInterface> CreateQuicTransportServer(
+      int port,
+      const char* cert_path,
+      const char* key_path,
+      const char* secret_path /*, std::vector<std::string> accepted_origins*/);
 
  private:
   void Init();
