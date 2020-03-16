@@ -68,11 +68,11 @@ void P2PQuicStreamImpl::WriteOrBufferData(uint8_t* data,
       base::BindOnce(
           &P2PQuicStreamImpl::WriteOrBufferDataOnCurrentThread,
           base::Unretained(this),
-          ::quic::QuicStringPiece(reinterpret_cast<char*>(data), length),fin));
+          quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length),fin));
 }
 
 void P2PQuicStreamImpl::WriteOrBufferDataOnCurrentThread(
-   ::quic::QuicStringPiece data, bool fin) {
+   quiche::QuicheStringPiece data, bool fin) {
   quartc_stream_->WriteOrBufferData(data,  fin, nullptr);
 }
 

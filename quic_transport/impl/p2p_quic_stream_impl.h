@@ -40,7 +40,7 @@ class P2PQuicStreamImpl : public P2PQuicStreamInterface,
   void OnBufferChanged(::quic::QuartcStream* stream) override;
 
  private:
-  void WriteOrBufferDataOnCurrentThread(::quic::QuicStringPiece data, bool fin);
+  void WriteOrBufferDataOnCurrentThread(quiche::QuicheStringPiece data, bool fin);
   ::quic::QuartcStream* quartc_stream_;
   base::TaskRunner* runner_;
   P2PQuicStreamInterface::Delegate* delegate_;

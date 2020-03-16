@@ -75,7 +75,7 @@ class P2PQuicTransportImpl : public P2PQuicTransportInterface,
                                  ::quic::QuicTime::Delta latest_rtt) override {}
   void OnConnectionClosed(const ::quic::QuicConnectionCloseFrame& frame,
                           ::quic::ConnectionCloseSource source) override {}
-  void OnMessageReceived(::quic::QuicStringPiece message) override {}
+  void OnMessageReceived(quiche::QuicheStringPiece message) override {}
   void OnMessageSent(int64_t datagram_id) override {}
   void OnMessageAcked(int64_t datagram_id,
                       ::quic::QuicTime receive_timestamp) override {}
