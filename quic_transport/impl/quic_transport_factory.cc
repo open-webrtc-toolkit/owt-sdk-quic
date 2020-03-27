@@ -9,7 +9,7 @@
 #include "base/logging.h"
 #include "base/threading/thread.h"
 #include "impl/p2p_quic_transport_impl.h"
-#include "impl/quic_transport_server_impl.h"
+#include "impl/quic_transport_owt_server_impl.h"
 #include "net/quic/crypto/proof_source_chromium.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 #include "net/quic/quic_chromium_alarm_factory.h"
@@ -72,7 +72,7 @@ QuicTransportFactory::CreateQuicTransportServer(int port,
                                                 const char* cert_path,
                                                 const char* key_path,
                                                 const char* secret_path) {
-  return std::make_unique<QuicTransportServerImpl>(
+  return std::make_unique<QuicTransportOwtServerImpl>(
       port, std::vector<url::Origin>(), CreateProofSource(),io_thread_.get());
 }
 

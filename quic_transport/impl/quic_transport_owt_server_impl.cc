@@ -12,7 +12,7 @@
 // Chromium/net/tools/quic/quic_transport_simple_server.cc
 // with modifications.
 
-#include "impl/quic_transport_server_impl.h"
+#include "impl/quic_transport_owt_server_impl.h"
 #include "base/bind.h"
 #include "base/threading/thread.h"
 #include "base/threading/thread_task_runner_handle.h"
@@ -37,7 +37,7 @@ constexpr size_t kMaxReadsPerEvent = 32;
 constexpr size_t kMaxNewConnectionsPerEvent = 32;
 constexpr int kReadBufferSize = 2 * ::quic::kMaxIncomingPacketSize;
 
-class QuicTransportServerImplSessionHelper
+class QuicTransportOwtServerImplSessionHelper
     : public ::quic::QuicCryptoServerStreamBase::Helper {
  public:
   bool CanAcceptClientHello(const ::quic::CryptoHandshakeMessage& /*message*/,
@@ -49,7 +49,7 @@ class QuicTransportServerImplSessionHelper
   }
 };
 
-QuicTransportServerImpl::QuicTransportServerImpl(
+QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
     int port,
     std::vector<url::Origin> accepted_origins,
     std::unique_ptr<::quic::ProofSource> proof_source,
@@ -69,19 +69,19 @@ QuicTransportServerImpl::QuicTransportServerImpl(
       &config_, &crypto_config_, &version_manager_,
       std::make_unique<net::QuicChromiumConnectionHelper>(
           clock_, ::quic::QuicRandom::GetInstance()),
-      std::make_unique<QuicTransportServerImplSessionHelper>(),
+      std::make_unique<QuicTransportOwtServerImplSessionHelper>(),
       std::make_unique<net::QuicChromiumAlarmFactory>(task_runner_.get(),
                                                       clock_),
       ::quic::kQuicDefaultConnectionIdLength, accepted_origins);
 }
 
-QuicTransportServerImpl::~QuicTransportServerImpl() {}
+QuicTransportOwtServerImpl::~QuicTransportOwtServerImpl() {}
 
-int QuicTransportServerImpl::Start() {
+int QuicTransportOwtServerImpl::Start() {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&QuicTransportServerImpl::StartOnCurrentThread,
+      FROM_HERE, base::BindOnce(&QuicTransportOwtServerImpl::StartOnCurrentThread,
                                 base::Unretained(this), &done));
   done.Wait();
   if (socket_) {
@@ -93,8 +93,8 @@ int QuicTransportServerImpl::Start() {
   }
 }
 
-void QuicTransportServerImpl::StartOnCurrentThread(base::WaitableEvent* done) {
-  LOG(INFO) << "QuicTransportServerImpl::StartOnCurrentThread";
+void QuicTransportOwtServerImpl::StartOnCurrentThread(base::WaitableEvent* done) {
+  LOG(INFO) << "QuicTransportOwtServerImpl::StartOnCurrentThread";
   socket_ = net::CreateQuicSimpleServerSocket(
       net::IPEndPoint{net::IPAddress::IPv6AllZeros(), port_}, &server_address_);
   if (socket_ == nullptr) {
@@ -106,27 +106,27 @@ void QuicTransportServerImpl::StartOnCurrentThread(base::WaitableEvent* done) {
       new net::QuicSimpleServerPacketWriter(socket_.get(), dispatcher_.get()));
   ScheduleReadPackets();
   done->Signal();
-  LOG(INFO) << "End of QuicTransportServerImpl::StartOnCurrentThread";
+  LOG(INFO) << "End of QuicTransportOwtServerImpl::StartOnCurrentThread";
   return;
 }
 
-void QuicTransportServerImpl::Stop() {}
+void QuicTransportOwtServerImpl::Stop() {}
 
-void QuicTransportServerImpl::SetVisitor(
+void QuicTransportOwtServerImpl::SetVisitor(
     QuicTransportServerInterface::Visitor* visitor) {}
 
-void QuicTransportServerImpl::ScheduleReadPackets() {
+void QuicTransportOwtServerImpl::ScheduleReadPackets() {
   task_runner_->PostTask(FROM_HERE,
-                         base::BindOnce(&QuicTransportServerImpl::ReadPackets,
+                         base::BindOnce(&QuicTransportOwtServerImpl::ReadPackets,
                                         weak_factory_.GetWeakPtr()));
 }
 
-void QuicTransportServerImpl::ReadPackets() {
+void QuicTransportOwtServerImpl::ReadPackets() {
   dispatcher_->ProcessBufferedChlos(kMaxNewConnectionsPerEvent);
   for (size_t i = 0; i < kMaxReadsPerEvent; i++) {
     int result = socket_->RecvFrom(
         read_buffer_.get(), read_buffer_->size(), &client_address_,
-        base::BindOnce(&QuicTransportServerImpl::OnReadComplete,
+        base::BindOnce(&QuicTransportOwtServerImpl::OnReadComplete,
                        base::Unretained(this)));
     if (result == net::ERR_IO_PENDING){
       return;
@@ -136,12 +136,12 @@ void QuicTransportServerImpl::ReadPackets() {
   ScheduleReadPackets();
 }
 
-void QuicTransportServerImpl::OnReadComplete(int result) {
+void QuicTransportOwtServerImpl::OnReadComplete(int result) {
   ProcessReadPacket(result);
   ReadPackets();
 }
 
-void QuicTransportServerImpl::ProcessReadPacket(int result) {
+void QuicTransportOwtServerImpl::ProcessReadPacket(int result) {
   if (result == 0)
     result = net::ERR_CONNECTION_CLOSED;
   if (result < 0) {

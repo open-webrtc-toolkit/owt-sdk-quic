@@ -12,8 +12,8 @@
 // Chromium/net/tools/quic/quic_transport_simple_server.h
 // with modifications.
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_SERVER_IMPL_H_
-#define OWT_QUIC_QUIC_TRANSPORT_SERVER_IMPL_H_
+#ifndef OWT_QUIC_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
+#define OWT_QUIC_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
 
 #include <string>
 #include <vector>
@@ -33,15 +33,15 @@
 namespace owt {
 namespace quic {
 // A server accepts WebTransport - QuicTransport connections.
-class OWT_EXPORT QuicTransportServerImpl : public QuicTransportServerInterface {
+class QuicTransportOwtServerImpl : public QuicTransportServerInterface {
  public:
-  QuicTransportServerImpl() = delete;
-  explicit QuicTransportServerImpl(
+  QuicTransportOwtServerImpl() = delete;
+  explicit QuicTransportOwtServerImpl(
       int port,
       std::vector<url::Origin> accepted_origins,
       std::unique_ptr<::quic::ProofSource> proof_source,
       base::Thread* io_thread);
-  ~QuicTransportServerImpl() override;
+  ~QuicTransportOwtServerImpl() override;
   int Start() override;
   void Stop() override;
   void SetVisitor(QuicTransportServerInterface::Visitor* visitor) override;
@@ -74,7 +74,7 @@ class OWT_EXPORT QuicTransportServerImpl : public QuicTransportServerInterface {
   scoped_refptr<net::IOBufferWithSize> read_buffer_;
   net::IPEndPoint client_address_;
 
-  base::WeakPtrFactory<QuicTransportServerImpl> weak_factory_{this};
+  base::WeakPtrFactory<QuicTransportOwtServerImpl> weak_factory_{this};
 };
 }  // namespace quic
 }  // namespace owt
