@@ -16,13 +16,13 @@
 
 #include <memory>
 
+#include "impl/quic_transport_owt_server_session.h"
 #include "net/third_party/quiche/src/common/platform/api/quiche_string_piece.h"
 #include "net/third_party/quiche/src/quic/core/quic_connection.h"
 #include "net/third_party/quiche/src/quic/core/quic_dispatcher.h"
 #include "net/third_party/quiche/src/quic/core/quic_types.h"
 #include "net/third_party/quiche/src/quic/core/quic_versions.h"
 #include "net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.h"
-#include "impl/quic_transport_owt_server_session.h"
 
 namespace owt {
 namespace quic {
@@ -45,7 +45,11 @@ QuicTransportOwtServerDispatcher::QuicTransportOwtServerDispatcher(
                      std::move(session_helper),
                      std::move(alarm_factory),
                      expected_server_connection_id_length),
-      accepted_origins_(accepted_origins) {}
+      accepted_origins_(accepted_origins),
+      visitor_(nullptr) {
+  LOG(INFO)
+      << "QuicTransportOwtServerDispatcher::QuicTransportOwtServerDispatcher";
+}
 
 QuicTransportOwtServerDispatcher::~QuicTransportOwtServerDispatcher() = default;
 
@@ -64,7 +68,15 @@ QuicTransportOwtServerDispatcher::CreateQuicSession(
       GetSupportedVersions(), crypto_config(), compressed_certs_cache(),
       accepted_origins_);
   session->Initialize();
+  if (visitor_) {
+    visitor_->OnSession(session.get());
+  }
+  DLOG(INFO) << "Create a new session for " << peer_address.ToString();
   return session;
+}
+
+void QuicTransportOwtServerDispatcher::SetVisitor(Visitor* visitor) {
+  visitor_ = visitor;
 }
 }  // namespace quic
 }  // namespace owt

@@ -16,6 +16,8 @@
 #include "base/bind.h"
 #include "base/threading/thread.h"
 #include "base/threading/thread_task_runner_handle.h"
+#include "impl/quic_transport_owt_server_dispatcher.h"
+#include "impl/quic_transport_owt_server_session.h"
 #include "net/base/net_errors.h"
 #include "net/quic/address_utils.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
@@ -64,8 +66,10 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
       dispatcher_(nullptr),
       task_runner_(io_thread->task_runner()),
       read_buffer_(
-          base::MakeRefCounted<net::IOBufferWithSize>(kReadBufferSize)) {
-  dispatcher_ = std::make_unique<::quic::QuicTransportSimpleServerDispatcher>(
+          base::MakeRefCounted<net::IOBufferWithSize>(kReadBufferSize)),
+      visitor_(nullptr) {
+  LOG(INFO) << "QuicTransportOwtServerImpl::QuicTransportOwtServerImpl";
+  dispatcher_ = std::make_unique<QuicTransportOwtServerDispatcher>(
       &config_, &crypto_config_, &version_manager_,
       std::make_unique<net::QuicChromiumConnectionHelper>(
           clock_, ::quic::QuicRandom::GetInstance()),
@@ -73,6 +77,7 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
       std::make_unique<net::QuicChromiumAlarmFactory>(task_runner_.get(),
                                                       clock_),
       ::quic::kQuicDefaultConnectionIdLength, accepted_origins);
+  dispatcher_->SetVisitor(this);
 }
 
 QuicTransportOwtServerImpl::~QuicTransportOwtServerImpl() {}
@@ -81,11 +86,13 @@ int QuicTransportOwtServerImpl::Start() {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&QuicTransportOwtServerImpl::StartOnCurrentThread,
-                                base::Unretained(this), &done));
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtServerImpl::StartOnCurrentThread,
+                     base::Unretained(this), &done));
   done.Wait();
   if (socket_) {
-    LOG(INFO) << "QUIC transport server is listening " << server_address_.ToString();
+    LOG(INFO) << "QUIC transport server is listening "
+              << server_address_.ToString();
     return EXIT_SUCCESS;
   } else {
     LOG(ERROR) << "Failed to start QUIC transport server.";
@@ -93,7 +100,8 @@ int QuicTransportOwtServerImpl::Start() {
   }
 }
 
-void QuicTransportOwtServerImpl::StartOnCurrentThread(base::WaitableEvent* done) {
+void QuicTransportOwtServerImpl::StartOnCurrentThread(
+    base::WaitableEvent* done) {
   LOG(INFO) << "QuicTransportOwtServerImpl::StartOnCurrentThread";
   socket_ = net::CreateQuicSimpleServerSocket(
       net::IPEndPoint{net::IPAddress::IPv6AllZeros(), port_}, &server_address_);
@@ -113,12 +121,14 @@ void QuicTransportOwtServerImpl::StartOnCurrentThread(base::WaitableEvent* done)
 void QuicTransportOwtServerImpl::Stop() {}
 
 void QuicTransportOwtServerImpl::SetVisitor(
-    QuicTransportServerInterface::Visitor* visitor) {}
+    QuicTransportServerInterface::Visitor* visitor) {
+  visitor_ = visitor;
+}
 
 void QuicTransportOwtServerImpl::ScheduleReadPackets() {
-  task_runner_->PostTask(FROM_HERE,
-                         base::BindOnce(&QuicTransportOwtServerImpl::ReadPackets,
-                                        weak_factory_.GetWeakPtr()));
+  task_runner_->PostTask(
+      FROM_HERE, base::BindOnce(&QuicTransportOwtServerImpl::ReadPackets,
+                                weak_factory_.GetWeakPtr()));
 }
 
 void QuicTransportOwtServerImpl::ReadPackets() {
@@ -128,7 +138,7 @@ void QuicTransportOwtServerImpl::ReadPackets() {
         read_buffer_.get(), read_buffer_->size(), &client_address_,
         base::BindOnce(&QuicTransportOwtServerImpl::OnReadComplete,
                        base::Unretained(this)));
-    if (result == net::ERR_IO_PENDING){
+    if (result == net::ERR_IO_PENDING) {
       return;
     }
     ProcessReadPacket(result);
@@ -155,6 +165,15 @@ void QuicTransportOwtServerImpl::ProcessReadPacket(int result) {
                                     clock_->Now(), /*owns_buffer=*/false);
   dispatcher_->ProcessPacket(net::ToQuicSocketAddress(server_address_),
                              net::ToQuicSocketAddress(client_address_), packet);
+}
+
+void QuicTransportOwtServerImpl::OnSession(
+    QuicTransportOwtServerSession* session) {
+  if (visitor_) {
+    CHECK(session);
+    LOG(INFO)<<"Connection ID: "<<session->ConnectionId();
+    visitor_->OnSession(session);
+  }
 }
 
 }  // namespace quic

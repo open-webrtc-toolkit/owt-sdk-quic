@@ -7,7 +7,8 @@
 #ifndef OWT_QUIC_QUIC_TRANSPORT_SERVER_INTERFACE_H_
 #define OWT_QUIC_QUIC_TRANSPORT_SERVER_INTERFACE_H_
 
-#include "export.h"
+#include "owt/quic/export.h"
+#include "owt/quic/quic_transport_session_interface.h"
 
 namespace owt {
 namespace quic {
@@ -15,8 +16,12 @@ namespace quic {
 class OWT_EXPORT QuicTransportServerInterface {
  public:
   class Visitor {
-    virtual ~Visitor();
-    virtual void OnEnded();
+   public:
+    virtual ~Visitor() = 0;
+    // Called when server is ended.
+    virtual void OnEnded() = 0;
+    // Called when a new session is created.
+    virtual void OnSession(QuicTransportSessionInterface*) = 0;
   };
   virtual ~QuicTransportServerInterface() = default;
   virtual int Start() = 0;

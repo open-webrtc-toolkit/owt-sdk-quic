@@ -12,8 +12,8 @@
 // Chromium/net/tools/quic/quic_transport_simple_server.h
 // with modifications.
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
-#define OWT_QUIC_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
+#ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
+#define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
 
 #include <string>
 #include <vector>
@@ -28,12 +28,14 @@
 #include "net/third_party/quiche/src/quic/core/quic_version_manager.h"
 #include "net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h"
 #include "owt/quic/quic_transport_server_interface.h"
+#include "owt/quic_transport/impl/quic_transport_owt_server_dispatcher.h"
 #include "url/origin.h"
 
 namespace owt {
 namespace quic {
 // A server accepts WebTransport - QuicTransport connections.
-class QuicTransportOwtServerImpl : public QuicTransportServerInterface {
+class QuicTransportOwtServerImpl : public QuicTransportServerInterface,
+                                   public QuicTransportOwtServerDispatcher::Visitor {
  public:
   QuicTransportOwtServerImpl() = delete;
   explicit QuicTransportOwtServerImpl(
@@ -45,6 +47,10 @@ class QuicTransportOwtServerImpl : public QuicTransportServerInterface {
   int Start() override;
   void Stop() override;
   void SetVisitor(QuicTransportServerInterface::Visitor* visitor) override;
+
+ protected:
+  // Implements QuicTransportOwtServerDispatcher::Visitor.
+  void OnSession(QuicTransportOwtServerSession* session) override;
 
  private:
   // Schedules a ReadPackets() call on the next iteration of the event loop.
@@ -65,7 +71,7 @@ class QuicTransportOwtServerImpl : public QuicTransportServerInterface {
   ::quic::QuicConfig config_;
   ::quic::QuicCryptoServerConfig crypto_config_;
 
-  std::unique_ptr<::quic::QuicTransportSimpleServerDispatcher> dispatcher_;
+  std::unique_ptr<QuicTransportOwtServerDispatcher> dispatcher_;
   std::unique_ptr<net::UDPServerSocket> socket_;
   net::IPEndPoint server_address_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
@@ -73,6 +79,8 @@ class QuicTransportOwtServerImpl : public QuicTransportServerInterface {
   // Results of the potentially asynchronous read operation.
   scoped_refptr<net::IOBufferWithSize> read_buffer_;
   net::IPEndPoint client_address_;
+  
+  QuicTransportServerInterface::Visitor* visitor_;
 
   base::WeakPtrFactory<QuicTransportOwtServerImpl> weak_factory_{this};
 };

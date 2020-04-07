@@ -12,11 +12,8 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.cc
 // with modifications.
 #include "impl/quic_transport_owt_server_session.h"
-
 #include <memory>
-
-#include "url/gurl.h"
-#include "url/origin.h"
+#include "impl/quic_transport_stream_impl.h"
 #include "net/third_party/quiche/src/quic/core/quic_buffer_allocator.h"
 #include "net/third_party/quiche/src/quic/core/quic_types.h"
 #include "net/third_party/quiche/src/quic/core/quic_versions.h"
@@ -24,18 +21,21 @@
 #include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_protocol.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
+#include "url/gurl.h"
+#include "url/origin.h"
 
 namespace owt {
 namespace quic {
+
 QuicTransportOwtServerSession::QuicTransportOwtServerSession(
-      ::quic::QuicConnection* connection,
-      bool owns_connection,
-      Visitor* owner,
-      const ::quic::QuicConfig& config,
-      const ::quic::ParsedQuicVersionVector& supported_versions,
-      const ::quic::QuicCryptoServerConfig* crypto_config,
-      ::quic::QuicCompressedCertsCache* compressed_certs_cache,
-      std::vector<url::Origin> accepted_origins)
+    ::quic::QuicConnection* connection,
+    bool owns_connection,
+    QuicSession::Visitor* owner,
+    const ::quic::QuicConfig& config,
+    const ::quic::ParsedQuicVersionVector& supported_versions,
+    const ::quic::QuicCryptoServerConfig* crypto_config,
+    ::quic::QuicCompressedCertsCache* compressed_certs_cache,
+    std::vector<url::Origin> accepted_origins)
     : QuicTransportServerSession(connection,
                                  owner,
                                  config,
@@ -44,7 +44,8 @@ QuicTransportOwtServerSession::QuicTransportOwtServerSession(
                                  compressed_certs_cache,
                                  this),
       owns_connection_(owns_connection),
-      accepted_origins_(accepted_origins) {}
+      accepted_origins_(accepted_origins),
+      visitor_(nullptr) {}
 
 QuicTransportOwtServerSession::~QuicTransportOwtServerSession() {
   if (owns_connection_) {
@@ -52,15 +53,34 @@ QuicTransportOwtServerSession::~QuicTransportOwtServerSession() {
   }
 }
 
+const char* QuicTransportOwtServerSession::ConnectionId() {
+  const std::string& connection_id_str = connection_id().ToString();
+  char* id = new char[connection_id_str.size() + 1];
+  strcpy(id, connection_id_str.c_str());
+  return id;
+}
+
 void QuicTransportOwtServerSession::OnIncomingDataStream(
     ::quic::QuicTransportStream* stream) {
+  if (visitor_) {
+    std::unique_ptr<QuicTransportStreamImpl> stream_impl =
+        std::make_unique<QuicTransportStreamImpl>(stream);
+    QuicTransportStreamImpl* stream_ptr(stream_impl.get());
+    streams_.push_back(std::move(stream_impl));
+    visitor_->OnIncomingStream(stream_ptr);
+  }
 }
 
 void QuicTransportOwtServerSession::OnCanCreateNewOutgoingStream(
-    bool unidirectional) {
+    bool unidirectional) {}
+
+void QuicTransportOwtServerSession::SetVisitor(
+    owt::quic::QuicTransportSessionInterface::Visitor* visitor) {
+  visitor_ = visitor;
 }
 
 bool QuicTransportOwtServerSession::CheckOrigin(url::Origin origin) {
+  DLOG(INFO) << "CheckOrigin";
   if (accepted_origins_.empty()) {
     return true;
   }
@@ -74,16 +94,18 @@ bool QuicTransportOwtServerSession::CheckOrigin(url::Origin origin) {
 }
 
 bool QuicTransportOwtServerSession::ProcessPath(const GURL& url) {
-  if (url.path() == "/echo"||url.path()=="/") {
+  DLOG(INFO) << "ProcessPath: " << url.path();
+  if (url.path() == "/echo" || url.path() == "/") {
     return true;
   }
 
-  QUIC_DLOG(WARNING) << "Unknown path requested: " << url.path();
+  LOG(WARNING) << "Unknown path requested: " << url.path();
   return false;
 }
 
 void QuicTransportOwtServerSession::OnMessageReceived(
     quiche::QuicheStringPiece message) {
+  LOG(INFO) << "Received message.";
 }
 }  // namespace quic
 }  // namespace owt

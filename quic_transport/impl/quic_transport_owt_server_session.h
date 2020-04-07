@@ -12,40 +12,48 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.h
 // with modifications.
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
-#define OWT_QUIC_QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
+#ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
+#define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
 
 #include <memory>
 #include <vector>
 
-#include "url/origin.h"
 #include "net/third_party/quiche/src/quic/core/quic_types.h"
 #include "net/third_party/quiche/src/quic/core/quic_versions.h"
 #include "net/third_party/quiche/src/quic/platform/api/quic_containers.h"
 #include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_server_session.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
+#include "owt/quic/quic_transport_session_interface.h"
+#include "owt/quic_transport/impl/quic_transport_stream_impl.h"
+#include "url/origin.h"
 
 namespace owt {
 namespace quic {
 
- // QuicTransport simple server is a non-production server that can be used for
+// QuicTransport simple server is a non-production server that can be used for
 // testing QuicTransport.  It has two modes that can be changed using the
 // command line flags, "echo" and "discard".
 class QuicTransportOwtServerSession
-    : public ::quic::QuicTransportServerSession,
+    : public QuicTransportSessionInterface,
+      public ::quic::QuicTransportServerSession,
       ::quic::QuicTransportServerSession::ServerVisitor {
  public:
   QuicTransportOwtServerSession(
       ::quic::QuicConnection* connection,
       bool owns_connection,
-      Visitor* owner,
+      QuicSession::Visitor* owner,
       const ::quic::QuicConfig& config,
       const ::quic::ParsedQuicVersionVector& supported_versions,
       const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicCompressedCertsCache* compressed_certs_cache,
       std::vector<url::Origin> accepted_origins);
   ~QuicTransportOwtServerSession() override;
+
+  // Override QuicTransportSessionInterface.
+  void SetVisitor(
+      owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
+  const char* ConnectionId() override;
 
   void OnIncomingDataStream(::quic::QuicTransportStream* stream) override;
   void OnCanCreateNewOutgoingStream(bool unidirectional) override;
@@ -54,13 +62,13 @@ class QuicTransportOwtServerSession
   void OnMessageReceived(quiche::QuicheStringPiece message) override;
 
  private:
-   const bool owns_connection_;
+  const bool owns_connection_;
   std::vector<url::Origin> accepted_origins_;
-  ::quic::QuicCircularDeque<std::string> streams_to_echo_back_;
+  owt::quic::QuicTransportSessionInterface::Visitor* visitor_;
+  std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
 };
 
-
-}
-}
+}  // namespace quic
+}  // namespace owt
 
 #endif

@@ -72,6 +72,7 @@ QuicTransportFactory::CreateQuicTransportServer(int port,
                                                 const char* cert_path,
                                                 const char* key_path,
                                                 const char* secret_path) {
+  LOG(INFO)<<"QuicTransportFactory::CreateQuicTransportServer";
   return std::make_unique<QuicTransportOwtServerImpl>(
       port, std::vector<url::Origin>(), CreateProofSource(),io_thread_.get());
 }
@@ -79,7 +80,7 @@ QuicTransportFactory::CreateQuicTransportServer(int port,
 void QuicTransportFactory::Init() {
   base::CommandLine::Init(0, nullptr);
   // Logging settings for Chromium.
-  logging::SetMinLogLevel(logging::LOG_VERBOSE);
+  logging::SetMinLogLevel(logging::LOG_INFO);
   logging::LoggingSettings settings;
   // settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
   InitLogging(settings);

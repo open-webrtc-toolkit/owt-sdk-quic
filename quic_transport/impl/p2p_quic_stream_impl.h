@@ -12,6 +12,9 @@
 // Chromium/src/third_party/blink/renderer/modules/peerconnection/adapters/*
 // with modifications.
 
+#ifndef OWT_QUIC_QUIC_TRANSPORT_P2P_QUIC_STREAM_IMPL_H_
+#define OWT_QUIC_QUIC_TRANSPORT_P2P_QUIC_STREAM_IMPL_H_
+
 #include "net/third_party/quiche/src/quic/quartc/quartc_stream.h"
 #include "owt/quic/p2p_quic_stream_interface.h"
 
@@ -48,3 +51,5 @@ class P2PQuicStreamImpl : public P2PQuicStreamInterface,
 };
 }  // namespace quic
 }  // namespace owt
+
+#endif

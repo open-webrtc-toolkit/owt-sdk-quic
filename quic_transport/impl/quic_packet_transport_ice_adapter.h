@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef OWT_QUIC_PACKET_TRANSPORT_ICE_ADAPTER_H_
-#define OWT_QUIC_PACKET_TRANSPORT_ICE_ADAPTER_H_
+#ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_PACKET_TRANSPORT_ICE_ADAPTER_H_
+#define OWT_QUIC_QUIC_TRANSPORT_QUIC_PACKET_TRANSPORT_ICE_ADAPTER_H_
 
 #include "base/synchronization/waitable_event.h"
 #include "net/third_party/quiche/src/quic/quartc/quartc_packet_writer.h"
