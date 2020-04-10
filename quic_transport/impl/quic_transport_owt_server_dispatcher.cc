@@ -37,7 +37,8 @@ QuicTransportOwtServerDispatcher::QuicTransportOwtServerDispatcher(
     std::unique_ptr<QuicCryptoServerStreamBase::Helper> session_helper,
     std::unique_ptr<QuicAlarmFactory> alarm_factory,
     uint8_t expected_server_connection_id_length,
-    std::vector<url::Origin> accepted_origins)
+    std::vector<url::Origin> accepted_origins,
+    base::TaskRunner* runner)
     : QuicDispatcher(config,
                      crypto_config,
                      version_manager,
@@ -46,7 +47,8 @@ QuicTransportOwtServerDispatcher::QuicTransportOwtServerDispatcher(
                      std::move(alarm_factory),
                      expected_server_connection_id_length),
       accepted_origins_(accepted_origins),
-      visitor_(nullptr) {
+      visitor_(nullptr),
+      runner_(runner) {
   LOG(INFO)
       << "QuicTransportOwtServerDispatcher::QuicTransportOwtServerDispatcher";
 }
@@ -66,7 +68,7 @@ QuicTransportOwtServerDispatcher::CreateQuicSession(
   auto session = std::make_unique<QuicTransportOwtServerSession>(
       connection.release(), /*owns_connection=*/true, this, config(),
       GetSupportedVersions(), crypto_config(), compressed_certs_cache(),
-      accepted_origins_);
+      accepted_origins_, runner_);
   session->Initialize();
   if (visitor_) {
     visitor_->OnSession(session.get());

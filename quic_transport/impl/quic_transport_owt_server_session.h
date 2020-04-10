@@ -47,14 +47,17 @@ class QuicTransportOwtServerSession
       const ::quic::ParsedQuicVersionVector& supported_versions,
       const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicCompressedCertsCache* compressed_certs_cache,
-      std::vector<url::Origin> accepted_origins);
+      std::vector<url::Origin> accepted_origins,
+      base::TaskRunner* runner);
   ~QuicTransportOwtServerSession() override;
 
   // Override QuicTransportSessionInterface.
   void SetVisitor(
       owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
   const char* ConnectionId() override;
+  QuicTransportStreamInterface* CreateBidirectionalStream() override;
 
+ protected:
   void OnIncomingDataStream(::quic::QuicTransportStream* stream) override;
   void OnCanCreateNewOutgoingStream(bool unidirectional) override;
   bool CheckOrigin(url::Origin origin) override;
@@ -66,6 +69,7 @@ class QuicTransportOwtServerSession
   std::vector<url::Origin> accepted_origins_;
   owt::quic::QuicTransportSessionInterface::Visitor* visitor_;
   std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
+  base::TaskRunner* runner_;
 };
 
 }  // namespace quic

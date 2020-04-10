@@ -28,8 +28,9 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
 };
 
 QuicTransportStreamImpl::QuicTransportStreamImpl(
-    ::quic::QuicTransportStream* stream)
-    : stream_(stream), visitor_(nullptr) {
+    ::quic::QuicTransportStream* stream,
+    base::TaskRunner* runner)
+    : stream_(stream), runner_(runner), visitor_(nullptr) {
   stream_->set_visitor(std::make_unique<VisitorAdapter>(this));
 }
 
@@ -55,6 +56,25 @@ void QuicTransportStreamImpl::OnCanWrite() {
   if (visitor_) {
     visitor_->OnCanWrite();
   }
+}
+
+void QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
+  CHECK(runner_);
+  runner_->PostTaskAndReplyWithResult(
+      FROM_HERE,
+      base::BindOnce(
+          &::quic::QuicTransportStream::Write, base::Unretained(stream_),
+          quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length)),
+      base::BindOnce([](bool result) { DCHECK(result); }));
+}
+
+void QuicTransportStreamImpl::Close() {
+  CHECK(runner_);
+  runner_->PostTaskAndReplyWithResult(
+      FROM_HERE,
+      base::BindOnce(&::quic::QuicTransportStream::SendFin,
+                     base::Unretained(stream_)),
+      base::BindOnce([](bool result) { DCHECK(result); }));
 }
 
 }  // namespace quic

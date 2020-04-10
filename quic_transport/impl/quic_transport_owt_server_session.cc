@@ -35,7 +35,8 @@ QuicTransportOwtServerSession::QuicTransportOwtServerSession(
     const ::quic::ParsedQuicVersionVector& supported_versions,
     const ::quic::QuicCryptoServerConfig* crypto_config,
     ::quic::QuicCompressedCertsCache* compressed_certs_cache,
-    std::vector<url::Origin> accepted_origins)
+    std::vector<url::Origin> accepted_origins,
+    base::TaskRunner* runner)
     : QuicTransportServerSession(connection,
                                  owner,
                                  config,
@@ -45,7 +46,8 @@ QuicTransportOwtServerSession::QuicTransportOwtServerSession(
                                  this),
       owns_connection_(owns_connection),
       accepted_origins_(accepted_origins),
-      visitor_(nullptr) {}
+      visitor_(nullptr),
+      runner_(runner) {}
 
 QuicTransportOwtServerSession::~QuicTransportOwtServerSession() {
   if (owns_connection_) {
@@ -60,11 +62,25 @@ const char* QuicTransportOwtServerSession::ConnectionId() {
   return id;
 }
 
+QuicTransportStreamInterface*
+QuicTransportOwtServerSession::CreateBidirectionalStream() {
+  std::unique_ptr<::quic::QuicTransportStream> stream =
+      std::make_unique<::quic::QuicTransportStream>(
+          GetNextOutgoingUnidirectionalStreamId(), this, this);
+  std::unique_ptr<QuicTransportStreamImpl> stream_impl =
+      std::make_unique<QuicTransportStreamImpl>(stream.get(), runner_);
+  ActivateStream(std::move(stream));
+  QuicTransportStreamImpl* stream_ptr(stream_impl.get());
+  streams_.push_back(std::move(stream_impl));
+  LOG(INFO) << "Create bidirectional stream.";
+  return stream_ptr;
+}
+
 void QuicTransportOwtServerSession::OnIncomingDataStream(
     ::quic::QuicTransportStream* stream) {
   if (visitor_) {
     std::unique_ptr<QuicTransportStreamImpl> stream_impl =
-        std::make_unique<QuicTransportStreamImpl>(stream);
+        std::make_unique<QuicTransportStreamImpl>(stream, runner_);
     QuicTransportStreamImpl* stream_ptr(stream_impl.get());
     streams_.push_back(std::move(stream_impl));
     visitor_->OnIncomingStream(stream_ptr);

@@ -16,6 +16,7 @@
 #define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_STREAM_IMPL_H_
 
 #include "base/memory/weak_ptr.h"
+#include "base/task_runner.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
 #include "owt/quic/quic_transport_stream_interface.h"
 
@@ -24,10 +25,15 @@ namespace quic {
 class QuicTransportStreamImpl : public QuicTransportStreamInterface,
                                 public ::quic::QuicTransportStream::Visitor {
  public:
-  explicit QuicTransportStreamImpl(::quic::QuicTransportStream* stream);
+  explicit QuicTransportStreamImpl(::quic::QuicTransportStream* stream,
+                                   base::TaskRunner* runner);
   ~QuicTransportStreamImpl() override;
+
+  // Overrides QuicTransportStreamInterface.
   void SetVisitor(
       owt::quic::QuicTransportStreamInterface::Visitor* visitor) override;
+  void Write(uint8_t* data, size_t length) override;
+  void Close() override;
 
   // Overrides ::quic::QuicTransportStream::Visitor.
   void OnCanRead() override;
@@ -36,6 +42,7 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
 
  protected:
   ::quic::QuicTransportStream* stream_;
+  base::TaskRunner* runner_;
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
 };
 }  // namespace quic

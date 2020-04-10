@@ -80,7 +80,7 @@ QuicTransportFactory::CreateQuicTransportServer(int port,
 void QuicTransportFactory::Init() {
   base::CommandLine::Init(0, nullptr);
   // Logging settings for Chromium.
-  logging::SetMinLogLevel(logging::LOG_INFO);
+  logging::SetMinLogLevel(logging::LOG_VERBOSE);
   logging::LoggingSettings settings;
   // settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
   InitLogging(settings);

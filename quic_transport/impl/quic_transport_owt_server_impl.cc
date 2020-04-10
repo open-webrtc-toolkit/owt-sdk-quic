@@ -76,7 +76,7 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
       std::make_unique<QuicTransportOwtServerImplSessionHelper>(),
       std::make_unique<net::QuicChromiumAlarmFactory>(task_runner_.get(),
                                                       clock_),
-      ::quic::kQuicDefaultConnectionIdLength, accepted_origins);
+      ::quic::kQuicDefaultConnectionIdLength, accepted_origins, task_runner_.get());
   dispatcher_->SetVisitor(this);
 }
 
@@ -171,7 +171,7 @@ void QuicTransportOwtServerImpl::OnSession(
     QuicTransportOwtServerSession* session) {
   if (visitor_) {
     CHECK(session);
-    LOG(INFO)<<"Connection ID: "<<session->ConnectionId();
+    LOG(INFO) << "Connection ID: " << session->ConnectionId();
     visitor_->OnSession(session);
   }
 }

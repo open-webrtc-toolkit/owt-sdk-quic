@@ -22,6 +22,7 @@ class OWT_EXPORT QuicTransportSessionInterface {
   virtual ~QuicTransportSessionInterface() = default;
   virtual const char* ConnectionId() = 0;
   virtual void SetVisitor(Visitor* visitor) = 0;
+  virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
 };
 }  // namespace quic
 }  // namespace owt
