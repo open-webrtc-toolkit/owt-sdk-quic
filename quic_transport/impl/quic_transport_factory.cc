@@ -26,10 +26,10 @@ namespace quic {
 std::unique_ptr<::quic::ProofSource> CreateProofSource() {
   auto proof_source = std::make_unique<net::ProofSourceChromium>();
   proof_source->Initialize(
-      base::FilePath(
-          "/home/jianjunz/Documents/certs/jianjunz-nuc-ubuntu.sh.intel.com.untrust.crt"),
-      base::FilePath(
-          "/home/jianjunz/Documents/certs/jianjunz-nuc-ubuntu.sh.intel.com.untrust.pkcs8"),
+      base::FilePath("/home/jianjunz/Documents/certs/"
+                     "jianjunz-nuc-ubuntu.sh.intel.com.untrust.crt"),
+      base::FilePath("/home/jianjunz/Documents/certs/"
+                     "jianjunz-nuc-ubuntu.sh.intel.com.untrust.pkcs8"),
       base::FilePath());
   return proof_source;
 }
@@ -72,15 +72,19 @@ QuicTransportFactory::CreateQuicTransportServer(int port,
                                                 const char* cert_path,
                                                 const char* key_path,
                                                 const char* secret_path) {
-  LOG(INFO)<<"QuicTransportFactory::CreateQuicTransportServer";
+  LOG(INFO) << "QuicTransportFactory::CreateQuicTransportServer";
   return std::make_unique<QuicTransportOwtServerImpl>(
-      port, std::vector<url::Origin>(), CreateProofSource(),io_thread_.get());
+      port, std::vector<url::Origin>(), CreateProofSource(), io_thread_.get());
 }
 
 void QuicTransportFactory::Init() {
   base::CommandLine::Init(0, nullptr);
-  // Logging settings for Chromium.
-  logging::SetMinLogLevel(logging::LOG_VERBOSE);
+// Logging settings for Chromium.
+#ifdef _DEBUG
+  logging::SetMinLogLevel(logging::LOG_INFO);
+#else
+  logging::SetMinLogLevel(logging::LOG_NONE);
+#endif
   logging::LoggingSettings settings;
   // settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
   InitLogging(settings);
