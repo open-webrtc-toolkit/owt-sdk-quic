@@ -32,22 +32,6 @@ enum class OWT_EXPORT QuicTransportState : uint8_t {
   kFailed
 };
 
-// https://w3c.github.io/webrtc-pc/#dom-rtcdtlsfingerprint
-struct OWT_EXPORT RTCDtlsFingerprint {
-  RTCDtlsFingerprint();
-  virtual ~RTCDtlsFingerprint();
-  std::string algorithm;
-  std::string value;
-};
-
-// https://w3c.github.io/webrtc-quic/#dom-rtcquicparameters
-struct OWT_EXPORT RTCQuicParameters {
-  RTCQuicParameters();
-  virtual ~RTCQuicParameters();
-  RTCQuicParameters(const RTCQuicParameters&);
-  std::string role;
-  std::vector<RTCDtlsFingerprint> fingerprints;
-};
 }  // namespace quic
 }  // namespace owt
 

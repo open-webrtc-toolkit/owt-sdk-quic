@@ -37,8 +37,6 @@ class OWT_EXPORT QuicTransportFactory {
  public:
   QuicTransportFactory();
   virtual ~QuicTransportFactory();
-  std::unique_ptr<P2PQuicTransportInterface> CreateP2PServerTransport(
-      P2PQuicPacketTransportInterface* quic_packet_transport);
   // `accepted_origins` is removed at this time because ABI compatible issue.
   std::unique_ptr<QuicTransportServerInterface> CreateQuicTransportServer(
       int port,

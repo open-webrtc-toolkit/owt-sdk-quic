@@ -8,7 +8,6 @@
 #include "base/at_exit.h"
 #include "base/logging.h"
 #include "base/threading/thread.h"
-#include "impl/p2p_quic_transport_impl.h"
 #include "impl/quic_transport_owt_server_impl.h"
 #include "net/quic/crypto/proof_source_chromium.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
@@ -56,16 +55,6 @@ QuicTransportFactory::QuicTransportFactory()
 }
 
 QuicTransportFactory::~QuicTransportFactory() = default;
-
-std::unique_ptr<P2PQuicTransportInterface>
-QuicTransportFactory::CreateP2PServerTransport(
-    P2PQuicPacketTransportInterface* quic_packet_transport) {
-  return std::make_unique<P2PQuicTransportImpl>(
-      quic_packet_transport, ::quic::QuicConfig(),
-      compressed_certs_cache_.get(), ::quic::QuicChromiumClock::GetInstance(),
-      alarm_factory_.get(), connection_helper_.get(),
-      io_thread_->task_runner().get());
-}
 
 std::unique_ptr<QuicTransportServerInterface>
 QuicTransportFactory::CreateQuicTransportServer(int port,
