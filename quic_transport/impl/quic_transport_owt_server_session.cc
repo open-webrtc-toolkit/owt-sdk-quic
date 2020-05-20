@@ -72,7 +72,6 @@ QuicTransportOwtServerSession::CreateBidirectionalStream() {
   ActivateStream(std::move(stream));
   QuicTransportStreamImpl* stream_ptr(stream_impl.get());
   streams_.push_back(std::move(stream_impl));
-  LOG(INFO) << "Create bidirectional stream.";
   return stream_ptr;
 }
 
@@ -96,7 +95,6 @@ void QuicTransportOwtServerSession::SetVisitor(
 }
 
 bool QuicTransportOwtServerSession::CheckOrigin(url::Origin origin) {
-  DLOG(INFO) << "CheckOrigin";
   if (accepted_origins_.empty()) {
     return true;
   }

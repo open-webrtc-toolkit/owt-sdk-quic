@@ -32,7 +32,10 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   // Overrides QuicTransportStreamInterface.
   void SetVisitor(
       owt::quic::QuicTransportStreamInterface::Visitor* visitor) override;
+  uint32_t Id() const override;
   void Write(uint8_t* data, size_t length) override;
+  size_t Read(uint8_t* data, size_t length) override;
+  size_t ReadableBytes() const override;
   void Close() override;
 
   // Overrides ::quic::QuicTransportStream::Visitor.
@@ -44,6 +47,9 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   ::quic::QuicTransportStream* stream_;
   base::TaskRunner* runner_;
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
+
+  private:
+  void WriteOnCurrentThread(uint8_t* data, size_t length);
 };
 }  // namespace quic
 }  // namespace owt

@@ -16,6 +16,7 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
       : visitor_(visitor) {}
 
   void OnCanRead() override {
+    LOG(INFO) << "OnCanRead";
     if (visitor_) {
       visitor_->OnCanRead();
     }
@@ -42,7 +43,6 @@ void QuicTransportStreamImpl::SetVisitor(
 }
 
 void QuicTransportStreamImpl::OnCanRead() {
-  LOG(INFO) << "OnCanRead.";
   if (visitor_) {
     visitor_->OnCanRead();
   }
@@ -58,23 +58,52 @@ void QuicTransportStreamImpl::OnCanWrite() {
   }
 }
 
+uint32_t QuicTransportStreamImpl::Id() const {
+  return stream_->id();
+}
+
 void QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
   CHECK(runner_);
-  runner_->PostTaskAndReplyWithResult(
+  runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(
-          &::quic::QuicTransportStream::Write, base::Unretained(stream_),
-          quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length)),
-      base::BindOnce([](bool result) { DCHECK(result); }));
+      base::BindOnce(&QuicTransportStreamImpl::WriteOnCurrentThread,
+                     base::Unretained(this), base::Unretained(data), length));
+  // TODO: PostTaskAndReplyWithResult blocks current thread. Don't know why. Fix
+  // it later.
+  // runner_->PostTaskAndReplyWithResult(
+  //     FROM_HERE,
+  //     base::BindOnce(
+  //         &::quic::QuicTransportStream::Write, base::Unretained(stream_),
+  //         quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length)),
+  //     base::BindOnce([](bool result) { DCHECK(result); }));
+  LOG(INFO) << "QuicTransportStreamImpl::Write ends";
 }
 
 void QuicTransportStreamImpl::Close() {
-  CHECK(runner_);
-  runner_->PostTaskAndReplyWithResult(
-      FROM_HERE,
-      base::BindOnce(&::quic::QuicTransportStream::SendFin,
-                     base::Unretained(stream_)),
-      base::BindOnce([](bool result) { DCHECK(result); }));
+  if (stream_->CanWrite()) {
+    CHECK(runner_);
+    runner_->PostTaskAndReplyWithResult(
+        FROM_HERE,
+        base::BindOnce(&::quic::QuicTransportStream::SendFin,
+                       base::Unretained(stream_)),
+        base::BindOnce([](bool result) { LOG(INFO)<<"Check result";
+        DCHECK(result); }));
+  }
+}
+
+size_t QuicTransportStreamImpl::Read(uint8_t* data, size_t length) {
+  return stream_->Read(reinterpret_cast<char*>(data), length);
+}
+
+size_t QuicTransportStreamImpl::ReadableBytes() const {
+  return stream_->ReadableBytes();
+}
+
+void QuicTransportStreamImpl::WriteOnCurrentThread(uint8_t* data,
+                                                   size_t length) {
+  bool result = stream_->Write(
+      quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length));
+  DCHECK(result);
 }
 
 }  // namespace quic
