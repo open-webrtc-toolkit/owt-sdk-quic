@@ -57,7 +57,9 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
     std::unique_ptr<::quic::ProofSource> proof_source,
     base::Thread* io_thread)
     : port_(port),
-      version_manager_({::quic::DefaultVersionForQuicTransport()}),
+      version_manager_(
+          {::quic::ParsedQuicVersion(::quic::PROTOCOL_TLS1_3,
+                                     ::quic::QUIC_VERSION_IETF_DRAFT_27)}),
       clock_(::quic::QuicChromiumClock::GetInstance()),
       crypto_config_(kSourceAddressTokenSecret,
                      ::quic::QuicRandom::GetInstance(),
