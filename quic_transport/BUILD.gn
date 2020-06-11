@@ -52,7 +52,6 @@ shared_library("owt_quic_transport") {
     ":owt_deps_quic",
     "//net",
     "//third_party/boringssl",
-    "//third_party/webrtc_overrides:webrtc_component",
   ]
   sources = [
     "api/owt/quic/quic_definitions.h",
