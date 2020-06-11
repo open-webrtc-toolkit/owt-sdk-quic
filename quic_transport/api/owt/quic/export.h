@@ -17,8 +17,13 @@
 
 #if defined(WIN32)
 
+#ifdef OWT_QUIC_LIBRARY_IMPL
 #define OWT_EXPORT __declspec(dllexport)
 #define OWT_EXPORT_PRIVATE __declspec(dllexport)
+#else
+#define OWT_EXPORT __declspec(dllimport)
+#define OWT_EXPORT_PRIVATE __declspec(dllimport)
+#endif
 
 #else  // defined(WIN32)
 

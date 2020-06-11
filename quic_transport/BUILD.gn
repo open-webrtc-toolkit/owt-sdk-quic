@@ -69,5 +69,7 @@ shared_library("owt_quic_transport") {
     "api",
   ]
 
+  defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
+
   #complete_static_lib = true
 }
