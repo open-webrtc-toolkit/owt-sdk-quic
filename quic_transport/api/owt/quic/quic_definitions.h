@@ -15,11 +15,7 @@
 #ifndef OWT_QUIC_TRANSPORT_QUIC_DEFINITIONS_H_
 #define OWT_QUIC_TRANSPORT_QUIC_DEFINITIONS_H_
 
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "export.h"
+#include "owt/quic/export.h"
 
 namespace owt {
 namespace quic {
