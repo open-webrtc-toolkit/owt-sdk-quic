@@ -31,9 +31,6 @@
 namespace owt {
 namespace quic {
 
-// QuicTransport simple server is a non-production server that can be used for
-// testing QuicTransport.  It has two modes that can be changed using the
-// command line flags, "echo" and "discard".
 class QuicTransportOwtServerSession
     : public QuicTransportSessionInterface,
       public ::quic::QuicTransportServerSession,
@@ -54,6 +51,7 @@ class QuicTransportOwtServerSession
   // Override QuicTransportSessionInterface.
   void SetVisitor(
       owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
+  // Caller needs to free the connection ID returned.
   const char* ConnectionId() override;
   QuicTransportStreamInterface* CreateBidirectionalStream() override;
 
