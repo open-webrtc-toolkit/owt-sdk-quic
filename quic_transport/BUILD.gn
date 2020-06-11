@@ -1,3 +1,7 @@
+# Copyright (C) <2020> Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
 source_set("owt_deps_quic") {
   # This target is similar as //src/third_party/openscreen/src/third_party/chromium_quic/BUILD.gn.
   sources = [
