@@ -56,14 +56,18 @@ QuicTransportFactory::QuicTransportFactory()
 
 QuicTransportFactory::~QuicTransportFactory() = default;
 
-std::unique_ptr<QuicTransportServerInterface>
-QuicTransportFactory::CreateQuicTransportServer(int port,
-                                                const char* cert_path,
-                                                const char* key_path,
-                                                const char* secret_path) {
+QuicTransportServerInterface* QuicTransportFactory::CreateQuicTransportServer(
+    int port,
+    const char* cert_path,
+    const char* key_path,
+    const char* secret_path) {
   LOG(INFO) << "QuicTransportFactory::CreateQuicTransportServer";
-  return std::make_unique<QuicTransportOwtServerImpl>(
-      port, std::vector<url::Origin>(), CreateProofSource(), io_thread_.get());
+  return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
+                                    CreateProofSource(), io_thread_.get());
+}
+
+void QuicTransportFactory::DeleteQuicTransportServer(const QuicTransportServerInterface* server){
+  delete reinterpret_cast<const QuicTransportOwtServerImpl*>(server);
 }
 
 void QuicTransportFactory::Init() {

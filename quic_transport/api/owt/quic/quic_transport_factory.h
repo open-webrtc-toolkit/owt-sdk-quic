@@ -33,16 +33,22 @@ class P2PQuicTransportInterface;
 class P2PQuicPacketTransportInterface;
 class QuicTransportServerInterface;
 
+/**
+ @brief Factory for creating and destoring QUIC transport objects.
+ Ownership of created objects is moved to caller, please call Delete* to release it.
+*/
 class OWT_EXPORT QuicTransportFactory {
  public:
   QuicTransportFactory();
   virtual ~QuicTransportFactory();
   // `accepted_origins` is removed at this time because ABI compatible issue.
-  std::unique_ptr<QuicTransportServerInterface> CreateQuicTransportServer(
+  // Ownership of returned value is moved to caller.
+  QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_path,
       const char* key_path,
       const char* secret_path /*, std::vector<std::string> accepted_origins*/);
+  void DeleteQuicTransportServer(const QuicTransportServerInterface* server);
 
  private:
   void Init();
