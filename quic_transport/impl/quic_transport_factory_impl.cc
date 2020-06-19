@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "owt/quic/quic_transport_factory.h"
 #include "base/at_exit.h"
 #include "base/logging.h"
 #include "base/threading/thread.h"
+#include "impl/quic_transport_factory_impl.h"
 #include "impl/quic_transport_owt_server_impl.h"
 #include "net/quic/crypto/proof_source_chromium.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
@@ -22,6 +22,10 @@
 namespace owt {
 namespace quic {
 
+QuicTransportFactory* QuicTransportFactory::Create() {
+  return new QuicTransportFactoryImpl();
+}
+
 std::unique_ptr<::quic::ProofSource> CreateProofSource() {
   auto proof_source = std::make_unique<net::ProofSourceChromium>();
   proof_source->Initialize(
@@ -33,7 +37,7 @@ std::unique_ptr<::quic::ProofSource> CreateProofSource() {
   return proof_source;
 }
 
-QuicTransportFactory::QuicTransportFactory()
+QuicTransportFactoryImpl::QuicTransportFactoryImpl()
     : exit_manager_(std::make_unique<base::AtExitManager>()),
       io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")),
       random_generator_(::quic::QuicRandom::GetInstance()),
@@ -54,25 +58,25 @@ QuicTransportFactory::QuicTransportFactory()
   LOG(INFO) << "Ctor of QuicTransportFactory.";
 }
 
-QuicTransportFactory::~QuicTransportFactory() = default;
+QuicTransportFactoryImpl::~QuicTransportFactoryImpl() = default;
 
-QuicTransportServerInterface* QuicTransportFactory::CreateQuicTransportServer(
+QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServer(
     int port,
     const char* cert_path,
     const char* key_path,
     const char* secret_path) {
-  LOG(INFO) << "QuicTransportFactory::CreateQuicTransportServer";
+  LOG(INFO) << "QuicTransportFactoryImpl::CreateQuicTransportServer";
   return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
                                     CreateProofSource(), io_thread_.get());
 }
 
-void QuicTransportFactory::DeleteQuicTransportServer(const QuicTransportServerInterface* server){
+void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
+    const QuicTransportServerInterface* server) {
   delete reinterpret_cast<const QuicTransportOwtServerImpl*>(server);
 }
 
-void QuicTransportFactory::Init() {
-  base::CommandLine::Init(0, nullptr);
-// Logging settings for Chromium.
+void QuicTransportFactoryImpl::Init() {
+  // Logging settings for Chromium.
 #ifdef _DEBUG
   logging::SetMinLogLevel(logging::LOG_INFO);
 #else
