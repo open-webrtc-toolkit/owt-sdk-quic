@@ -76,6 +76,7 @@ void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
 }
 
 void QuicTransportFactoryImpl::Init() {
+  base::CommandLine::Init(0, nullptr);
   // Logging settings for Chromium.
 #ifdef _DEBUG
   logging::SetMinLogLevel(logging::LOG_INFO);
