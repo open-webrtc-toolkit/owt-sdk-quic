@@ -16,8 +16,6 @@
 #include "net/third_party/quiche/src/quic/core/crypto/proof_source.h"
 #include "net/third_party/quiche/src/quic/core/crypto/quic_crypto_server_config.h"
 #include "net/third_party/quiche/src/quic/core/quic_types.h"
-#include "net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.h"
-#include "net/third_party/quiche/src/quic/quartc/quartc_factory.h"
 
 namespace owt {
 namespace quic {
