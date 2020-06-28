@@ -32,6 +32,8 @@ class OWT_EXPORT QuicTransportFactory {
           secret_path /*, std::vector<std::string> accepted_origins*/) = 0;
   virtual void ReleaseQuicTransportServer(
       const QuicTransportServerInterface* server) = 0;
+  virtual QuicTransportClientInterface* CreateQuicTransportClient(
+      const char* url) = 0;
 };
 }  // namespace quic
 }  // namespace owt
