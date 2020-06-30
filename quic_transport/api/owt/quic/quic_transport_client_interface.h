@@ -14,7 +14,11 @@ namespace owt {
 namespace quic {
 // A client connects to QuicTransportServer.
 class OWT_EXPORT QuicTransportClientInterface {
+ public:
+  virtual ~QuicTransportClientInterface() = default;
   virtual void Connect() = 0;
 };
 }  // namespace quic
 }  // namespace owt
+
+#endif

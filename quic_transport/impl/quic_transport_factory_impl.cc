@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "impl/quic_transport_factory_impl.h"
 #include "base/at_exit.h"
 #include "base/logging.h"
 #include "base/threading/thread.h"
-#include "impl/quic_transport_factory_impl.h"
+#include "impl/quic_transport_owt_client_impl.h"
 #include "impl/quic_transport_owt_server_impl.h"
 #include "net/quic/crypto/proof_source_chromium.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
@@ -71,6 +72,11 @@ QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServe
 void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
     const QuicTransportServerInterface* server) {
   delete reinterpret_cast<const QuicTransportOwtServerImpl*>(server);
+}
+
+QuicTransportClientInterface*
+QuicTransportFactoryImpl::CreateQuicTransportClient(const char* url) {
+  return new QuicTransportOwtClientImpl(GURL(std::string(url)));
 }
 
 void QuicTransportFactoryImpl::Init() {

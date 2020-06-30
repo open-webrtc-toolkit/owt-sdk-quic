@@ -12,9 +12,8 @@
 namespace owt {
 namespace quic {
 
-class P2PQuicTransportInterface;
-class P2PQuicPacketTransportInterface;
 class QuicTransportServerInterface;
+class QuicTransportClientInterface;
 
 class OWT_EXPORT QuicTransportFactory {
  public:

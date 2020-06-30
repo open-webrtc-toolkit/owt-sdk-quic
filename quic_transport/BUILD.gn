@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import("//testing/test.gni")
+
 source_set("owt_deps_quic") {
   # This target is similar as //src/third_party/openscreen/src/third_party/chromium_quic/BUILD.gn.
   sources = [
@@ -45,10 +47,13 @@ shared_library("owt_quic_transport") {
   ]
   sources = [
     "api/owt/quic/quic_definitions.h",
+    "api/owt/quic/quic_transport_client_interface.h",
     "api/owt/quic/quic_transport_factory.h",
     "api/owt/quic/quic_transport_server_interface.h",
     "impl/quic_transport_factory_impl.cc",
     "impl/quic_transport_factory_impl.h",
+    "impl/quic_transport_owt_client_impl.cc",
+    "impl/quic_transport_owt_client_impl.h",
     "impl/quic_transport_owt_server_dispatcher.cc",
     "impl/quic_transport_owt_server_dispatcher.h",
     "impl/quic_transport_owt_server_impl.cc",
@@ -66,4 +71,15 @@ shared_library("owt_quic_transport") {
   defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
 
   #complete_static_lib = true
+}
+
+test("owt_quic_transport_tests") {
+  testonly = true
+  sources = [ "impl/quic_transport_owt_end_to_end_test.cc" ]
+  configs += [ "//build/config:precompiled_headers" ]
+  deps = [
+    ":owt_quic_transport",
+    "//testing/gmock",
+    "//testing/gtest",
+  ]
 }

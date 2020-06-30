@@ -44,6 +44,8 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
       override;
   void ReleaseQuicTransportServer(
       const QuicTransportServerInterface* server) override;
+  QuicTransportClientInterface* CreateQuicTransportClient(
+      const char* url) override;
 
  private:
   void Init();
