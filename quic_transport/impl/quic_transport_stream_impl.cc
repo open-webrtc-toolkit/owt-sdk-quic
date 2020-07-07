@@ -22,7 +22,11 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
     }
   }
   void OnFinRead() override {}
-  void OnCanWrite() override {}
+  void OnCanWrite() override {
+    if(visitor_){
+      visitor_->OnCanWrite();
+    }
+  }
 
  private:
   ::quic::QuicTransportStream::Visitor* visitor_;
@@ -63,6 +67,8 @@ uint32_t QuicTransportStreamImpl::Id() const {
 }
 
 void QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
+  // TODO: `data` might be destroyed before writing. Retain data until writing
+  // to QuicStream.
   CHECK(runner_);
   runner_->PostTask(
       FROM_HERE,
@@ -76,7 +82,6 @@ void QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
   //         &::quic::QuicTransportStream::Write, base::Unretained(stream_),
   //         quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length)),
   //     base::BindOnce([](bool result) { DCHECK(result); }));
-  LOG(INFO) << "QuicTransportStreamImpl::Write ends";
 }
 
 void QuicTransportStreamImpl::Close() {

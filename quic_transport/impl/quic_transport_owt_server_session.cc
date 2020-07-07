@@ -87,7 +87,11 @@ void QuicTransportOwtServerSession::OnIncomingDataStream(
 }
 
 void QuicTransportOwtServerSession::OnCanCreateNewOutgoingStream(
-    bool unidirectional) {}
+    bool unidirectional) {
+  if (visitor_) {
+    visitor_->OnCanCreateNewOutgoingStream(unidirectional);
+  }
+}
 
 void QuicTransportOwtServerSession::SetVisitor(
     owt::quic::QuicTransportSessionInterface::Visitor* visitor) {
