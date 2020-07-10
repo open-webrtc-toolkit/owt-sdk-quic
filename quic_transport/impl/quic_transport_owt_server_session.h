@@ -54,6 +54,7 @@ class QuicTransportOwtServerSession
   // Caller needs to free the connection ID returned.
   const char* ConnectionId() override;
   QuicTransportStreamInterface* CreateBidirectionalStream() override;
+  const ConnectionStats& GetStats() override;
 
  protected:
   void OnIncomingDataStream(::quic::QuicTransportStream* stream) override;
@@ -68,6 +69,7 @@ class QuicTransportOwtServerSession
   owt::quic::QuicTransportSessionInterface::Visitor* visitor_;
   std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
   base::TaskRunner* runner_;
+  ConnectionStats stats_;
 };
 
 }  // namespace quic

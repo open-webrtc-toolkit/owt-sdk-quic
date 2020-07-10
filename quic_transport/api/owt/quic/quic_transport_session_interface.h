@@ -9,6 +9,7 @@
 
 #include "owt/quic/export.h"
 #include "owt/quic/quic_transport_stream_interface.h"
+#include "owt/quic/quic_definitions.h"
 
 namespace owt {
 namespace quic {
@@ -24,6 +25,8 @@ class OWT_EXPORT QuicTransportSessionInterface {
   virtual const char* ConnectionId() = 0;
   virtual void SetVisitor(Visitor* visitor) = 0;
   virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
+  // Get connection stats.
+  virtual const ConnectionStats& GetStats() = 0;
 };
 }  // namespace quic
 }  // namespace owt

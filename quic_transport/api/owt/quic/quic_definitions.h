@@ -16,16 +16,16 @@
 #define OWT_QUIC_TRANSPORT_QUIC_DEFINITIONS_H_
 
 #include "owt/quic/export.h"
+#include <cstdint>
 
 namespace owt {
 namespace quic {
 
-enum class OWT_EXPORT QuicTransportState : uint8_t {
-  kNew,
-  kConnecting,
-  kConnected,
-  kClosed,
-  kFailed
+// Stats for a QUIC connection.
+// Ref: net/third_party/quiche/src/quic/core/quic_connection_stats.h.
+struct OWT_EXPORT ConnectionStats {
+  // Estimated bandwidth in bit per second.
+  uint64_t estimated_bandwidth;
 };
 
 }  // namespace quic
