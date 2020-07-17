@@ -8,6 +8,7 @@
 #define OWT_QUIC_TRANSPORT_QUIC_TRANSPORT_FACTORY_H_
 
 #include "owt/quic/export.h"
+#include "owt/quic/quic_transport_client_interface.h"
 
 namespace owt {
 namespace quic {
@@ -33,6 +34,9 @@ class OWT_EXPORT QuicTransportFactory {
       const QuicTransportServerInterface* server) = 0;
   virtual QuicTransportClientInterface* CreateQuicTransportClient(
       const char* url) = 0;
+  virtual QuicTransportClientInterface* CreateQuicTransportClient(
+      const char* url,
+      const QuicTransportClientInterface::Parameters& parameters) = 0;
 };
 }  // namespace quic
 }  // namespace owt

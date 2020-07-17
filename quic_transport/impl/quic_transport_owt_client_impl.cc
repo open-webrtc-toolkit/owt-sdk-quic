@@ -11,10 +11,16 @@
 namespace owt {
 namespace quic {
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(const GURL& url) {
+  net::QuicTransportClient::Parameters parameters;
+  QuicTransportOwtClientImpl(url, parameters);
+}
+
+QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
+    const GURL& url,
+    const net::QuicTransportClient::Parameters& parameters) {
   url::Origin origin = url::Origin::Create(url);
   net::URLRequestContextBuilder builder;
   context_ = builder.Build();
-  net::QuicTransportClient::Parameters parameters;
   client_ = std::make_unique<net::QuicTransportClient>(
       url, origin, this, net::NetworkIsolationKey(origin, origin),
       context_.get(), parameters);
@@ -24,6 +30,11 @@ QuicTransportOwtClientImpl::~QuicTransportOwtClientImpl() {}
 
 void QuicTransportOwtClientImpl::Connect() {
   client_->Connect();
+}
+
+void QuicTransportOwtClientImpl::SetVisitor(
+    QuicTransportClientInterface::Visitor* visitor) {
+  visitor_ = visitor;
 }
 
 }  // namespace quic

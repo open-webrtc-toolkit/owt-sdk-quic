@@ -19,23 +19,28 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
  public:
   ~QuicTransportOwtClientImpl() override;
   QuicTransportOwtClientImpl(const GURL& url);
+  QuicTransportOwtClientImpl(
+      const GURL& url,
+      const net::QuicTransportClient::Parameters& parameters);
+  void SetVisitor(QuicTransportClientInterface::Visitor* visitor) override;
   void Connect() override;
 
-protected:
+ protected:
   // Overrides net::QuicTransportClient::Visitor.
- void OnConnected() override{}
- void OnConnectionFailed() override{}
- void OnClosed() override{}
- void OnError() override{}
- void OnIncomingBidirectionalStreamAvailable() override{}
- void OnIncomingUnidirectionalStreamAvailable() override{}
- void OnDatagramReceived(base::StringPiece datagram) override{}
- void OnCanCreateNewOutgoingBidirectionalStream() override{}
- void OnCanCreateNewOutgoingUnidirectionalStream() override{}
+  void OnConnected() override {}
+  void OnConnectionFailed() override {}
+  void OnClosed() override {}
+  void OnError() override {}
+  void OnIncomingBidirectionalStreamAvailable() override {}
+  void OnIncomingUnidirectionalStreamAvailable() override {}
+  void OnDatagramReceived(base::StringPiece datagram) override {}
+  void OnCanCreateNewOutgoingBidirectionalStream() override {}
+  void OnCanCreateNewOutgoingUnidirectionalStream() override {}
 
-private:
- std::unique_ptr<net::URLRequestContext> context_;
- std::unique_ptr<net::QuicTransportClient> client_;
+ private:
+  std::unique_ptr<net::URLRequestContext> context_;
+  std::unique_ptr<net::QuicTransportClient> client_;
+  QuicTransportClientInterface::Visitor* visitor_;
 };
 }  // namespace quic
 }  // namespace owt

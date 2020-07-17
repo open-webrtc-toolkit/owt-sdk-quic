@@ -56,7 +56,6 @@ void QuicTransportStreamImpl::OnFinRead() {
   // TODO:
 }
 void QuicTransportStreamImpl::OnCanWrite() {
-  LOG(INFO) << "OnCanWrite.";
   if (visitor_) {
     visitor_->OnCanWrite();
   }
@@ -106,9 +105,17 @@ size_t QuicTransportStreamImpl::ReadableBytes() const {
 
 void QuicTransportStreamImpl::WriteOnCurrentThread(uint8_t* data,
                                                    size_t length) {
-  bool result = stream_->Write(
-      quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length));
-  DCHECK(result);
+  // std::cout << "Write ";
+  // for (int i = 0; i < 8; i++) {
+  //   std::cout << (unsigned int)data[i] << " ";
+  // }
+  // std::cout<<std::endl;
+  stream_->WriteOrBufferData(
+      quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length), false,
+      nullptr);
+  // bool result = stream_->Write(
+  //     quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length));
+  // DCHECK(result);
 }
 
 }  // namespace quic

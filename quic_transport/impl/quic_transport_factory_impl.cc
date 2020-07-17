@@ -59,14 +59,14 @@ QuicTransportFactoryImpl::QuicTransportFactoryImpl()
 
 QuicTransportFactoryImpl::~QuicTransportFactoryImpl() = default;
 
-QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServer(
-    int port,
-    const char* cert_path,
-    const char* key_path,
-    const char* secret_path) {
+QuicTransportServerInterface*
+QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
+                                                    const char* cert_path,
+                                                    const char* key_path,
+                                                    const char* secret_path) {
   LOG(INFO) << "QuicTransportFactoryImpl::CreateQuicTransportServer";
   return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
-                                    CreateProofSource(), io_thread_.get());
+                                        CreateProofSource(), io_thread_.get());
 }
 
 void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
@@ -79,16 +79,35 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(const char* url) {
   return new QuicTransportOwtClientImpl(GURL(std::string(url)));
 }
 
+QuicTransportClientInterface*
+QuicTransportFactoryImpl::CreateQuicTransportClient(
+    const char* url,
+    const QuicTransportClientInterface::Parameters& parameters) {
+  net::QuicTransportClient::Parameters param;
+  for (size_t i = 0; i < parameters.server_certificate_fingerprints_length;
+       i++) {
+    owt::quic::CertificateFingerprint fingerprint =
+        *parameters.server_certificate_fingerprints[i];
+    ::quic::CertificateFingerprint quic_fingerprint;
+    quic_fingerprint.algorithm = ::quic::CertificateFingerprint::kSha256;
+    quic_fingerprint.fingerprint = fingerprint.fingerprint;
+    param.server_certificate_fingerprints.push_back(quic_fingerprint);
+  }
+  return new QuicTransportOwtClientImpl(GURL(std::string(url)), param);
+}
+
 void QuicTransportFactoryImpl::Init() {
   base::CommandLine::Init(0, nullptr);
+  base::CommandLine* command_line(base::CommandLine::ForCurrentProcess());
+  command_line->AppendSwitch("--quic_default_to_bbr");
   // Logging settings for Chromium.
 #ifdef _DEBUG
   logging::SetMinLogLevel(logging::LOG_INFO);
 #else
-  logging::SetMinLogLevel(logging::LOG_NONE);
+  logging::SetMinLogLevel(logging::LOG_INFO);
 #endif
   logging::LoggingSettings settings;
-  // settings.logging_dest = logging::LOG_TO_SYSTEM_DEBUG_LOG;
+  settings.logging_dest = logging::LOG_TO_STDERR;
   InitLogging(settings);
 }
 

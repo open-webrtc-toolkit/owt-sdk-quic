@@ -75,11 +75,17 @@ shared_library("owt_quic_transport") {
 
 test("owt_quic_transport_tests") {
   testonly = true
-  sources = [ "impl/quic_transport_owt_end_to_end_test.cc" ]
+  sources = [
+    "//net/test/run_all_unittests.cc",
+    "impl/tests/quic_transport_owt_end_to_end_test.cc",
+  ]
   configs += [ "//build/config:precompiled_headers" ]
   deps = [
     ":owt_quic_transport",
+    "//net:test_support",
+    "//net:quic_test_tools",
     "//testing/gmock",
     "//testing/gtest",
   ]
+  include_dirs = [ "api" ]
 }

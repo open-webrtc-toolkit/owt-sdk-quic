@@ -28,6 +28,19 @@ struct OWT_EXPORT ConnectionStats {
   uint64_t estimated_bandwidth;
 };
 
+// Hash function algorithm and certificate fingerprint as described in RFC4572.
+// Algorithm is always sha-256 at this moment.
+// Ref: https://w3c.github.io/webrtc-pc/#dom-rtcdtlsfingerprint
+// Ref: net/third_party/quiche/src/quic/quic_transport/web_transport_fingerprint_proof_verifier.h
+struct OWT_EXPORT CertificateFingerprint{
+  char* fingerprint;
+};
+
+struct OWT_EXPORT CertificateFingerprintArray{
+  size_t length;
+  CertificateFingerprint value[];
+};
+
 }  // namespace quic
 }  // namespace owt
 
