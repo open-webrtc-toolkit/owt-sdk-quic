@@ -33,12 +33,7 @@ struct OWT_EXPORT ConnectionStats {
 // Ref: https://w3c.github.io/webrtc-pc/#dom-rtcdtlsfingerprint
 // Ref: net/third_party/quiche/src/quic/quic_transport/web_transport_fingerprint_proof_verifier.h
 struct OWT_EXPORT CertificateFingerprint{
-  char* fingerprint;
-};
-
-struct OWT_EXPORT CertificateFingerprintArray{
-  size_t length;
-  CertificateFingerprint value[];
+  const char* fingerprint;
 };
 
 }  // namespace quic

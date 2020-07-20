@@ -10,10 +10,8 @@
 
 namespace owt {
 namespace quic {
-QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(const GURL& url) {
-  net::QuicTransportClient::Parameters parameters;
-  QuicTransportOwtClientImpl(url, parameters);
-}
+QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(const GURL& url)
+    : QuicTransportOwtClientImpl(url, net::QuicTransportClient::Parameters()) {}
 
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
@@ -26,10 +24,22 @@ QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
       context_.get(), parameters);
 }
 
+QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
+    const GURL& url,
+    const net::QuicTransportClient::Parameters& parameters,
+    net::URLRequestContext* context) {
+  url::Origin origin = url::Origin::Create(url);
+  client_ = std::make_unique<net::QuicTransportClient>(
+      url, origin, this, net::NetworkIsolationKey(origin, origin), context,
+      parameters);
+}
+
 QuicTransportOwtClientImpl::~QuicTransportOwtClientImpl() {}
 
 void QuicTransportOwtClientImpl::Connect() {
+  LOG(INFO) << "Client::Connect";
   client_->Connect();
+  LOG(INFO) << "After Client::Connect";
 }
 
 void QuicTransportOwtClientImpl::SetVisitor(

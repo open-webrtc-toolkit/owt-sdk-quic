@@ -9,6 +9,7 @@
  * Reference: net/quic/quic_transport_end_to_end_test.cc
  */
 
+#include "net/quic/crypto/proof_source_chromium.h"
 #include "net/test/test_data_directory.h"
 #include "net/test/test_with_task_environment.h"
 #include "net/third_party/quiche/src/quic/test_tools/crypto_test_utils.h"
@@ -28,6 +29,41 @@ class ClientMockVisitor : public QuicTransportClientInterface::Visitor {
   MOCK_METHOD0(OnConnectionFailed, void());
 };
 
+// A clock that only mocks out WallNow(), but uses real Now() and
+// ApproximateNow().  Useful for certificate verification.
+class TestWallClock : public ::quic::QuicClock {
+ public:
+  ::quic::QuicTime Now() const override {
+    return ::quic::QuicChromiumClock::GetInstance()->Now();
+  }
+  ::quic::QuicTime ApproximateNow() const override {
+    return ::quic::QuicChromiumClock::GetInstance()->ApproximateNow();
+  }
+  ::quic::QuicWallTime WallNow() const override { return wall_now_; }
+
+  void set_wall_now(::quic::QuicWallTime now) { wall_now_ = now; }
+
+ private:
+  ::quic::QuicWallTime wall_now_ = ::quic::QuicWallTime::Zero();
+};
+
+class TestConnectionHelper : public ::quic::QuicConnectionHelperInterface {
+ public:
+  const ::quic::QuicClock* GetClock() const override { return &clock_; }
+  ::quic::QuicRandom* GetRandomGenerator() override {
+    return ::quic::QuicRandom::GetInstance();
+  }
+  ::quic::QuicBufferAllocator* GetStreamSendBufferAllocator() override {
+    return &allocator_;
+  }
+
+  TestWallClock& clock() { return clock_; }
+
+ private:
+  TestWallClock clock_;
+  ::quic::SimpleBufferAllocator allocator_;
+};
+
 class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
  public:
   QuicTransportOwtEndToEndTest()
@@ -38,13 +74,23 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
 
   std::unique_ptr<QuicTransportClientInterface> CreateClient(
       const std::string& url) {
+  ::quic::QuicTransportClient::Parameters parameters;
+  parameters.server_certificate_fingerprints.push_back(
+      quic::CertificateFingerprint{
+          .algorithm = quic::CertificateFingerprint::kSha256,
+          .fingerprint = "ED:3D:D7:C3:67:10:94:68:D1:DC:D1:26:5C:B2:74:D7:1C:"
+                         "A2:63:3E:94:94:C0:84:39:D6:64:FA:08:B9:77:37"});
     return std::unique_ptr<QuicTransportClientInterface>(
-        factory_->CreateQuicTransportClient(url.c_str()));
+        factory_->CreateQuicTransportClient(url.c_str(), parameters));
   }
 
   void StartServer() {
-    std::unique_ptr<::quic::ProofSource> proof_source =
-        ::quic::test::crypto_test_utils::ProofSourceForTesting();
+    auto proof_source = std::make_unique<net::ProofSourceChromium>();
+    base::FilePath certs_dir = net::GetTestCertsDirectory();
+    ASSERT_TRUE(proof_source->Initialize(
+        certs_dir.AppendASCII("quic-short-lived.pem"),
+        certs_dir.AppendASCII("quic-leaf-cert.key"),
+        certs_dir.AppendASCII("quic-leaf-cert.key.sct")));
     server_ = std::make_unique<net::QuicTransportSimpleServer>(
         /* port */ 0, std::vector<url::Origin>({origin_}),
         std::move(proof_source));
@@ -68,6 +114,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
 
  protected:
   ClientMockVisitor visitor_;
+  std::unique_ptr<QuicTransportClientInterface> client_;
 
  private:
   std::unique_ptr<QuicTransportFactory> factory_;
@@ -79,12 +126,13 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
 
 TEST_F(QuicTransportOwtEndToEndTest, Creation) {
   StartServer();
-  std::unique_ptr<QuicTransportClientInterface> quic_client =
-      CreateClient(GetServerUrl("/discard").spec());
-  quic_client->SetVisitor(&visitor_);
+  client_ = CreateClient(GetServerUrl("/discard"));
+  client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
-  quic_client->Connect();
+  client_->Connect();
+  LOG(INFO) << "Before run";
   Run();
+  LOG(INFO) << "After run";
 }
 }  // namespace test
 }  // namespace quic

@@ -22,6 +22,12 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   QuicTransportOwtClientImpl(
       const GURL& url,
       const net::QuicTransportClient::Parameters& parameters);
+  // `context` could has its user defined wall time, which can be used for
+  // certificate verification in testing.
+  QuicTransportOwtClientImpl(
+      const GURL& url,
+      const net::QuicTransportClient::Parameters& parameters,
+      net::URLRequestContext* context);
   void SetVisitor(QuicTransportClientInterface::Visitor* visitor) override;
   void Connect() override;
 
