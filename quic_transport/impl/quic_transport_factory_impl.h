@@ -55,7 +55,6 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
 
   std::unique_ptr<base::AtExitManager> exit_manager_;
   std::unique_ptr<base::Thread> io_thread_;
-  std::unique_ptr<::quic::QuicRandom> random_generator_;
   std::unique_ptr<::quic::QuicAlarmFactory> alarm_factory_;
   std::unique_ptr<::quic::QuicConnectionHelperInterface> connection_helper_;
   std::unique_ptr<::quic::QuicCompressedCertsCache> compressed_certs_cache_;

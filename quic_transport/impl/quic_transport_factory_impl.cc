@@ -39,10 +39,9 @@ std::unique_ptr<::quic::ProofSource> CreateProofSource() {
 QuicTransportFactoryImpl::QuicTransportFactoryImpl()
     : exit_manager_(std::make_unique<base::AtExitManager>()),
       io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")),
-      random_generator_(::quic::QuicRandom::GetInstance()),
       connection_helper_(std::make_unique<net::QuicChromiumConnectionHelper>(
           ::quic::QuicChromiumClock::GetInstance(),
-          random_generator_.get())),
+          ::quic::QuicRandom::GetInstance())),
       compressed_certs_cache_(std::make_unique<
                               ::quic::QuicCompressedCertsCache>(
           ::quic::QuicCompressedCertsCache::kQuicCompressedCertsCacheSize)) {
