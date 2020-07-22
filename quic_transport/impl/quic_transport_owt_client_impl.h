@@ -17,7 +17,6 @@ namespace quic {
 class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
                                    public net::QuicTransportClient::Visitor {
  public:
-  ~QuicTransportOwtClientImpl() override;
   QuicTransportOwtClientImpl(const GURL& url);
   QuicTransportOwtClientImpl(
       const GURL& url,
@@ -28,13 +27,15 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
       const GURL& url,
       const net::QuicTransportClient::Parameters& parameters,
       net::URLRequestContext* context);
+  ~QuicTransportOwtClientImpl() override;
+
   void SetVisitor(QuicTransportClientInterface::Visitor* visitor) override;
   void Connect() override;
 
  protected:
   // Overrides net::QuicTransportClient::Visitor.
-  void OnConnected() override {}
-  void OnConnectionFailed() override {}
+  void OnConnected() override;
+  void OnConnectionFailed() override;
   void OnClosed() override {}
   void OnError() override {}
   void OnIncomingBidirectionalStreamAvailable() override {}

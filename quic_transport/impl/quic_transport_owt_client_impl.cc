@@ -47,5 +47,17 @@ void QuicTransportOwtClientImpl::SetVisitor(
   visitor_ = visitor;
 }
 
+void QuicTransportOwtClientImpl::OnConnected() {
+  if (visitor_) {
+    visitor_->OnConnected();
+  }
+}
+
+void QuicTransportOwtClientImpl::OnConnectionFailed() {
+  if (visitor_) {
+    visitor_->OnConnectionFailed();
+  }
+}
+
 }  // namespace quic
 }  // namespace owt
