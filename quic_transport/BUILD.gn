@@ -4,44 +4,8 @@
 
 import("//testing/test.gni")
 
-source_set("owt_deps_quic") {
-  # This target is similar as //src/third_party/openscreen/src/third_party/chromium_quic/BUILD.gn.
-  sources = [
-    "//net/quic/platform/impl/quic_default_proof_providers_impl.cc",
-    "//net/quic/platform/impl/quic_default_proof_providers_impl.h",
-    "//net/third_party/quiche/src/quic/core/chlo_extractor.cc",
-    "//net/third_party/quiche/src/quic/core/chlo_extractor.h",
-    "//net/third_party/quiche/src/quic/core/quic_buffered_packet_store.cc",
-    "//net/third_party/quiche/src/quic/core/quic_buffered_packet_store.h",
-    "//net/third_party/quiche/src/quic/core/quic_dispatcher.cc",
-    "//net/third_party/quiche/src/quic/core/quic_dispatcher.h",
-    "//net/third_party/quiche/src/quic/core/quic_time_wait_list_manager.cc",
-    "//net/third_party/quiche/src/quic/core/quic_time_wait_list_manager.h",
-    "//net/third_party/quiche/src/quic/core/tls_chlo_extractor.cc",
-    "//net/third_party/quiche/src/quic/core/tls_chlo_extractor.h",
-    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.cc",
-    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h",
-    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.cc",
-    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.h",
-    "//net/third_party/quiche/src/quic/tools/simple_ticket_crypter.cc",
-    "//net/third_party/quiche/src/quic/tools/simple_ticket_crypter.h",
-    "//net/tools/quic/quic_simple_server_packet_writer.cc",
-    "//net/tools/quic/quic_simple_server_packet_writer.h",
-    "//net/tools/quic/quic_simple_server_socket.cc",
-    "//net/tools/quic/quic_simple_server_socket.h",
-  ]
-  include_dirs = [ "//" ]
+source_set("owt_quic_transport_impl") {
   deps = [
-    "//base",
-    "//third_party/boringssl",
-    "//url",
-  ]
-  configs += [ "//third_party/protobuf:protobuf_config" ]
-}
-
-shared_library("owt_quic_transport") {
-  deps = [
-    ":owt_deps_quic",
     "//net",
     "//third_party/boringssl",
   ]
@@ -69,8 +33,10 @@ shared_library("owt_quic_transport") {
   ]
 
   defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
+}
 
-  #complete_static_lib = true
+shared_library("owt_quic_transport") {
+  deps = [ ":owt_quic_transport_impl" ]
 }
 
 test("owt_quic_transport_tests") {
@@ -81,11 +47,12 @@ test("owt_quic_transport_tests") {
   ]
   configs += [ "//build/config:precompiled_headers" ]
   deps = [
-    ":owt_quic_transport",
-    "//net:test_support",
+    ":owt_quic_transport_impl",
     "//net:quic_test_tools",
+    "//net:test_support",
     "//testing/gmock",
     "//testing/gtest",
   ]
   include_dirs = [ "api" ]
+  defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
 }
