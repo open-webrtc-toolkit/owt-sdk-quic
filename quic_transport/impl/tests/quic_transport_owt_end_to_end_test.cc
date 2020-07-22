@@ -9,13 +9,19 @@
  * Reference: net/quic/quic_transport_end_to_end_test.cc
  */
 
+#include "net/base/host_port_pair.h"
 #include "net/quic/crypto/proof_source_chromium.h"
+#include "net/quic/quic_context.h"
+#include "net/quic/quic_transport_client.h"
 #include "net/test/test_data_directory.h"
 #include "net/test/test_with_task_environment.h"
 #include "net/third_party/quiche/src/quic/test_tools/crypto_test_utils.h"
 #include "net/tools/quic/quic_transport_simple_server.h"
+#include "net/url_request/url_request_context.h"
+#include "net/url_request/url_request_context_builder.h"
 #include "owt/quic/quic_transport_client_interface.h"
 #include "owt/quic/quic_transport_factory.h"
+#include "owt/quic_transport/impl/quic_transport_owt_client_impl.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -70,18 +76,30 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
       : factory_(std::unique_ptr<QuicTransportFactory>(
             QuicTransportFactory::Create())),
         port_(0),
-        origin_(url::Origin::Create(GURL{"https://example.org"})) {}
+        origin_(url::Origin::Create(GURL{"https://example.org"})) {
+    net::URLRequestContextBuilder builder;
+    auto helper = std::make_unique<TestConnectionHelper>();
+    helper_ = helper.get();
+    auto quic_context = std::make_unique<net::QuicContext>(std::move(helper));
+    quic_context->params()->origins_to_force_quic_on.insert(
+        net::HostPortPair("test.example.com", 0));
+    builder.set_quic_context(std::move(quic_context));
+    context_ = builder.Build();
+  }
 
-  std::unique_ptr<QuicTransportClientInterface> CreateClient(
-      const std::string& url) {
-  ::quic::QuicTransportClient::Parameters parameters;
-  parameters.server_certificate_fingerprints.push_back(
-      quic::CertificateFingerprint{
-          .algorithm = quic::CertificateFingerprint::kSha256,
-          .fingerprint = "ED:3D:D7:C3:67:10:94:68:D1:DC:D1:26:5C:B2:74:D7:1C:"
-                         "A2:63:3E:94:94:C0:84:39:D6:64:FA:08:B9:77:37"});
+  std::unique_ptr<QuicTransportClientInterface> CreateClient(const GURL& url) {
+    net::QuicTransportClient::Parameters parameters;
+    parameters.server_certificate_fingerprints.push_back(
+        ::quic::CertificateFingerprint{
+            .algorithm = ::quic::CertificateFingerprint::kSha256,
+            .fingerprint = "ED:3D:D7:C3:67:10:94:68:D1:DC:D1:26:5C:B2:74:D7:1C:"
+                           "A2:63:3E:94:94:C0:84:39:D6:64:FA:08:B9:77:37"});
+    // Set clock to a time in which quic-short-lived.pem is valid
+    // (2020-06-05T20:35:00.000Z).
+    helper_->clock().set_wall_now(
+        ::quic::QuicWallTime::FromUNIXSeconds(1591389300));
     return std::unique_ptr<QuicTransportClientInterface>(
-        factory_->CreateQuicTransportClient(url.c_str(), parameters));
+        new QuicTransportOwtClientImpl(url, parameters, context_.get()));
   }
 
   void StartServer() {
@@ -99,8 +117,8 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   }
 
   GURL GetServerUrl(const std::string& suffix) {
-    return GURL{
-        quiche::QuicheStrCat("quic-transport://localhost:", port_, suffix)};
+    return GURL{quiche::QuicheStrCat(
+        "quic-transport://test.example.org:", port_, suffix)};
   }
 
   void Run() {
@@ -113,27 +131,38 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   }
 
  protected:
-  ClientMockVisitor visitor_;
-  std::unique_ptr<QuicTransportClientInterface> client_;
-
- private:
   std::unique_ptr<QuicTransportFactory> factory_;
   std::unique_ptr<net::QuicTransportSimpleServer> server_;
   int port_;
   url::Origin origin_;
   std::unique_ptr<base::RunLoop> run_loop_;
+  std::unique_ptr<net::URLRequestContext> context_;
+  TestConnectionHelper* helper_;  // Owned by |context_|.
+  ClientMockVisitor visitor_;
+  std::unique_ptr<QuicTransportClientInterface> client_;
 };
 
-TEST_F(QuicTransportOwtEndToEndTest, Creation) {
+TEST_F(QuicTransportOwtEndToEndTest, Connect) {
   StartServer();
   client_ = CreateClient(GetServerUrl("/discard"));
   client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
   client_->Connect();
-  LOG(INFO) << "Before run";
   Run();
-  LOG(INFO) << "After run";
 }
+
+TEST_F(QuicTransportOwtEndToEndTest, DISABLED_InvalidCertificate) {
+  StartServer();
+  std::unique_ptr<QuicTransportClientInterface> client =
+      std::unique_ptr<QuicTransportClientInterface>(
+          factory_->CreateQuicTransportClient(
+              GetServerUrl("/discard").spec().c_str()));
+  client->SetVisitor(&visitor_);
+  EXPECT_CALL(visitor_, OnConnectionFailed()).WillOnce(StopRunning());
+  client->Connect();
+  Run();
+}
+
 }  // namespace test
 }  // namespace quic
 }  // namespace owt
