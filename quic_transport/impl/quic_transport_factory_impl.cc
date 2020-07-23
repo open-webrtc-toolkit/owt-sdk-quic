@@ -6,6 +6,7 @@
 
 #include "impl/quic_transport_factory_impl.h"
 #include "base/at_exit.h"
+#include "base/bind.h"
 #include "base/logging.h"
 #include "base/threading/thread.h"
 #include "impl/quic_transport_owt_client_impl.h"
@@ -53,7 +54,6 @@ QuicTransportFactoryImpl::QuicTransportFactoryImpl()
       ::quic::QuicChromiumClock::GetInstance());
   // TODO: Move logging settings to somewhere else.
   Init();
-  LOG(INFO) << "Ctor of QuicTransportFactory.";
 }
 
 QuicTransportFactoryImpl::~QuicTransportFactoryImpl() = default;
@@ -63,7 +63,6 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
                                                     const char* cert_path,
                                                     const char* key_path,
                                                     const char* secret_path) {
-  LOG(INFO) << "QuicTransportFactoryImpl::CreateQuicTransportServer";
   return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
                                         CreateProofSource(), io_thread_.get());
 }
@@ -75,13 +74,16 @@ void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
 
 QuicTransportClientInterface*
 QuicTransportFactoryImpl::CreateQuicTransportClient(const char* url) {
-  return new QuicTransportOwtClientImpl(GURL(std::string(url)));
+  QuicTransportClientInterface::Parameters param;
+  param.server_certificate_fingerprints_length = 0;
+  return CreateQuicTransportClient(url, param);
 }
 
 QuicTransportClientInterface*
 QuicTransportFactoryImpl::CreateQuicTransportClient(
     const char* url,
     const QuicTransportClientInterface::Parameters& parameters) {
+  QuicTransportClientInterface* result(nullptr);
   net::QuicTransportClient::Parameters param;
   for (size_t i = 0; i < parameters.server_certificate_fingerprints_length;
        i++) {
@@ -92,7 +94,25 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
     quic_fingerprint.fingerprint = fingerprint.fingerprint;
     param.server_certificate_fingerprints.push_back(quic_fingerprint);
   }
-  return new QuicTransportOwtClientImpl(GURL(std::string(url)), param);
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  io_thread_->task_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](const char* url, const net::QuicTransportClient::Parameters& param,
+             base::Thread* io_thread, QuicTransportClientInterface** result,
+             base::WaitableEvent* event) {
+            url::Origin origin = url::Origin::Create(GURL(url));
+            QuicTransportClientInterface* client =
+                new QuicTransportOwtClientImpl(GURL(std::string(url)), origin,
+                                               param, io_thread);
+            *result = client;
+            event->Signal();
+          },
+          base::Unretained(url), param, base::Unretained(io_thread_.get()),
+          base::Unretained(&result), base::Unretained(&done)));
+  done.Wait();
+  return result;
 }
 
 void QuicTransportFactoryImpl::Init() {
@@ -103,7 +123,7 @@ void QuicTransportFactoryImpl::Init() {
 #ifdef _DEBUG
   logging::SetMinLogLevel(logging::LOG_INFO);
 #else
-  logging::SetMinLogLevel(logging::LOG_INFO);
+  logging::SetMinLogLevel(logging::LOG_WARNING);
 #endif
   logging::LoggingSettings settings;
   settings.logging_dest = logging::LOG_TO_STDERR;

@@ -18,6 +18,7 @@ class OWT_EXPORT QuicTransportClientInterface {
  public:
   // https://wicg.github.io/web-transport/#dom-quictransportconfiguration-server_certificate_fingerprints.
   struct OWT_EXPORT Parameters {
+    Parameters() : server_certificate_fingerprints_length(0) {}
     CertificateFingerprint** server_certificate_fingerprints;
     size_t server_certificate_fingerprints_length;
   };
@@ -32,7 +33,10 @@ class OWT_EXPORT QuicTransportClientInterface {
   };
   virtual ~QuicTransportClientInterface() = default;
   virtual void SetVisitor(Visitor* visitor) = 0;
+  // Connect to a QUIC transport server. URL is specified during creation.
   virtual void Connect() = 0;
+  // Create a bidirectional stream.
+  virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
 };
 }  // namespace quic
 }  // namespace owt
