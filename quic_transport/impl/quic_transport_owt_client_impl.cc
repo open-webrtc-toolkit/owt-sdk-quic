@@ -6,6 +6,7 @@
 
 #include "impl/quic_transport_owt_client_impl.h"
 #include "base/threading/thread.h"
+#include "net/proxy_resolution/configured_proxy_resolution_service.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
 
@@ -47,6 +48,8 @@ QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
   }
   if (context == nullptr) {
     net::URLRequestContextBuilder builder;
+    builder.set_proxy_resolution_service(
+        net::ConfiguredProxyResolutionService::CreateDirect());
     context_owned_ = builder.Build();
     context_ = context_owned_.get();
   }

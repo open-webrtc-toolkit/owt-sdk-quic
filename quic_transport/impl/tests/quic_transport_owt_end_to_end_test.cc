@@ -11,6 +11,7 @@
 
 #include "base/threading/thread.h"
 #include "net/base/host_port_pair.h"
+#include "net/proxy_resolution/configured_proxy_resolution_service.h"
 #include "net/quic/crypto/proof_source_chromium.h"
 #include "net/quic/quic_context.h"
 #include "net/quic/quic_transport_client.h"
@@ -111,6 +112,8 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
     LOG(INFO) << "Init context on thread: "
               << base::PlatformThread::CurrentId();
     net::URLRequestContextBuilder builder;
+    builder.set_proxy_resolution_service(
+        net::ConfiguredProxyResolutionService::CreateDirect());
     auto helper = std::make_unique<TestConnectionHelper>();
     helper_ = helper.get();
     auto quic_context = std::make_unique<net::QuicContext>(std::move(helper));
