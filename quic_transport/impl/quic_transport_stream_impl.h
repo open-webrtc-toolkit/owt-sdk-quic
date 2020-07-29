@@ -49,7 +49,7 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
 
   private:
-  void WriteOnCurrentThread(uint8_t* data, size_t length);
+  void WriteOnCurrentThread(std::vector<uint8_t> data);
 };
 }  // namespace quic
 }  // namespace owt
