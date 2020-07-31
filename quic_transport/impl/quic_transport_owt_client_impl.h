@@ -50,8 +50,8 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   void OnConnectionFailed() override;
   void OnClosed() override {}
   void OnError() override {}
-  void OnIncomingBidirectionalStreamAvailable() override {}
-  void OnIncomingUnidirectionalStreamAvailable() override {}
+  void OnIncomingBidirectionalStreamAvailable() override;
+  void OnIncomingUnidirectionalStreamAvailable() override;
   void OnDatagramReceived(base::StringPiece datagram) override {}
   void OnCanCreateNewOutgoingBidirectionalStream() override {}
   void OnCanCreateNewOutgoingUnidirectionalStream() override {}
@@ -61,6 +61,10 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   QuicTransportStreamInterface* CreateOutgoingStream(bool bidirectional);
   QuicTransportStreamInterface* CreateOutgoingStreamOnCurrentThread(
       bool bidirectional);
+  void OnIncomingStreamAvailable(bool bidirectional);
+  // This method also adds created stream to `streams_`.
+  QuicTransportStreamInterface* OwtStreamForNativeStream(
+      ::quic::QuicTransportStream* stream);
 
   std::unique_ptr<base::Thread> io_thread_owned_;
   GURL url_;

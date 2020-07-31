@@ -111,8 +111,6 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   }
 
   void InitContextOnIOThread(base::WaitableEvent* event) {
-    LOG(INFO) << "Init context on thread: "
-              << base::PlatformThread::CurrentId();
     net::URLRequestContextBuilder builder;
     builder.set_proxy_resolution_service(
         net::ConfiguredProxyResolutionService::CreateDirect());
@@ -233,6 +231,37 @@ TEST_F(QuicTransportOwtEndToEndTest, EchoBidirectionalStream) {
   EXPECT_EQ(stream->ReadableBytes(), data_size);
   uint8_t* data_read = new uint8_t[data_size];
   stream->Read(data_read, data_size);
+  for (size_t i = 0; i < data_size; i++) {
+    EXPECT_EQ(data[i], data_read[i]);
+  }
+}
+
+TEST_F(QuicTransportOwtEndToEndTest, EchoUnidirectionalStream) {
+  StartServer();
+  client_ = CreateClient(GetServerUrl("/echo"));
+  client_->SetVisitor(&visitor_);
+  EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
+  client_->Connect();
+  Run();
+  auto* stream = client_->CreateOutgoingUnidirectionalStream();
+  EXPECT_TRUE(stream != nullptr);
+  size_t data_size = 10;
+  uint8_t* data = new uint8_t[data_size];
+  for (size_t i = 0; i < data_size; i++) {
+    data[i] = i;
+  }
+  stream->Write(data, data_size);
+  // For unidirectional streams, QuicTransportSimpleServer echos after stream is
+  // closed.
+  stream->Close();
+  QuicTransportStreamInterface* receive_stream(nullptr);
+  EXPECT_CALL(visitor_, OnIncomingStream)
+      .WillOnce(DoAll(testing::SaveArg<0>(&receive_stream), StopRunning()));
+  Run();
+  EXPECT_TRUE(receive_stream != nullptr);
+  EXPECT_EQ(receive_stream->ReadableBytes(), data_size);
+  uint8_t* data_read = new uint8_t[data_size];
+  receive_stream->Read(data_read, data_size);
   for (size_t i = 0; i < data_size; i++) {
     EXPECT_EQ(data[i], data_read[i]);
   }

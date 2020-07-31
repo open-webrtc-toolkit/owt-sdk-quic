@@ -22,6 +22,9 @@
 
 namespace owt {
 namespace quic {
+
+// QuicTransportStreamImpl is a proxy for ::quic::QuicTransportStream. All calls
+// to ::quic::QuicTransportStream run in runner_.
 class QuicTransportStreamImpl : public QuicTransportStreamInterface,
                                 public ::quic::QuicTransportStream::Visitor {
  public:
@@ -48,7 +51,7 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   base::TaskRunner* runner_;
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
 
-  private:
+ private:
   void WriteOnCurrentThread(std::vector<uint8_t> data);
 };
 }  // namespace quic

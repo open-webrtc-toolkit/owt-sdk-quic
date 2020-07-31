@@ -149,6 +149,34 @@ QuicTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
   ::quic::QuicTransportStream* stream =
       bidirectional ? client_->session()->OpenOutgoingBidirectionalStream()
                     : client_->session()->OpenOutgoingUnidirectionalStream();
+  return OwtStreamForNativeStream(stream);
+}
+
+void QuicTransportOwtClientImpl::OnIncomingBidirectionalStreamAvailable() {
+  OnIncomingStreamAvailable(true);
+}
+
+void QuicTransportOwtClientImpl::OnIncomingUnidirectionalStreamAvailable() {
+  OnIncomingStreamAvailable(false);
+}
+
+void QuicTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
+  auto* stream = bidirectional
+                     ? client_->session()->AcceptIncomingBidirectionalStream()
+                     : client_->session()->AcceptIncomingUnidirectionalStream();
+  CHECK(stream);
+  if (visitor_) {
+    auto* owt_stream = OwtStreamForNativeStream(stream);
+    visitor_->OnIncomingStream(owt_stream);
+  } else {
+    // No one cares about incoming streams.
+    DCHECK(stream->SendFin());
+  }
+}
+
+QuicTransportStreamInterface*
+QuicTransportOwtClientImpl::OwtStreamForNativeStream(
+    ::quic::QuicTransportStream* stream) {
   std::unique_ptr<QuicTransportStreamImpl> stream_impl =
       std::make_unique<QuicTransportStreamImpl>(stream, task_runner_.get());
   QuicTransportStreamImpl* stream_ptr(stream_impl.get());
