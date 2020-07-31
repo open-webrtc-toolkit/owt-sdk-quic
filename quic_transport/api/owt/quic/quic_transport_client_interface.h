@@ -30,6 +30,8 @@ class OWT_EXPORT QuicTransportClientInterface {
     virtual void OnConnected() = 0;
     // Called when a connection is failed.
     virtual void OnConnectionFailed() = 0;
+    // Called when an incoming stream is received.
+    virtual void OnIncomingStream(QuicTransportStreamInterface*) = 0;
   };
   virtual ~QuicTransportClientInterface() = default;
   virtual void SetVisitor(Visitor* visitor) = 0;
@@ -37,6 +39,9 @@ class OWT_EXPORT QuicTransportClientInterface {
   virtual void Connect() = 0;
   // Create a bidirectional stream.
   virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
+  // Create an ougoing unidirectional stream.
+  virtual QuicTransportStreamInterface*
+  CreateOutgoingUnidirectionalStream() = 0;
 };
 }  // namespace quic
 }  // namespace owt

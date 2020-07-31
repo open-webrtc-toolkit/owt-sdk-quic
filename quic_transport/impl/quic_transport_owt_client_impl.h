@@ -42,6 +42,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   void SetVisitor(QuicTransportClientInterface::Visitor* visitor) override;
   void Connect() override;
   QuicTransportStreamInterface* CreateBidirectionalStream() override;
+  QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream() override;
 
  protected:
   // Overrides net::QuicTransportClient::Visitor.
@@ -55,10 +56,12 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   void OnCanCreateNewOutgoingBidirectionalStream() override {}
   void OnCanCreateNewOutgoingUnidirectionalStream() override {}
 
-  void ConnectOnCurrentThread(base::WaitableEvent* event);
-  QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
-
  private:
+  void ConnectOnCurrentThread(base::WaitableEvent* event);
+  QuicTransportStreamInterface* CreateOutgoingStream(bool bidirectional);
+  QuicTransportStreamInterface* CreateOutgoingStreamOnCurrentThread(
+      bool bidirectional);
+
   std::unique_ptr<base::Thread> io_thread_owned_;
   GURL url_;
   url::Origin origin_;

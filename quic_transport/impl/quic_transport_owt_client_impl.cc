@@ -115,6 +115,16 @@ void QuicTransportOwtClientImpl::OnConnectionFailed() {
 
 QuicTransportStreamInterface*
 QuicTransportOwtClientImpl::CreateBidirectionalStream() {
+  return CreateOutgoingStream(true);
+}
+
+QuicTransportStreamInterface*
+QuicTransportOwtClientImpl::CreateOutgoingUnidirectionalStream() {
+  return CreateOutgoingStream(false);
+}
+
+QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
+    bool bidirectional) {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   QuicTransportStreamInterface* stream(nullptr);
@@ -122,21 +132,23 @@ QuicTransportOwtClientImpl::CreateBidirectionalStream() {
       FROM_HERE, base::BindOnce(
                      [](QuicTransportOwtClientImpl* client,
                         QuicTransportStreamInterface** result,
-                        base::WaitableEvent* event) {
-                       *result =
-                           client->CreateBidirectionalStreamOnCurrentThread();
+                        bool bidirectional, base::WaitableEvent* event) {
+                       *result = client->CreateOutgoingStreamOnCurrentThread(
+                           bidirectional);
                        event->Signal();
                      },
                      base::Unretained(this), base::Unretained(&stream),
-                     base::Unretained(&done)));
+                     bidirectional, base::Unretained(&done)));
   done.Wait();
   return stream;
 }
 
 QuicTransportStreamInterface*
-QuicTransportOwtClientImpl::CreateBidirectionalStreamOnCurrentThread() {
+QuicTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
+    bool bidirectional) {
   ::quic::QuicTransportStream* stream =
-      client_->session()->OpenOutgoingBidirectionalStream();
+      bidirectional ? client_->session()->OpenOutgoingBidirectionalStream()
+                    : client_->session()->OpenOutgoingUnidirectionalStream();
   std::unique_ptr<QuicTransportStreamImpl> stream_impl =
       std::make_unique<QuicTransportStreamImpl>(stream, task_runner_.get());
   QuicTransportStreamImpl* stream_ptr(stream_impl.get());

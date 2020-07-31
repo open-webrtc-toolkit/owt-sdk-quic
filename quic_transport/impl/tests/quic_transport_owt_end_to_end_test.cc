@@ -36,6 +36,7 @@ class ClientMockVisitor : public QuicTransportClientInterface::Visitor {
  public:
   MOCK_METHOD0(OnConnected, void());
   MOCK_METHOD0(OnConnectionFailed, void());
+  MOCK_METHOD1(OnIncomingStream, void(QuicTransportStreamInterface*));
 };
 
 class StreamMockVisitor : public QuicTransportStreamInterface::Visitor {
