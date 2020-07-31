@@ -17,7 +17,7 @@ class OWT_EXPORT QuicTransportServerInterface {
  public:
   class Visitor {
    public:
-    virtual ~Visitor() = 0;
+    virtual ~Visitor() = default;
     // Called when server is ended.
     virtual void OnEnded() = 0;
     // Called when a new session is created.

@@ -44,13 +44,17 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
       override;
   void ReleaseQuicTransportServer(
       const QuicTransportServerInterface* server) override;
+  QuicTransportClientInterface* CreateQuicTransportClient(
+      const char* url) override;
+  QuicTransportClientInterface* CreateQuicTransportClient(
+      const char* url,
+      const QuicTransportClientInterface::Parameters& parameters) override;
 
  private:
   void Init();
 
   std::unique_ptr<base::AtExitManager> exit_manager_;
   std::unique_ptr<base::Thread> io_thread_;
-  std::unique_ptr<::quic::QuicRandom> random_generator_;
   std::unique_ptr<::quic::QuicAlarmFactory> alarm_factory_;
   std::unique_ptr<::quic::QuicConnectionHelperInterface> connection_helper_;
   std::unique_ptr<::quic::QuicCompressedCertsCache> compressed_certs_cache_;

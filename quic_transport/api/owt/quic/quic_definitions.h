@@ -16,16 +16,24 @@
 #define OWT_QUIC_TRANSPORT_QUIC_DEFINITIONS_H_
 
 #include "owt/quic/export.h"
+#include <cstdint>
 
 namespace owt {
 namespace quic {
 
-enum class OWT_EXPORT QuicTransportState : uint8_t {
-  kNew,
-  kConnecting,
-  kConnected,
-  kClosed,
-  kFailed
+// Stats for a QUIC connection.
+// Ref: net/third_party/quiche/src/quic/core/quic_connection_stats.h.
+struct OWT_EXPORT ConnectionStats {
+  // Estimated bandwidth in bit per second.
+  uint64_t estimated_bandwidth;
+};
+
+// Hash function algorithm and certificate fingerprint as described in RFC4572.
+// Algorithm is always sha-256 at this moment.
+// Ref: https://w3c.github.io/webrtc-pc/#dom-rtcdtlsfingerprint
+// Ref: net/third_party/quiche/src/quic/quic_transport/web_transport_fingerprint_proof_verifier.h
+struct OWT_EXPORT CertificateFingerprint{
+  const char* fingerprint;
 };
 
 }  // namespace quic

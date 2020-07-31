@@ -22,7 +22,11 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
     }
   }
   void OnFinRead() override {}
-  void OnCanWrite() override {}
+  void OnCanWrite() override {
+    if(visitor_){
+      visitor_->OnCanWrite();
+    }
+  }
 
  private:
   ::quic::QuicTransportStream::Visitor* visitor_;
@@ -48,11 +52,11 @@ void QuicTransportStreamImpl::OnCanRead() {
   }
 }
 void QuicTransportStreamImpl::OnFinRead() {
-  LOG(INFO) << "OnFinRead.";
-  // TODO:
+  if (visitor_) {
+    visitor_->OnFinRead();
+  }
 }
 void QuicTransportStreamImpl::OnCanWrite() {
-  LOG(INFO) << "OnCanWrite.";
   if (visitor_) {
     visitor_->OnCanWrite();
   }
@@ -63,20 +67,12 @@ uint32_t QuicTransportStreamImpl::Id() const {
 }
 
 void QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
+  std::vector<uint8_t> data_copy(data, data + length);
   CHECK(runner_);
   runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&QuicTransportStreamImpl::WriteOnCurrentThread,
-                     base::Unretained(this), base::Unretained(data), length));
-  // TODO: PostTaskAndReplyWithResult blocks current thread. Don't know why. Fix
-  // it later.
-  // runner_->PostTaskAndReplyWithResult(
-  //     FROM_HERE,
-  //     base::BindOnce(
-  //         &::quic::QuicTransportStream::Write, base::Unretained(stream_),
-  //         quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length)),
-  //     base::BindOnce([](bool result) { DCHECK(result); }));
-  LOG(INFO) << "QuicTransportStreamImpl::Write ends";
+                     base::Unretained(this), std::move(data_copy)));
 }
 
 void QuicTransportStreamImpl::Close() {
@@ -86,8 +82,9 @@ void QuicTransportStreamImpl::Close() {
         FROM_HERE,
         base::BindOnce(&::quic::QuicTransportStream::SendFin,
                        base::Unretained(stream_)),
-        base::BindOnce([](bool result) { LOG(INFO)<<"Check result";
-        DCHECK(result); }));
+        base::BindOnce([](bool result) {
+          DCHECK(result);
+        }));
   }
 }
 
@@ -99,10 +96,9 @@ size_t QuicTransportStreamImpl::ReadableBytes() const {
   return stream_->ReadableBytes();
 }
 
-void QuicTransportStreamImpl::WriteOnCurrentThread(uint8_t* data,
-                                                   size_t length) {
-  bool result = stream_->Write(
-      quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length));
+void QuicTransportStreamImpl::WriteOnCurrentThread(std::vector<uint8_t> data) {
+  bool result = stream_->Write(quiche::QuicheStringPiece(
+      reinterpret_cast<char*>(data.data()), data.size()));
   DCHECK(result);
 }
 

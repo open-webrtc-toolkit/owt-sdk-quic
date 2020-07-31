@@ -8,13 +8,13 @@
 #define OWT_QUIC_TRANSPORT_QUIC_TRANSPORT_FACTORY_H_
 
 #include "owt/quic/export.h"
+#include "owt/quic/quic_transport_client_interface.h"
 
 namespace owt {
 namespace quic {
 
-class P2PQuicTransportInterface;
-class P2PQuicPacketTransportInterface;
 class QuicTransportServerInterface;
+class QuicTransportClientInterface;
 
 class OWT_EXPORT QuicTransportFactory {
  public:
@@ -32,6 +32,11 @@ class OWT_EXPORT QuicTransportFactory {
           secret_path /*, std::vector<std::string> accepted_origins*/) = 0;
   virtual void ReleaseQuicTransportServer(
       const QuicTransportServerInterface* server) = 0;
+  virtual QuicTransportClientInterface* CreateQuicTransportClient(
+      const char* url) = 0;
+  virtual QuicTransportClientInterface* CreateQuicTransportClient(
+      const char* url,
+      const QuicTransportClientInterface::Parameters& parameters) = 0;
 };
 }  // namespace quic
 }  // namespace owt

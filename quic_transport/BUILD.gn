@@ -2,63 +2,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-source_set("owt_deps_quic") {
-  # This target is similar as //src/third_party/openscreen/src/third_party/chromium_quic/BUILD.gn.
-  sources = [
-    "//net/quic/platform/impl/quic_default_proof_providers_impl.cc",
-    "//net/quic/platform/impl/quic_default_proof_providers_impl.h",
-    "//net/third_party/quiche/src/quic/core/chlo_extractor.cc",
-    "//net/third_party/quiche/src/quic/core/chlo_extractor.h",
-    "//net/third_party/quiche/src/quic/core/quic_dispatcher.cc",
-    "//net/third_party/quiche/src/quic/core/quic_dispatcher.h",
-    "//net/third_party/quiche/src/quic/core/quic_time_wait_list_manager.cc",
-    "//net/third_party/quiche/src/quic/core/quic_time_wait_list_manager.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_connection_helper.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_connection_helper.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_crypto_helpers.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_dispatcher.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_dispatcher.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_endpoint.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_endpoint.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_factory.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_factory.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_packet_writer.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_packet_writer.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_session.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_session.h",
-    "//net/third_party/quiche/src/quic/quartc/quartc_stream.cc",
-    "//net/third_party/quiche/src/quic/quartc/quartc_stream.h",
-    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.cc",
-    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h",
-    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.cc",
-    "//net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.h",
-    "//net/tools/quic/quic_simple_server_packet_writer.cc",
-    "//net/tools/quic/quic_simple_server_packet_writer.h",
-    "//net/tools/quic/quic_simple_server_socket.cc",
-    "//net/tools/quic/quic_simple_server_socket.h",
-  ]
-  include_dirs = [ "//" ]
+import("//testing/test.gni")
+
+source_set("owt_quic_transport_impl") {
   deps = [
     "//base",
-    "//third_party/boringssl",
-    "//url",
-  ]
-  configs += [ "//third_party/protobuf:protobuf_config" ]
-}
-
-shared_library("owt_quic_transport") {
-  deps = [
-    ":owt_deps_quic",
     "//net",
+    "//net:simple_quic_tools",
+    "//net/third_party/quiche:simple_quic_tools_core",
     "//third_party/boringssl",
   ]
   sources = [
     "api/owt/quic/quic_definitions.h",
+    "api/owt/quic/quic_transport_client_interface.h",
     "api/owt/quic/quic_transport_factory.h",
     "api/owt/quic/quic_transport_server_interface.h",
     "impl/quic_transport_factory_impl.cc",
     "impl/quic_transport_factory_impl.h",
+    "impl/quic_transport_owt_client_impl.cc",
+    "impl/quic_transport_owt_client_impl.h",
     "impl/quic_transport_owt_server_dispatcher.cc",
     "impl/quic_transport_owt_server_dispatcher.h",
     "impl/quic_transport_owt_server_impl.cc",
@@ -74,6 +36,26 @@ shared_library("owt_quic_transport") {
   ]
 
   defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
+}
 
-  #complete_static_lib = true
+shared_library("owt_quic_transport") {
+  deps = [ ":owt_quic_transport_impl" ]
+}
+
+test("owt_quic_transport_tests") {
+  testonly = true
+  sources = [
+    "//net/test/run_all_unittests.cc",
+    "impl/tests/quic_transport_owt_end_to_end_test.cc",
+  ]
+  configs += [ "//build/config:precompiled_headers" ]
+  deps = [
+    ":owt_quic_transport_impl",
+    "//net:quic_test_tools",
+    "//net:test_support",
+    "//testing/gmock",
+    "//testing/gtest",
+  ]
+  include_dirs = [ "api" ]
+  defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
 }

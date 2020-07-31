@@ -87,7 +87,11 @@ void QuicTransportOwtServerSession::OnIncomingDataStream(
 }
 
 void QuicTransportOwtServerSession::OnCanCreateNewOutgoingStream(
-    bool unidirectional) {}
+    bool unidirectional) {
+  if (visitor_) {
+    visitor_->OnCanCreateNewOutgoingStream(unidirectional);
+  }
+}
 
 void QuicTransportOwtServerSession::SetVisitor(
     owt::quic::QuicTransportSessionInterface::Visitor* visitor) {
@@ -120,6 +124,12 @@ bool QuicTransportOwtServerSession::ProcessPath(const GURL& url) {
 void QuicTransportOwtServerSession::OnMessageReceived(
     quiche::QuicheStringPiece message) {
   LOG(INFO) << "Received message.";
+}
+
+const ConnectionStats& QuicTransportOwtServerSession::GetStats() {
+  const ::quic::QuicConnectionStats& stats = connection()->GetStats();
+  stats_.estimated_bandwidth = stats.estimated_bandwidth.ToBitsPerSecond();
+  return stats_;
 }
 }  // namespace quic
 }  // namespace owt
