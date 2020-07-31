@@ -52,8 +52,9 @@ void QuicTransportStreamImpl::OnCanRead() {
   }
 }
 void QuicTransportStreamImpl::OnFinRead() {
-  LOG(INFO) << "OnFinRead.";
-  // TODO:
+  if (visitor_) {
+    visitor_->OnFinRead();
+  }
 }
 void QuicTransportStreamImpl::OnCanWrite() {
   if (visitor_) {

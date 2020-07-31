@@ -22,6 +22,8 @@ class OWT_EXPORT QuicTransportStreamInterface {
     virtual void OnCanRead() = 0;
     // Called when stream is ready to write.
     virtual void OnCanWrite() = 0;
+    // Called when final incoming data is read.
+    virtual void OnFinRead() = 0;
   };
   virtual ~QuicTransportStreamInterface() = default;
   // QUIC stream ID.

@@ -42,6 +42,7 @@ class StreamMockVisitor : public QuicTransportStreamInterface::Visitor {
  public:
   MOCK_METHOD0(OnCanRead, void());
   MOCK_METHOD0(OnCanWrite, void());
+  MOCK_METHOD0(OnFinRead, void());
 };
 
 // A clock that only mocks out WallNow(), but uses real Now() and
