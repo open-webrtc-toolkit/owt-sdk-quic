@@ -7,6 +7,7 @@ import("//testing/test.gni")
 
 source_set("owt_quic_transport_impl") {
   deps = [
+    ":generate_version_info",
     "//base",
     "//net",
     "//net:simple_quic_tools",
@@ -18,6 +19,7 @@ source_set("owt_quic_transport_impl") {
     "api/owt/quic/quic_transport_client_interface.h",
     "api/owt/quic/quic_transport_factory.h",
     "api/owt/quic/quic_transport_server_interface.h",
+    "api/owt/quic/version.h",
     "impl/quic_transport_factory_impl.cc",
     "impl/quic_transport_factory_impl.h",
     "impl/quic_transport_owt_client_impl.cc",
@@ -30,6 +32,7 @@ source_set("owt_quic_transport_impl") {
     "impl/quic_transport_owt_server_session.h",
     "impl/quic_transport_stream_impl.cc",
     "impl/quic_transport_stream_impl.h",
+    "impl/version.cc",
   ]
   include_dirs = [
     "./",
@@ -45,7 +48,7 @@ if (is_win) {
     template_file = "resources/owt_version.rc.version"
     sources = [
       "$target_gen_dir/lastchange",
-      "resources/version.rc",
+      "VERSION",
     ]
     output = "$target_gen_dir/owt_quic_transport_dll_version.rc"
   }
@@ -62,6 +65,16 @@ action("update_last_change") {
     rebase_path("$target_gen_dir/lastchange"),
   ]
   outputs = [ "$target_gen_dir/lastchange" ]
+}
+
+process_version("generate_version_info") {
+  deps = [ ":update_last_change" ]
+  template_file = "impl/version_info_values.h.template"
+  sources = [
+    "$target_gen_dir/lastchange",
+    "VERSION",
+  ]
+  output = "$target_gen_dir/version_info_values.h"
 }
 
 shared_library("owt_quic_transport") {
