@@ -37,6 +37,22 @@ Some manually changes to Chromium code are needed before building SDK.
 
 1. Add `"//owt/quic_transport:owt_quic_transport",` to `BUILD.gn`, after line 89.
 1. Remove line 63 and 64 from `net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h`.
+1. Create a file `gclient_args.gni` in `build/config` with following code.
+
+```
+# Generated from 'DEPS'
+build_with_chromium = true
+checkout_android = false
+checkout_android_native_support = false
+checkout_ios_webkit = false
+checkout_nacl = true
+checkout_oculus_sdk = false
+checkout_openxr = false
+checkout_aemu = false
+checkout_google_benchmark = false
+```
+
+Since we checked out code to `src/owt`, gclient cannot find buildtools under this directory. We need to add an environment variable `CHROMIUM_BUILDTOOLS_PATH`. Its value should be `<dir of .gclient file>/src/buildtools`.
 
 ## Build SDK
 
