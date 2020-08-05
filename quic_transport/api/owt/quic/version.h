@@ -11,9 +11,10 @@ namespace owt {
 namespace quic {
 
 class Version {
-  // Get current product version number.
+ public:
+  /// Get current product version number.
   static const char* VersionNumber();
-  // Get last commit hash.
+  /// Get last commit hash.
   static const char* LastChange();
 };
 
