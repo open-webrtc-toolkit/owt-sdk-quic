@@ -1,0 +1,53 @@
+# Building OWT QUIC SDK
+
+## System requirements
+
+- At least 50GB of free disk space.
+- High speed network connection.
+- Windows 10 for Windows build, or Ubuntu 18.04 for Ubuntu build.
+
+## Install dependencies
+
+Please follow [Chromium Windows build instruction](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/windows_build_instructions.md) or [Chromium Linux build instruction](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/linux/build_instructions.md) to setup system and install `depot_tools`.
+
+## Get the code
+
+Create a new directory for the check out, and create a `.gclient` file in this directory. Add following code to `.gclient` file.
+
+```
+solutions = [
+  { "name"        : "src/owt",
+    "url"         : "https://gitlab.devtools.intel.com/open-webrtc-toolkit/owt-sdk-quic.git",
+    "deps_file"   : "DEPS",
+    "managed"     : False,
+    "custom_deps" : {
+    },
+    "custom_vars": {},
+  },
+]
+```
+
+Run `gclient sync` to check out SDK code, Chromium code, and other dependencies. It may take one or two hours if your network connection is not fast enough.
+
+You will see a `src` directory after sync completes. Switch to the `src` directory for following steps.
+
+## Additional changes
+
+Some manually changes to Chromium code are needed before building SDK.
+
+1. Add `"//owt/quic_transport:owt_quic_transport",` to `BUILD.gn`, after line 89.
+1. Remove line 63 and 64 from `net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h`.
+
+## Build SDK
+
+Run `gn gen out/debug` to generate ninja files, or `gn args out/debug` to configure GN arguments. For debug version, it may look like this
+```
+is_debug=true
+is_component_build=true
+```
+
+Then run `ninja -C out/debug/ owt_quic_transport` to build the SDK or `ninja -C out/debug/ owt_quic_transport_tests` for end to end tests.
+
+## Certificates
+
+Encryption is mandatory for QUIC connections. Certificate and key are hard coded in line 32 to 35 of `owt/quic_transport/impl/quic_transport_factory_impl.cc`. You may generate a testing certificate by running `net/tools/quic/certs/generate-certs.sh`. It valids for 72 hours.
