@@ -5,7 +5,7 @@
 import("//chrome/process_version_rc_template.gni")
 import("//testing/test.gni")
 
-source_set("owt_quic_transport_impl") {
+static_library("owt_quic_transport_impl") {
   deps = [
     ":generate_version_info",
     "//base",
@@ -40,6 +40,8 @@ source_set("owt_quic_transport_impl") {
   ]
 
   defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
+
+  complete_static_lib=true
 }
 
 if (is_win) {
@@ -88,6 +90,7 @@ test("owt_quic_transport_tests") {
   testonly = true
   sources = [
     "//net/test/run_all_unittests.cc",
+    "impl/quic_transport_factory_impl_unittest.cc",
     "impl/tests/quic_transport_owt_end_to_end_test.cc",
     "impl/version_unittest.cc",
   ]
