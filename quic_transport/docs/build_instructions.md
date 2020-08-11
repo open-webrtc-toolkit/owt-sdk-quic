@@ -36,7 +36,6 @@ You will see a `src` directory after sync completes. Switch to the `src` directo
 Some manually changes to Chromium code are needed before building SDK.
 
 1. Add `"//owt/quic_transport:owt_quic_transport",` to `BUILD.gn`, after line 89.
-1. Remove line 63 and 64 from `net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h`.
 1. Create a file `gclient_args.gni` in `build/config` with following code.
 
 ```
@@ -60,6 +59,7 @@ Run `gn gen out/debug` to generate ninja files, or `gn args out/debug` to config
 ```
 is_debug=true
 is_component_build=true
+symbol_level=1
 ```
 
 Then run `ninja -C out/debug/ owt_quic_transport` to build the SDK or `ninja -C out/debug/ owt_quic_transport_tests` for end to end tests.
