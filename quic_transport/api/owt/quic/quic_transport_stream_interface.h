@@ -38,6 +38,8 @@ class OWT_EXPORT QuicTransportStreamInterface {
   virtual size_t ReadableBytes() const = 0;
   // Close the stream, send FIN to remote side.
   virtual void Close() = 0;
+  // Bytes of data buffered.
+  virtual uint64_t BufferedDataBytes() const = 0;
 };
 }  // namespace quic
 }  // namespace owt
