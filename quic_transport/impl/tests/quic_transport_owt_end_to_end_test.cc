@@ -225,7 +225,7 @@ TEST_F(QuicTransportOwtEndToEndTest, EchoBidirectionalStream) {
   for (size_t i = 0; i < data_size; i++) {
     data[i] = i;
   }
-  stream->Write(data, data_size);
+  EXPECT_EQ(stream->Write(data, data_size), data_size);
   EXPECT_CALL(stream_visitor, OnCanRead()).WillOnce(StopRunning());
   Run();
   EXPECT_EQ(stream->ReadableBytes(), data_size);
@@ -250,7 +250,7 @@ TEST_F(QuicTransportOwtEndToEndTest, EchoUnidirectionalStream) {
   for (size_t i = 0; i < data_size; i++) {
     data[i] = i;
   }
-  stream->Write(data, data_size);
+  EXPECT_EQ(stream->Write(data, data_size), data_size);
   // For unidirectional streams, QuicTransportSimpleServer echos after stream is
   // closed.
   stream->Close();
