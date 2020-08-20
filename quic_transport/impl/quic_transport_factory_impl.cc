@@ -26,17 +26,6 @@ QuicTransportFactory* QuicTransportFactory::Create() {
   return new QuicTransportFactoryImpl();
 }
 
-std::unique_ptr<::quic::ProofSource> CreateProofSource() {
-  auto proof_source = std::make_unique<net::ProofSourceChromium>();
-  proof_source->Initialize(
-      base::FilePath("/home/jianjunz/Documents/certs/"
-                     "jianjunz-nuc-ubuntu.sh.intel.com.untrust.crt"),
-      base::FilePath("/home/jianjunz/Documents/certs/"
-                     "jianjunz-nuc-ubuntu.sh.intel.com.untrust.pkcs8"),
-      base::FilePath());
-  return proof_source;
-}
-
 QuicTransportFactoryImpl::QuicTransportFactoryImpl()
     : io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")) {
   base::Thread::Options options;
@@ -51,10 +40,17 @@ QuicTransportFactoryImpl::~QuicTransportFactoryImpl() = default;
 QuicTransportServerInterface*
 QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
                                                     const char* cert_path,
-                                                    const char* key_path,
-                                                    const char* secret_path) {
+                                                    const char* key_path) {
+  auto proof_source = std::make_unique<net::ProofSourceChromium>();
+  if (!proof_source->Initialize(base::FilePath::FromUTF8Unsafe(cert_path),
+                                base::FilePath::FromUTF8Unsafe(key_path),
+                                base::FilePath())) {
+    LOG(ERROR) << "Failed to initialize proof source.";
+    return nullptr;
+  }
   return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
-                                        CreateProofSource(), io_thread_.get());
+                                        std::move(proof_source),
+                                        io_thread_.get());
 }
 
 void QuicTransportFactoryImpl::ReleaseQuicTransportServer(

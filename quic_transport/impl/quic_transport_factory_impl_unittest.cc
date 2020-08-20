@@ -17,7 +17,7 @@ namespace test {
 TEST(DISABLED_QuicTransportFactoryImplTest, CreateQuicTransportServer) {
   auto* factory = QuicTransportFactory::Create();
   EXPECT_TRUE(factory != nullptr);
-  auto* server = factory->CreateQuicTransportServer(20001, "", "", "");
+  auto* server = factory->CreateQuicTransportServer(20001, "", "");
   EXPECT_TRUE(server != nullptr);
 }
 

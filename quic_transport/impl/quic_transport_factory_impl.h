@@ -39,9 +39,7 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
   QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_path,
-      const char* key_path,
-      const char* secret_path /*, std::vector<std::string> accepted_origins*/)
-      override;
+      const char* key_path) override;
   void ReleaseQuicTransportServer(
       const QuicTransportServerInterface* server) override;
   QuicTransportClientInterface* CreateQuicTransportClient(

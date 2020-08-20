@@ -68,4 +68,4 @@ Then run `ninja -C out/debug/ owt_quic_transport` to build the SDK or `ninja -C 
 
 ## Certificates
 
-Encryption is mandatory for QUIC connections. Certificate and key are hard coded in line 32 to 35 of `owt/quic_transport/impl/quic_transport_factory_impl.cc`. You may generate a testing certificate by running `net/tools/quic/certs/generate-certs.sh`. It valids for 72 hours.
+Encryption is mandatory for QUIC connections. You may generate a testing certificate by running `net/tools/quic/certs/generate-certs.sh`. It valids for 72 hours.
