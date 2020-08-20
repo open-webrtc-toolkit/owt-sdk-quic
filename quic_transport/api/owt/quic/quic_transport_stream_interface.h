@@ -29,8 +29,9 @@ class OWT_EXPORT QuicTransportStreamInterface {
   // QUIC stream ID.
   virtual uint32_t Id() const = 0;
   virtual void SetVisitor(Visitor* visitor) = 0;
-  // Write or buffer data.
-  virtual void Write(uint8_t* data, size_t length) = 0;
+  // Write or buffer data. Returns the length of data written or buffered.
+  // Current implementation always returns 0 or `length`.
+  virtual size_t Write(uint8_t* data, size_t length) = 0;
   // Reads at most `length` bytes into `data` and returns the number of bytes
   // actually read.
   virtual size_t Read(uint8_t* data, size_t length) = 0;

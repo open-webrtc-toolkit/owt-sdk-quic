@@ -5,6 +5,7 @@
  */
 
 #include "impl/quic_transport_stream_impl.h"
+#include "base/synchronization/waitable_event.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
 
 namespace owt {
@@ -66,13 +67,24 @@ uint32_t QuicTransportStreamImpl::Id() const {
   return stream_->id();
 }
 
-void QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
-  std::vector<uint8_t> data_copy(data, data + length);
+size_t QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
   CHECK(runner_);
+  bool result;
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
   runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportStreamImpl::WriteOnCurrentThread,
-                     base::Unretained(this), std::move(data_copy)));
+      base::BindOnce(
+          [](QuicTransportStreamImpl* stream, uint8_t* data, size_t& length,
+             bool& result, base::WaitableEvent* event) {
+            result = stream->stream_->Write(quiche::QuicheStringPiece(
+                reinterpret_cast<char*>(data), length));
+            event->Signal();
+          },
+          base::Unretained(this), base::Unretained(data), std::ref(length),
+          std::ref(result), base::Unretained(&done)));
+  done.Wait();
+  return result ? length : 0;
 }
 
 void QuicTransportStreamImpl::Close() {
