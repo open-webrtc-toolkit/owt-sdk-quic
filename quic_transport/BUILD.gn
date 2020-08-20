@@ -5,7 +5,15 @@
 import("//chrome/process_version_rc_template.gni")
 import("//testing/test.gni")
 
-static_library("owt_quic_transport_impl") {
+config("owt_quic_transport_config") {
+  include_dirs = [
+    "./",
+    "api",
+  ]
+  defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
+}
+
+source_set("owt_quic_transport_impl") {
   deps = [
     ":generate_version_info",
     "//base",
@@ -34,14 +42,7 @@ static_library("owt_quic_transport_impl") {
     "impl/quic_transport_stream_impl.h",
     "impl/version.cc",
   ]
-  include_dirs = [
-    "./",
-    "api",
-  ]
-
-  defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
-
-  complete_static_lib = true
+  configs += [ ":owt_quic_transport_config" ]
 }
 
 if (is_win) {
@@ -81,6 +82,7 @@ process_version("generate_version_info") {
 
 shared_library("owt_quic_transport") {
   deps = [ ":owt_quic_transport_impl" ]
+  configs += [ ":owt_quic_transport_config" ]
   if (is_win) {
     deps += [ ":owt_quic_transport_dll_version" ]
     sources = [ "impl/dllmain.cc" ]
@@ -95,7 +97,10 @@ test("owt_quic_transport_tests") {
     "impl/tests/quic_transport_owt_end_to_end_test.cc",
     "impl/version_unittest.cc",
   ]
-  configs += [ "//build/config:precompiled_headers" ]
+  configs += [
+    "//build/config:precompiled_headers",
+    ":owt_quic_transport_config",
+  ]
   deps = [
     ":owt_quic_transport_impl",
     "//net:quic_test_tools",
@@ -103,6 +108,22 @@ test("owt_quic_transport_tests") {
     "//testing/gmock",
     "//testing/gtest",
   ]
-  include_dirs = [ "api" ]
-  defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
+}
+
+if (is_win) {
+  test("owt_quic_transport_dll_tests") {
+    testonly = true
+    sources = [
+      "//net/test/run_all_unittests.cc",
+      "impl/dllmain_unittest.cc",
+    ]
+    deps = [
+      ":owt_quic_transport",
+      "//net:quic_test_tools",
+      "//net:test_support",
+      "//testing/gmock",
+      "//testing/gtest",
+    ]
+    configs += [ ":owt_quic_transport_config" ]
+  }
 }
