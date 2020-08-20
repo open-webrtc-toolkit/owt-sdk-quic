@@ -58,9 +58,11 @@ Since we checked out code to `src/owt`, gclient cannot find buildtools under thi
 Run `gn gen out/debug` to generate ninja files, or `gn args out/debug` to configure GN arguments. For debug version, it may look like this
 ```
 is_debug=true
-is_component_build=true
+is_component_build=false
 symbol_level=1
 ```
+
+You may want to set `is_component_build` to `false` in order to get a single shared library, but you can also set it to `true` to reduce the compiling time for debugging. `symbol_level` is set to `1` since `2` is conflicted with `is_component_build=false`.
 
 Then run `ninja -C out/debug/ owt_quic_transport` to build the SDK or `ninja -C out/debug/ owt_quic_transport_tests` for end to end tests.
 

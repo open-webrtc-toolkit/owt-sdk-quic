@@ -38,20 +38,10 @@ std::unique_ptr<::quic::ProofSource> CreateProofSource() {
 }
 
 QuicTransportFactoryImpl::QuicTransportFactoryImpl()
-    : exit_manager_(std::make_unique<base::AtExitManager>()),
-      io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")),
-      connection_helper_(std::make_unique<net::QuicChromiumConnectionHelper>(
-          ::quic::QuicChromiumClock::GetInstance(),
-          ::quic::QuicRandom::GetInstance())),
-      compressed_certs_cache_(std::make_unique<
-                              ::quic::QuicCompressedCertsCache>(
-          ::quic::QuicCompressedCertsCache::kQuicCompressedCertsCacheSize)) {
+    : io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")) {
   base::Thread::Options options;
   options.message_pump_type = base::MessagePumpType::IO;
   io_thread_->StartWithOptions(options);
-  alarm_factory_ = std::make_unique<net::QuicChromiumAlarmFactory>(
-      io_thread_->task_runner().get(),
-      ::quic::QuicChromiumClock::GetInstance());
   // TODO: Move logging settings to somewhere else.
   Init();
 }

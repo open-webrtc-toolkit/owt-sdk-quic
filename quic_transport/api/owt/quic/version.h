@@ -7,10 +7,12 @@
 #ifndef OWT_QUIC_TRANSPORT_VERSION_H_
 #define OWT_QUIC_TRANSPORT_VERSION_H_
 
+#include "export.h"
+
 namespace owt {
 namespace quic {
 
-class Version {
+class OWT_EXPORT Version {
  public:
   /// Get current product version number.
   static const char* VersionNumber();
