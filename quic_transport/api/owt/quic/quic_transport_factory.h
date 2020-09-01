@@ -28,9 +28,13 @@ class OWT_EXPORT QuicTransportFactory {
   virtual QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_path,
-      const char* key_path/*,
-      const char* secret_path,
+      const char* key_path,
+      const char* secret_path/*,
       std::vector<std::string> accepted_origins*/) = 0;
+  virtual QuicTransportServerInterface* CreateQuicTransportServer(
+      int port,
+      const char* pfx_path,
+      const char* password) = 0;
   virtual void ReleaseQuicTransportServer(
       const QuicTransportServerInterface* server) = 0;
   virtual QuicTransportClientInterface* CreateQuicTransportClient(

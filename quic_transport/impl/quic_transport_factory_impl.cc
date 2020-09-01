@@ -9,6 +9,7 @@
 #include "base/bind.h"
 #include "base/logging.h"
 #include "base/threading/thread.h"
+#include "impl/proof_source_owt.h"
 #include "impl/quic_transport_owt_client_impl.h"
 #include "impl/quic_transport_owt_server_impl.h"
 #include "net/quic/crypto/proof_source_chromium.h"
@@ -40,11 +41,27 @@ QuicTransportFactoryImpl::~QuicTransportFactoryImpl() = default;
 QuicTransportServerInterface*
 QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
                                                     const char* cert_path,
-                                                    const char* key_path) {
+                                                    const char* key_path,
+                                                    const char* secret_path) {
   auto proof_source = std::make_unique<net::ProofSourceChromium>();
   if (!proof_source->Initialize(base::FilePath::FromUTF8Unsafe(cert_path),
                                 base::FilePath::FromUTF8Unsafe(key_path),
                                 base::FilePath())) {
+    LOG(ERROR) << "Failed to initialize proof source.";
+    return nullptr;
+  }
+  return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
+                                        std::move(proof_source),
+                                        io_thread_.get());
+}
+
+QuicTransportServerInterface*
+QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
+                                                    const char* pfx_path,
+                                                    const char* password) {
+  auto proof_source = std::make_unique<ProofSourceOwt>();
+  if (!proof_source->Initialize(base::FilePath::FromUTF8Unsafe(pfx_path),
+                                std::string(password))) {
     LOG(ERROR) << "Failed to initialize proof source.";
     return nullptr;
   }

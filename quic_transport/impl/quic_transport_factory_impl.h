@@ -35,11 +35,15 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
  public:
   QuicTransportFactoryImpl();
   ~QuicTransportFactoryImpl() override;
-  // `accepted_origins` is removed at this time because ABI compatible issue.
   QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_path,
-      const char* key_path) override;
+      const char* key_path,
+      const char* secret_path) override;
+  QuicTransportServerInterface* CreateQuicTransportServer(
+      int port,
+      const char* pfx_path,
+      const char* password) override;
   void ReleaseQuicTransportServer(
       const QuicTransportServerInterface* server) override;
   QuicTransportClientInterface* CreateQuicTransportClient(
