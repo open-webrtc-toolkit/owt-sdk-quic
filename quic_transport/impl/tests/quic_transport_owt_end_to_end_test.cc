@@ -87,7 +87,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
       : io_thread_(std::make_unique<base::Thread>(
             "quic_transport_end_to_end_test_io_thread")),
         factory_(std::unique_ptr<QuicTransportFactory>(
-            QuicTransportFactory::Create())),
+            QuicTransportFactory::CreateForTesting())),
         port_(0),
         origin_(url::Origin::Create(GURL{"https://example.org"})) {
     base::Thread::Options options;

@@ -22,6 +22,9 @@ class OWT_EXPORT QuicTransportFactory {
 
   /// Create a QuicTransportFactory.
   static QuicTransportFactory* Create();
+  /// Create a QuicTransportFactory for testing. It will not initialize
+  /// AtExitManager since testing tools will initialize one.
+  static QuicTransportFactory* CreateForTesting();
   // `accepted_origins` is removed at this time because ABI compatible issue.
   // Ownership of returned value is moved to caller. Returns nullptr if creation
   // is failed.
