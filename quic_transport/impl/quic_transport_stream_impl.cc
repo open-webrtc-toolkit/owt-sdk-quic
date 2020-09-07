@@ -34,8 +34,15 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
 
 QuicTransportStreamImpl::QuicTransportStreamImpl(
     ::quic::QuicTransportStream* stream,
-    base::TaskRunner* runner)
-    : stream_(stream), runner_(runner), visitor_(nullptr) {
+    base::TaskRunner* runner,
+    base::TaskRunner* event_runner)
+    : stream_(stream),
+      runner_(runner),
+      event_runner_(event_runner),
+      visitor_(nullptr) {
+  CHECK(stream_);
+  CHECK(runner_);
+  CHECK(event_runner_);
   stream_->set_visitor(std::make_unique<VisitorAdapter>(this));
 }
 
@@ -47,16 +54,36 @@ void QuicTransportStreamImpl::SetVisitor(
 }
 
 void QuicTransportStreamImpl::OnCanRead() {
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportStreamImpl::OnCanReadOnCurrentThread,
+                     weak_factory_.GetWeakPtr()));
+}
+
+void QuicTransportStreamImpl::OnFinRead() {
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportStreamImpl::OnFinReadOnCurrentThread,
+                     weak_factory_.GetWeakPtr()));
+}
+void QuicTransportStreamImpl::OnCanWrite() {
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportStreamImpl::OnCanWriteOnCurrentThread,
+                     weak_factory_.GetWeakPtr()));
+}
+
+void QuicTransportStreamImpl::OnCanReadOnCurrentThread() {
   if (visitor_) {
     visitor_->OnCanRead();
   }
 }
-void QuicTransportStreamImpl::OnFinRead() {
+void QuicTransportStreamImpl::OnFinReadOnCurrentThread() {
   if (visitor_) {
     visitor_->OnFinRead();
   }
 }
-void QuicTransportStreamImpl::OnCanWrite() {
+void QuicTransportStreamImpl::OnCanWriteOnCurrentThread() {
   if (visitor_) {
     visitor_->OnCanWrite();
   }

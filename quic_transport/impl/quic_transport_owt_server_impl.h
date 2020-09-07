@@ -42,7 +42,8 @@ class QuicTransportOwtServerImpl : public QuicTransportServerInterface,
       int port,
       std::vector<url::Origin> accepted_origins,
       std::unique_ptr<::quic::ProofSource> proof_source,
-      base::Thread* io_thread);
+      base::Thread* io_thread,
+      base::Thread* event_thread);
   ~QuicTransportOwtServerImpl() override;
   int Start() override;
   void Stop() override;
@@ -75,11 +76,12 @@ class QuicTransportOwtServerImpl : public QuicTransportServerInterface,
   std::unique_ptr<net::UDPServerSocket> socket_;
   net::IPEndPoint server_address_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
 
   // Results of the potentially asynchronous read operation.
   scoped_refptr<net::IOBufferWithSize> read_buffer_;
   net::IPEndPoint client_address_;
-  
+
   QuicTransportServerInterface::Visitor* visitor_;
 
   base::WeakPtrFactory<QuicTransportOwtServerImpl> weak_factory_{this};

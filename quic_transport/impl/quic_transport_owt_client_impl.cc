@@ -15,26 +15,40 @@ namespace quic {
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
-    base::Thread* thread)
+    base::Thread* io_thread,
+    base::Thread* event_thread)
     : QuicTransportOwtClientImpl(url,
                                  origin,
                                  net::QuicTransportClient::Parameters(),
-                                 thread) {}
+                                 io_thread,
+                                 event_thread) {}
 
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
     const net::QuicTransportClient::Parameters& parameters,
-    base::Thread* thread)
-    : QuicTransportOwtClientImpl(url, origin, parameters, nullptr, thread) {}
+    base::Thread* io_thread,
+    base::Thread* event_thread)
+    : QuicTransportOwtClientImpl(url,
+                                 origin,
+                                 parameters,
+                                 nullptr,
+                                 io_thread,
+                                 event_thread) {}
 
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
     const net::QuicTransportClient::Parameters& parameters,
     net::URLRequestContext* context,
-    base::Thread* io_thread)
-    : url_(url), origin_(origin), parameters_(parameters), context_(context) {
+    base::Thread* io_thread,
+    base::Thread* event_thread)
+    : url_(url),
+      origin_(origin),
+      parameters_(parameters),
+      event_runner_(event_thread->task_runner()),
+      context_(context) {
+  CHECK(event_runner_);
   if (!io_thread) {
     LOG(INFO) << "Create a new IO stream.";
     io_thread_owned_ =
@@ -178,7 +192,8 @@ QuicTransportStreamInterface*
 QuicTransportOwtClientImpl::OwtStreamForNativeStream(
     ::quic::QuicTransportStream* stream) {
   std::unique_ptr<QuicTransportStreamImpl> stream_impl =
-      std::make_unique<QuicTransportStreamImpl>(stream, task_runner_.get());
+      std::make_unique<QuicTransportStreamImpl>(stream, task_runner_.get(),
+                                                event_runner_.get());
   QuicTransportStreamImpl* stream_ptr(stream_impl.get());
   streams_.push_back(std::move(stream_impl));
   return stream_ptr;

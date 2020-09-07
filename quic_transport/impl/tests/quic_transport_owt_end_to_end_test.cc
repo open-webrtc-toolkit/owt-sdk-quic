@@ -86,6 +86,8 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   QuicTransportOwtEndToEndTest()
       : io_thread_(std::make_unique<base::Thread>(
             "quic_transport_end_to_end_test_io_thread")),
+        event_thread_(std::make_unique<base::Thread>(
+            "quic_transport_end_to_end_event_thread")),
         factory_(std::unique_ptr<QuicTransportFactory>(
             QuicTransportFactory::CreateForTesting())),
         port_(0),
@@ -93,6 +95,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
     base::Thread::Options options;
     options.message_pump_type = base::MessagePumpType::IO;
     io_thread_->StartWithOptions(options);
+    event_thread_->StartWithOptions(options);
   }
 
   ~QuicTransportOwtEndToEndTest() override {
@@ -144,7 +147,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
         ::quic::QuicWallTime::FromUNIXSeconds(1591389300));
     return std::unique_ptr<QuicTransportClientInterface>(
         new QuicTransportOwtClientImpl(url, origin_, parameters, context_.get(),
-                                       io_thread_.get()));
+                                       io_thread_.get(), event_thread_.get()));
   }
 
   void StartServer() {
@@ -177,6 +180,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
 
  protected:
   std::unique_ptr<base::Thread> io_thread_;
+  std::unique_ptr<base::Thread> event_thread_;
   std::unique_ptr<QuicTransportFactory> factory_;
   std::unique_ptr<net::QuicTransportSimpleServer> server_;
   int port_;

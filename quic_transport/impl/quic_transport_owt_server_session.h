@@ -45,7 +45,8 @@ class QuicTransportOwtServerSession
       const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicCompressedCertsCache* compressed_certs_cache,
       std::vector<url::Origin> accepted_origins,
-      base::TaskRunner* runner);
+      base::TaskRunner* runner,
+      base::TaskRunner* event_runner);
   ~QuicTransportOwtServerSession() override;
 
   // Override QuicTransportSessionInterface.
@@ -71,6 +72,7 @@ class QuicTransportOwtServerSession
   owt::quic::QuicTransportSessionInterface::Visitor* visitor_;
   std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
   base::TaskRunner* runner_;
+  base::TaskRunner* event_runner_;
   ConnectionStats stats_;
   base::ThreadChecker thread_checker_;
 };

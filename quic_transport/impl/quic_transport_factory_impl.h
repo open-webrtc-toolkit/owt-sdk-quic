@@ -59,6 +59,7 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
 
   std::unique_ptr<base::AtExitManager> at_exit_manager_;
   std::unique_ptr<base::Thread> io_thread_;
+  std::unique_ptr<base::Thread> event_thread_;
 };
 
 }  // namespace quic

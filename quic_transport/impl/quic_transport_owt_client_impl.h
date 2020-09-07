@@ -23,12 +23,14 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
  public:
   QuicTransportOwtClientImpl(const GURL& url,
                              const url::Origin& origin,
-                             base::Thread* thread);
+                             base::Thread* io_thread,
+                             base::Thread* event_thread);
   QuicTransportOwtClientImpl(
       const GURL& url,
       const url::Origin& origin,
       const net::QuicTransportClient::Parameters& parameters,
-      base::Thread* thread);
+      base::Thread* io_thread,
+      base::Thread* event_thread);
   // `context` could has its user defined wall time, which can be used for
   // certificate verification in testing.
   QuicTransportOwtClientImpl(
@@ -36,7 +38,8 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
       const url::Origin& origin,
       const net::QuicTransportClient::Parameters& parameters,
       net::URLRequestContext* context,
-      base::Thread* io_thread);
+      base::Thread* io_thread,
+      base::Thread* event_thread);
   ~QuicTransportOwtClientImpl() override;
 
   void SetVisitor(QuicTransportClientInterface::Visitor* visitor) override;
@@ -71,6 +74,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   url::Origin origin_;
   net::QuicTransportClient::Parameters parameters_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
+  scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
   std::unique_ptr<net::URLRequestContext> context_owned_;
   net::URLRequestContext* context_;
   std::unique_ptr<net::QuicTransportClient> client_;

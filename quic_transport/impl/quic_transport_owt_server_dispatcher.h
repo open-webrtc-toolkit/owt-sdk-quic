@@ -39,7 +39,8 @@ class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
       std::unique_ptr<::quic::QuicAlarmFactory> alarm_factory,
       uint8_t expected_server_connection_id_length,
       std::vector<url::Origin> accepted_origins,
-      base::TaskRunner* runner);
+      base::TaskRunner* task_runner,
+      base::TaskRunner* event_runner);
   void SetVisitor(Visitor* visitor);
 
   ~QuicTransportOwtServerDispatcher() override;
@@ -55,6 +56,7 @@ class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
   std::vector<url::Origin> accepted_origins_;
   Visitor* visitor_;
   base::TaskRunner* runner_;
+  base::TaskRunner* event_runner_;
 };
 }  // namespace quic
 }  // namespace owt
