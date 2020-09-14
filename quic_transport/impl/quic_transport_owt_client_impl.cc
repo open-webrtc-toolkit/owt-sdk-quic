@@ -116,15 +116,19 @@ void QuicTransportOwtClientImpl::SetVisitor(
 }
 
 void QuicTransportOwtClientImpl::OnConnected() {
-  if (visitor_) {
-    visitor_->OnConnected();
-  }
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::FireEvent,
+                     weak_factory_.GetWeakPtr(),
+                     &QuicTransportClientInterface::Visitor::OnConnected));
 }
 
 void QuicTransportOwtClientImpl::OnConnectionFailed() {
-  if (visitor_) {
-    visitor_->OnConnectionFailed();
-  }
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          &QuicTransportOwtClientImpl::FireEvent, weak_factory_.GetWeakPtr(),
+          &QuicTransportClientInterface::Visitor::OnConnectionFailed));
 }
 
 QuicTransportStreamInterface*
@@ -167,11 +171,17 @@ QuicTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
 }
 
 void QuicTransportOwtClientImpl::OnIncomingBidirectionalStreamAvailable() {
-  OnIncomingStreamAvailable(true);
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::OnIncomingStreamAvailable,
+                     weak_factory_.GetWeakPtr(), true));
 }
 
 void QuicTransportOwtClientImpl::OnIncomingUnidirectionalStreamAvailable() {
-  OnIncomingStreamAvailable(false);
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::OnIncomingStreamAvailable,
+                     weak_factory_.GetWeakPtr(), false));
 }
 
 void QuicTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
@@ -197,6 +207,13 @@ QuicTransportOwtClientImpl::OwtStreamForNativeStream(
   QuicTransportStreamImpl* stream_ptr(stream_impl.get());
   streams_.push_back(std::move(stream_impl));
   return stream_ptr;
+}
+
+void QuicTransportOwtClientImpl::FireEvent(
+    std::function<void(QuicTransportClientInterface::Visitor&)> func) {
+  if (visitor_) {
+    func(*visitor_);
+  }
 }
 
 }  // namespace quic

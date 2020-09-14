@@ -7,6 +7,7 @@
 #ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_CLIENT_IMPL_H_
 #define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_CLIENT_IMPL_H_
 
+#include "base/memory/weak_ptr.h"
 #include "base/single_thread_task_runner.h"
 #include "net/quic/quic_transport_client.h"
 #include "owt/quic/quic_transport_client_interface.h"
@@ -68,6 +69,8 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   // This method also adds created stream to `streams_`.
   QuicTransportStreamInterface* OwtStreamForNativeStream(
       ::quic::QuicTransportStream* stream);
+  void FireEvent(
+      std::function<void(QuicTransportClientInterface::Visitor&)> func);
 
   std::unique_ptr<base::Thread> io_thread_owned_;
   GURL url_;
@@ -80,6 +83,8 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   std::unique_ptr<net::QuicTransportClient> client_;
   QuicTransportClientInterface::Visitor* visitor_;
   std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
+
+  base::WeakPtrFactory<QuicTransportOwtClientImpl> weak_factory_{this};
 };
 }  // namespace quic
 }  // namespace owt

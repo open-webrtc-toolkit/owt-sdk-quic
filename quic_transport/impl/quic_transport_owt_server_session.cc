@@ -111,15 +111,37 @@ void QuicTransportOwtServerSession::OnIncomingDataStream(
                                                   event_runner_);
     QuicTransportStreamImpl* stream_ptr(stream_impl.get());
     streams_.push_back(std::move(stream_impl));
-    visitor_->OnIncomingStream(stream_ptr);
+    event_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            [](base::WeakPtr<QuicTransportOwtServerSession> session,
+               QuicTransportStreamImpl* stream_ptr) {
+              if (!session) {
+                return;
+              }
+              if (session->visitor_) {
+                session->visitor_->OnIncomingStream(stream_ptr);
+              }
+            },
+            weak_factory_.GetWeakPtr(), base::Unretained(stream_ptr)));
   }
 }
 
 void QuicTransportOwtServerSession::OnCanCreateNewOutgoingStream(
     bool unidirectional) {
-  if (visitor_) {
-    visitor_->OnCanCreateNewOutgoingStream(unidirectional);
-  }
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](base::WeakPtr<QuicTransportOwtServerSession> session,
+             bool unidirectional) {
+            if (!session) {
+              return;
+            }
+            if (session->visitor_) {
+              session->visitor_->OnCanCreateNewOutgoingStream(unidirectional);
+            }
+          },
+          weak_factory_.GetWeakPtr(), unidirectional));
 }
 
 void QuicTransportOwtServerSession::SetVisitor(

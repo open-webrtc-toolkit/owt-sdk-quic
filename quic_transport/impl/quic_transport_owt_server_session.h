@@ -75,6 +75,7 @@ class QuicTransportOwtServerSession
   base::TaskRunner* event_runner_;
   ConnectionStats stats_;
   base::ThreadChecker thread_checker_;
+  base::WeakPtrFactory<QuicTransportOwtServerSession> weak_factory_{this};
 };
 
 }  // namespace quic
