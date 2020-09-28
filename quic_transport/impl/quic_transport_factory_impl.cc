@@ -24,11 +24,18 @@ namespace owt {
 namespace quic {
 
 QuicTransportFactory* QuicTransportFactory::Create() {
+  QuicTransportFactoryImpl* factory = new QuicTransportFactoryImpl();
+  factory->InitializeAtExitManager();
+  return factory;
+}
+
+QuicTransportFactory* QuicTransportFactory::CreateForTesting() {
   return new QuicTransportFactoryImpl();
 }
 
 QuicTransportFactoryImpl::QuicTransportFactoryImpl()
-    : io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")) {
+    : at_exit_manager_(nullptr),
+      io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")) {
   base::Thread::Options options;
   options.message_pump_type = base::MessagePumpType::IO;
   io_thread_->StartWithOptions(options);
@@ -37,6 +44,10 @@ QuicTransportFactoryImpl::QuicTransportFactoryImpl()
 }
 
 QuicTransportFactoryImpl::~QuicTransportFactoryImpl() = default;
+
+void QuicTransportFactoryImpl::InitializeAtExitManager() {
+  at_exit_manager_ = std::make_unique<base::AtExitManager>();
+}
 
 QuicTransportServerInterface*
 QuicTransportFactoryImpl::CreateQuicTransportServer(int port,

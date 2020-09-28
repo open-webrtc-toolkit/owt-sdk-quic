@@ -35,6 +35,8 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
  public:
   QuicTransportFactoryImpl();
   ~QuicTransportFactoryImpl() override;
+  void InitializeAtExitManager();
+  // `accepted_origins` is removed at this time because ABI compatible issue.
   QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_path,
@@ -55,6 +57,7 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
  private:
   void Init();
 
+  std::unique_ptr<base::AtExitManager> at_exit_manager_;
   std::unique_ptr<base::Thread> io_thread_;
 };
 
