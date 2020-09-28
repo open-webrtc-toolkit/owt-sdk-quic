@@ -40,6 +40,7 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   size_t Read(uint8_t* data, size_t length) override;
   size_t ReadableBytes() const override;
   void Close() override;
+  uint64_t BufferedDataBytes() const override;
 
   // Overrides ::quic::QuicTransportStream::Visitor.
   void OnCanRead() override;

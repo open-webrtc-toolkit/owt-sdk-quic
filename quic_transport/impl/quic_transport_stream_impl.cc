@@ -114,5 +114,9 @@ void QuicTransportStreamImpl::WriteOnCurrentThread(std::vector<uint8_t> data) {
   DCHECK(result);
 }
 
+uint64_t QuicTransportStreamImpl::BufferedDataBytes() const {
+  return stream_->BufferedDataBytes();
+}
+
 }  // namespace quic
 }  // namespace owt
