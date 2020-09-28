@@ -28,6 +28,8 @@ source_set("owt_quic_transport_impl") {
     "api/owt/quic/quic_transport_factory.h",
     "api/owt/quic/quic_transport_server_interface.h",
     "api/owt/quic/version.h",
+    "impl/proof_source_owt.cc",
+    "impl/proof_source_owt.h",
     "impl/quic_transport_factory_impl.cc",
     "impl/quic_transport_factory_impl.h",
     "impl/quic_transport_owt_client_impl.cc",
@@ -96,6 +98,7 @@ test("owt_quic_transport_tests") {
     "impl/quic_transport_factory_impl_unittest.cc",
     "impl/tests/quic_transport_owt_end_to_end_test.cc",
     "impl/version_unittest.cc",
+    "impl/proof_source_owt_unittest.cc",
   ]
   configs += [
     "//build/config:precompiled_headers",

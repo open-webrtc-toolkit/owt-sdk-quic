@@ -23,13 +23,18 @@ class OWT_EXPORT QuicTransportFactory {
   /// Create a QuicTransportFactory.
   static QuicTransportFactory* Create();
   // `accepted_origins` is removed at this time because ABI compatible issue.
-  // Ownership of returned value is moved to caller.
+  // Ownership of returned value is moved to caller. Returns nullptr if creation
+  // is failed.
   virtual QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_path,
       const char* key_path,
-      const char*
-          secret_path /*, std::vector<std::string> accepted_origins*/) = 0;
+      const char* secret_path/*,
+      std::vector<std::string> accepted_origins*/) = 0;
+  virtual QuicTransportServerInterface* CreateQuicTransportServer(
+      int port,
+      const char* pfx_path,
+      const char* password) = 0;
   virtual void ReleaseQuicTransportServer(
       const QuicTransportServerInterface* server) = 0;
   virtual QuicTransportClientInterface* CreateQuicTransportClient(
