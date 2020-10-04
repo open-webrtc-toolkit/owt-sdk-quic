@@ -58,12 +58,13 @@ QuicTransportOwtServerDispatcher::~QuicTransportOwtServerDispatcher() = default;
 std::unique_ptr<QuicSession>
 QuicTransportOwtServerDispatcher::CreateQuicSession(
     QuicConnectionId server_connection_id,
+    const QuicSocketAddress& self_address,
     const QuicSocketAddress& peer_address,
     quiche::QuicheStringPiece /*alpn*/,
     const ParsedQuicVersion& version) {
   auto connection = std::make_unique<QuicConnection>(
-      server_connection_id, peer_address, helper(), alarm_factory(), writer(),
-      /*owns_writer=*/false, Perspective::IS_SERVER,
+      server_connection_id, self_address, peer_address, helper(),
+      alarm_factory(), writer(), /*owns_writer=*/false, Perspective::IS_SERVER,
       ParsedQuicVersionVector{version});
   auto session = std::make_unique<QuicTransportOwtServerSession>(
       connection.release(), /*owns_connection=*/true, this, config(),
