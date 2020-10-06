@@ -45,6 +45,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
 
   void SetVisitor(QuicTransportClientInterface::Visitor* visitor) override;
   void Connect() override;
+  void Close() override;
   QuicTransportStreamInterface* CreateBidirectionalStream() override;
   QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream() override;
 
@@ -62,6 +63,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
 
  private:
   void ConnectOnCurrentThread(base::WaitableEvent* event);
+  void CloseOnCurrentThread(base::WaitableEvent* event);
   QuicTransportStreamInterface* CreateOutgoingStream(bool bidirectional);
   QuicTransportStreamInterface* CreateOutgoingStreamOnCurrentThread(
       bool bidirectional);

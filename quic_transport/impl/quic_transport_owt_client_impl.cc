@@ -73,6 +73,11 @@ QuicTransportOwtClientImpl::~QuicTransportOwtClientImpl() {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::CloseOnCurrentThread,
+                     base::Unretained(this), &done));
+  done.Wait();
+  task_runner_->PostTask(
       FROM_HERE, base::BindOnce(
                      [](std::unique_ptr<net::QuicTransportClient> client,
                         std::unique_ptr<net::URLRequestContext> context,
@@ -99,6 +104,17 @@ void QuicTransportOwtClientImpl::Connect() {
   done.Wait();
 }
 
+void QuicTransportOwtClientImpl::Close() {
+  VLOG(1) << "Closing QuicTransportOwtClient.";
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::CloseOnCurrentThread,
+                     base::Unretained(this), &done));
+  done.Wait();
+}
+
 void QuicTransportOwtClientImpl::ConnectOnCurrentThread(
     base::WaitableEvent* event) {
   CHECK(context_);
@@ -107,6 +123,16 @@ void QuicTransportOwtClientImpl::ConnectOnCurrentThread(
       url_, origin_, this, net::NetworkIsolationKey(origin_, origin_), context_,
       parameters_);
   client_->Connect();
+  event->Signal();
+}
+
+void QuicTransportOwtClientImpl::CloseOnCurrentThread(
+    base::WaitableEvent* event) {
+  if (client_ && client_->session() && client_->session()->connection()) {
+    client_->session()->connection()->CloseConnection(
+        ::quic::QuicErrorCode::QUIC_NO_ERROR, "Close connection.",
+        ::quic::ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
+  }
   event->Signal();
 }
 

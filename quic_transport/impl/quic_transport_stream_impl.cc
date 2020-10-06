@@ -107,8 +107,12 @@ size_t QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
       base::BindOnce(
           [](QuicTransportStreamImpl* stream, uint8_t* data, size_t& length,
              bool& result, base::WaitableEvent* event) {
-            result = stream->stream_->Write(quiche::QuicheStringPiece(
-                reinterpret_cast<char*>(data), length));
+            if (stream->stream_->CanWrite()) {
+              result = stream->stream_->Write(quiche::QuicheStringPiece(
+                  reinterpret_cast<char*>(data), length));
+            } else {
+              result = false;
+            }
             event->Signal();
           },
           base::Unretained(this), base::Unretained(data), std::ref(length),

@@ -13,7 +13,7 @@
 
 namespace owt {
 namespace quic {
-// A client connects to QuicTransportServer.
+// A client manages a connection to a QuicTransportServer.
 class OWT_EXPORT QuicTransportClientInterface {
  public:
   // https://wicg.github.io/web-transport/#dom-quictransportconfiguration-server_certificate_fingerprints.
@@ -37,6 +37,8 @@ class OWT_EXPORT QuicTransportClientInterface {
   virtual void SetVisitor(Visitor* visitor) = 0;
   // Connect to a QUIC transport server. URL is specified during creation.
   virtual void Connect() = 0;
+  // Close QUIC connection with server.
+  virtual void Close() = 0;
   // Create a bidirectional stream.
   virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
   // Create an ougoing unidirectional stream.
