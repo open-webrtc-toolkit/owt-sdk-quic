@@ -150,18 +150,18 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
                                        io_thread_.get(), event_thread_.get()));
   }
 
-  void StartServer() {
+  void StartSimpleServer() {
     auto proof_source = std::make_unique<net::ProofSourceChromium>();
     base::FilePath certs_dir = net::GetTestCertsDirectory();
     ASSERT_TRUE(proof_source->Initialize(
         certs_dir.AppendASCII("quic-short-lived.pem"),
         certs_dir.AppendASCII("quic-leaf-cert.key"),
         certs_dir.AppendASCII("quic-leaf-cert.key.sct")));
-    server_ = std::make_unique<net::QuicTransportSimpleServer>(
+    simple_server_ = std::make_unique<net::QuicTransportSimpleServer>(
         /* port */ 0, std::vector<url::Origin>({origin_}),
         std::move(proof_source));
-    ASSERT_EQ(EXIT_SUCCESS, server_->Start());
-    port_ = server_->server_address().port();
+    ASSERT_EQ(EXIT_SUCCESS, simple_server_->Start());
+    port_ = simple_server_->server_address().port();
   }
 
   GURL GetServerUrl(const std::string& suffix) {
@@ -182,7 +182,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   std::unique_ptr<base::Thread> io_thread_;
   std::unique_ptr<base::Thread> event_thread_;
   std::unique_ptr<QuicTransportFactory> factory_;
-  std::unique_ptr<net::QuicTransportSimpleServer> server_;
+  std::unique_ptr<net::QuicTransportSimpleServer> simple_server_;
   int port_;
   url::Origin origin_;
   std::unique_ptr<base::RunLoop> run_loop_;
@@ -193,7 +193,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
 };
 
 TEST_F(QuicTransportOwtEndToEndTest, Connect) {
-  StartServer();
+  StartSimpleServer();
   client_ = CreateClient(GetServerUrl("/discard"));
   client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
@@ -202,7 +202,7 @@ TEST_F(QuicTransportOwtEndToEndTest, Connect) {
 }
 
 TEST_F(QuicTransportOwtEndToEndTest, InvalidCertificate) {
-  StartServer();
+  StartSimpleServer();
   std::unique_ptr<QuicTransportClientInterface> client =
       std::unique_ptr<QuicTransportClientInterface>(
           factory_->CreateQuicTransportClient(
@@ -214,7 +214,7 @@ TEST_F(QuicTransportOwtEndToEndTest, InvalidCertificate) {
 }
 
 TEST_F(QuicTransportOwtEndToEndTest, EchoBidirectionalStream) {
-  StartServer();
+  StartSimpleServer();
   client_ = CreateClient(GetServerUrl("/echo"));
   client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
@@ -241,7 +241,7 @@ TEST_F(QuicTransportOwtEndToEndTest, EchoBidirectionalStream) {
 }
 
 TEST_F(QuicTransportOwtEndToEndTest, EchoUnidirectionalStream) {
-  StartServer();
+  StartSimpleServer();
   client_ = CreateClient(GetServerUrl("/echo"));
   client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
