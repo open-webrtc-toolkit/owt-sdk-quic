@@ -17,7 +17,6 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
       : visitor_(visitor) {}
 
   void OnCanRead() override {
-    LOG(INFO) << "OnCanRead";
     if (visitor_) {
       visitor_->OnCanRead();
     }
@@ -68,6 +67,10 @@ uint32_t QuicTransportStreamImpl::Id() const {
 }
 
 size_t QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
+  if (thread_checker_.CalledOnValidThread()) {
+    return stream_->Write(
+        quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length));
+  }
   CHECK(runner_);
   bool result;
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
@@ -101,7 +104,28 @@ void QuicTransportStreamImpl::Close() {
 }
 
 size_t QuicTransportStreamImpl::Read(uint8_t* data, size_t length) {
-  return stream_->Read(reinterpret_cast<char*>(data), length);
+  if (thread_checker_.CalledOnValidThread()) {
+    LOG(INFO)<<"Read on valid thread.";
+    return stream_->Read(reinterpret_cast<char*>(data), length);
+  }
+  LOG(INFO)<<"Read on invalid thread.";
+  CHECK(runner_);
+  size_t result;
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](QuicTransportStreamImpl* stream, uint8_t* data, size_t length,
+             size_t& result, base::WaitableEvent* event) {
+            result =
+                stream->stream_->Read(reinterpret_cast<char*>(data), length);
+            event->Signal();
+          },
+          base::Unretained(this), base::Unretained(data), length,
+          std::ref(result), base::Unretained(&done)));
+  done.Wait();
+  return result;
 }
 
 size_t QuicTransportStreamImpl::ReadableBytes() const {

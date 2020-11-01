@@ -64,6 +64,28 @@ const char* QuicTransportOwtServerSession::ConnectionId() {
 
 QuicTransportStreamInterface*
 QuicTransportOwtServerSession::CreateBidirectionalStream() {
+  if (thread_checker_.CalledOnValidThread()) {
+    return CreateBidirectionalStreamOnCurrentThread();
+  }
+  QuicTransportStreamInterface* result(nullptr);
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](QuicTransportOwtServerSession* session,
+             QuicTransportStreamInterface** result, base::WaitableEvent* event) {
+            *result = session->CreateBidirectionalStreamOnCurrentThread();
+            event->Signal();
+          },
+          base::Unretained(this), base::Unretained(&result),
+          base::Unretained(&done)));
+  done.Wait();
+  return result;
+}
+
+QuicTransportStreamInterface*
+QuicTransportOwtServerSession::CreateBidirectionalStreamOnCurrentThread() {
   std::unique_ptr<::quic::QuicTransportStream> stream =
       std::make_unique<::quic::QuicTransportStream>(
           GetNextOutgoingUnidirectionalStreamId(), this, this);

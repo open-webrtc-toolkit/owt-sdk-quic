@@ -64,12 +64,15 @@ class QuicTransportOwtServerSession
   void OnMessageReceived(quiche::QuicheStringPiece message) override;
 
  private:
+  QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
+
   const bool owns_connection_;
   std::vector<url::Origin> accepted_origins_;
   owt::quic::QuicTransportSessionInterface::Visitor* visitor_;
   std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
   base::TaskRunner* runner_;
   ConnectionStats stats_;
+  base::ThreadChecker thread_checker_;
 };
 
 }  // namespace quic
