@@ -17,7 +17,7 @@ Create a new directory for the check out, and create a `.gclient` file in this d
 ```
 solutions = [
   { "name"        : "src/owt",
-    "url"         : "https://gitlab.devtools.intel.com/open-webrtc-toolkit/owt-sdk-quic.git",
+    "url"         : "https://github.com/open-webrtc-toolkit/owt-deps-quic.git",
     "deps_file"   : "DEPS",
     "managed"     : False,
     "custom_deps" : {
