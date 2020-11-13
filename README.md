@@ -9,6 +9,10 @@ This repository has two projects for QUIC support. They might be merged in the f
 - **quic_io** is developed for QUIC based internal I/O among OWT server agents. 
 - **quic_transport** is a SDK for both server side and client side [WebTransport](https://w3c.github.io/webtransport/) support.
 
+## How to build
+
+Please refer to [this file](quic_io/readme.md) for build instructions for quic_io and [this file](quic_transport/docs/build_instructions.md) for build instructions for quic_transport.
+
 ## How to contribute
 We warmly welcome community contributions to Open WebRTC Toolkit Media Server repository. If you are willing to contribute your features and ideas to OWT, follow the process below:
 - Make sure your patch will not break anything, including all the build and tests
