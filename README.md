@@ -1,24 +1,26 @@
-## QUIC RAW Library
+# Open WebRTC Toolkit QUIC SDK
 
-This library is based on chromium source code and exposes basic interfaces for raw data transporting.
+Open WebRTC Toolkit QUIC SDK based on the Chromium project to provide C++ APIs for both server side and client side QUIC support.
+
+## Code structure
+
+This repository has two projects for QUIC support. They might be merged in the future.
+
+- **quic_io** is developed for QUIC based internal I/O among OWT server agents. 
+- **quic_transport** is a SDK for both server side and client side [WebTransport](https://w3c.github.io/webtransport/) support.
 
 ## How to build
-1. Get the chromium code. (https://chromium.googlesource.com/chromium/src/+/master/docs/linux_build_instructions.md)
-2. Reset chromium commit close to 0d7f510fc898d4040d474a58b0eb609c43b6ac20.
-3. Copy the code into chromium directory.
-    - cp -r src ${chromium}/src/net/tools/quic/raw
-4. Patch the BUILD.gn file in chromium code.
-    - cd ${chroumium}
-    - git apply ${this-repo}/build-gn.patch
-5. Set "is_debug=false" for gn args, build chromium target.
-    - ninja -C ${out-directory} rawquic
 
-## How to use
-1. Build the library yourself or download from link(TO-DO).
-2. Add ${this-repo}/src/wrapper to include dir.
-3. Same compile steps as other shared libraries.
-Note that since our .so file is compiled through chromium's clang, clang is recommended for linking.
+Please refer to [this file](quic_io/readme.md) for build instructions for quic_io and [this file](quic_transport/docs/build_instructions.md) for build instructions for quic_transport.
 
-## About example
-1. Place the .so file in ${this-repo}/lib
-2. cd example/ && make
+## How to contribute
+We warmly welcome community contributions to Open WebRTC Toolkit Media Server repository. If you are willing to contribute your features and ideas to OWT, follow the process below:
+- Make sure your patch will not break anything, including all the build and tests
+- Submit a pull request onto https://github.com/open-webrtc-toolkit/owt-deps-quic/pulls
+- Watch your patch for review comments, if any, until it is accepted and merged. The OWT project is licensed under Apache License, Version 2.0. By contributing to the project, you agree to the license and copyright terms therein and release your contributions under these terms.
+
+## How to report issues
+Use the "Issues" tab on Github.
+
+## See Also
+https://webrtc.intel.com
