@@ -43,7 +43,7 @@ def setup_environment_variables():
 
 def build():
     gn_args = {'debug': 'is_debug=true is_component_build=false symbol_level=1',
-               'release': 'is_debug=true is_component_build=false'}
+               'release': 'is_debug=false is_component_build=false'}
     for scheme, args in gn_args.items():
         output_path = SRC_PATH/'out'/scheme
         subprocess.call(['gn', 'gen', str(output_path), '--args=%s' % args])
