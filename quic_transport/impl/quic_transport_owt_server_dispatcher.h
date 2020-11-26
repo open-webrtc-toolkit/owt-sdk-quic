@@ -47,6 +47,7 @@ class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
  protected:
   std::unique_ptr<::quic::QuicSession> CreateQuicSession(
       ::quic::QuicConnectionId server_connection_id,
+      const ::quic::QuicSocketAddress& self_address,
       const ::quic::QuicSocketAddress& peer_address,
       quiche::QuicheStringPiece alpn,
       const ::quic::ParsedQuicVersion& version) override;

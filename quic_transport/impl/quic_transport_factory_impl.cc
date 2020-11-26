@@ -7,6 +7,7 @@
 #include "impl/quic_transport_factory_impl.h"
 #include "base/at_exit.h"
 #include "base/bind.h"
+#include "base/command_line.h"
 #include "base/logging.h"
 #include "base/threading/thread.h"
 #include "impl/proof_source_owt.h"

@@ -17,6 +17,7 @@
 
 #include "base/memory/weak_ptr.h"
 #include "base/task_runner.h"
+#include "base/threading/thread_checker.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
 #include "owt/quic/quic_transport_stream_interface.h"
 
@@ -51,6 +52,7 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   ::quic::QuicTransportStream* stream_;
   base::TaskRunner* runner_;
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
+  base::ThreadChecker thread_checker_;
 
  private:
   void WriteOnCurrentThread(std::vector<uint8_t> data);

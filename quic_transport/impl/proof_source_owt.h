@@ -14,6 +14,7 @@
 #ifndef OWT_QUIC_TRANSPORT_PROOF_SOURCE_OWT_H_
 #define OWT_QUIC_TRANSPORT_PROOF_SOURCE_OWT_H_
 
+#include "base/files/file_path.h"
 #include "crypto/rsa_private_key.h"
 #include "net/third_party/quiche/src/quic/core/crypto/proof_source.h"
 
