@@ -13,6 +13,7 @@ import shutil
 
 SRC_PATH = Path(__file__).resolve().parents[3]
 PATCH_PATH = SRC_PATH/'owt'/'quic_transport'/'patches'
+PACKAGE_PATH = SRC_PATH.parent/'packages'
 SDK_TARGET_NAME = 'owt_quic_transport'
 PATCH_LIST = [
     ('0001-Add-owt_quic_transport-to-BUILD.gn.patch', SRC_PATH)
@@ -20,7 +21,9 @@ PATCH_LIST = [
 
 
 def sync():
-    subprocess.call(['gclient', 'sync'], cwd=SRC_PATH, shell=False)
+    if subprocess.call(['gclient', 'sync'], cwd=SRC_PATH, shell=False):
+        return False
+    return True
 
 
 def patch():
@@ -53,13 +56,39 @@ def build():
     return True
 
 
+def pack():
+    hash = subprocess.check_output(
+        ['git', 'rev-parse', 'HEAD'], cwd=SRC_PATH/'owt').strip().decode('utf-8')
+    path = PACKAGE_PATH/hash
+    if Path.exists(path):
+        shutil.rmtree(path)
+    Path.mkdir(path, parents=True)
+
+    def pack_headers(package_root):
+        shutil.copytree(SRC_PATH/'owt'/'quic_transport' /
+                        'api', package_root/'include')
+
+    def pack_binaries(package_root):
+        file_name = 'lib'+SDK_TARGET_NAME+'.so'
+        for scheme in ['debug', 'release']:
+            Path.mkdir(package_root/'bin'/scheme, parents=True)
+            shutil.copyfile(SRC_PATH/'out'/scheme / file_name,
+                            package_root/'bin'/scheme/file_name)
+
+    pack_headers(path)
+    pack_binaries(path)
+    print('Please find the package in https://example.com/%s'%hash)
+
+
 def main():
-    sync()
+    if not sync():
+        return 1
     patch()
     create_gclient_args()
     setup_environment_variables()
     if not build():
         return 1
+    pack()
     return 0
 
 
