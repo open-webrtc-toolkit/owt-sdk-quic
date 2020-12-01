@@ -36,8 +36,10 @@ QuicTransportFactory* QuicTransportFactory::CreateForTesting() {
 
 QuicTransportFactoryImpl::QuicTransportFactoryImpl()
     : at_exit_manager_(nullptr),
+      io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")),
       event_thread_(
           std::make_unique<base::Thread>("quic_transport_event_thread")) {
+  base::Thread::Options options;
   options.message_pump_type = base::MessagePumpType::IO;
   io_thread_->StartWithOptions(options);
   event_thread_->StartWithOptions(options);
