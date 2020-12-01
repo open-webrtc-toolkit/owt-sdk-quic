@@ -94,11 +94,11 @@ shared_library("owt_quic_transport") {
 test("owt_quic_transport_tests") {
   testonly = true
   sources = [
-    "//net/test/run_all_unittests.cc",
+    "impl/proof_source_owt_unittest.cc",
     "impl/quic_transport_factory_impl_unittest.cc",
     "impl/tests/quic_transport_owt_end_to_end_test.cc",
+    "impl/tests/run_all_unittests.cc",
     "impl/version_unittest.cc",
-    "impl/proof_source_owt_unittest.cc",
   ]
   configs += [
     "//build/config:precompiled_headers",
