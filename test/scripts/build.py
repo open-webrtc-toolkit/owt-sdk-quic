@@ -3,6 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 '''Script for build in continuous integration environment.
+
+Please run this script with python 3.4 or newer on Ubuntu 18.04 or Windows 10
+20H2.
+
+It's expected to be ran on continuous integration machines and nightly build
+machines.
 '''
 
 import os
@@ -21,7 +27,8 @@ PATCH_LIST = [
 
 
 def sync():
-    if subprocess.call(['gclient', 'sync'], cwd=SRC_PATH, shell=False):
+    gclient_bin = 'gclient.bat' if sys.platform == 'win32' else 'gclient'
+    if subprocess.call([gclient_bin, 'sync'], cwd=SRC_PATH, shell=False):
         return False
     return True
 
@@ -47,9 +54,10 @@ def setup_environment_variables():
 def build():
     gn_args = {'debug': 'is_debug=true is_component_build=false symbol_level=1',
                'release': 'is_debug=false is_component_build=false'}
+    gn_bin = 'gn.bat' if sys.platform == 'win32' else 'gn'
     for scheme, args in gn_args.items():
         output_path = SRC_PATH/'out'/scheme
-        subprocess.call(['gn', 'gen', str(output_path), '--args=%s' % args])
+        subprocess.call([gn_bin, 'gen', str(output_path), '--args=%s' % args])
         if subprocess.call(['ninja', '-C', str(output_path), SDK_TARGET_NAME],
                            cwd=SRC_PATH, shell=False):
             return False
@@ -69,14 +77,20 @@ def pack():
                         'api', package_root/'include')
 
     def pack_binaries(package_root):
-        file_name = 'lib'+SDK_TARGET_NAME+'.so'
+        file_names = []
+        if sys.platform == 'win32':
+            file_names = [SDK_TARGET_NAME+'.dll', SDK_TARGET_NAME+'.dll.lib']
+        elif sys.platform == 'linux':
+            file_names = ['lib'+SDK_TARGET_NAME+'.so']
         for scheme in ['debug', 'release']:
             Path.mkdir(package_root/'bin'/scheme, parents=True)
-            shutil.copyfile(SRC_PATH/'out'/scheme / file_name,
-                            package_root/'bin'/scheme/file_name)
+            for file_name in file_names:
+                shutil.copyfile(SRC_PATH/'out'/scheme / file_name,
+                                package_root/'bin'/scheme/file_name)
 
     pack_headers(path)
     pack_binaries(path)
+    # TODO: Replace example.com with the web server hosting QUIC SDKs.
     print('Please find the package in https://example.com/%s'%hash)
 
 
