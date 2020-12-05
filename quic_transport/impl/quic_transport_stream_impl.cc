@@ -96,7 +96,9 @@ uint32_t QuicTransportStreamImpl::Id() const {
 size_t QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
   if (thread_checker_.CalledOnValidThread()) {
     return stream_->Write(
-        quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length));
+               quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length))
+               ? length
+               : 0;
   }
   CHECK(runner_);
   bool result;
