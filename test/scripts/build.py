@@ -4,8 +4,8 @@
 
 '''Script for build in continuous integration environment.
 
-Please run this script with python 3.4 or newer on Ubuntu 18.04 or Windows 10
-20H2.
+It synchronizes code, builds SDK and creates a zip file for the SDK. Please run
+this script with python 3.4 or newer on Ubuntu 18.04 or Windows 10 20H2.
 
 It's expected to be ran on continuous integration machines and nightly build
 machines.
@@ -16,6 +16,7 @@ import subprocess
 import sys
 from pathlib import Path
 import shutil
+import zipfile
 
 SRC_PATH = Path(__file__).resolve().parents[3]
 PATCH_PATH = SRC_PATH/'owt'/'quic_transport'/'patches'
@@ -88,10 +89,27 @@ def pack():
                 shutil.copyfile(SRC_PATH/'out'/scheme / file_name,
                                 package_root/'bin'/scheme/file_name)
 
+    def zip_sdk(package_root, hash):
+        with zipfile.ZipFile(PACKAGE_PATH/(hash+'.zip'), 'w', zipfile.ZIP_DEFLATED) as package_zip:
+            for root, dirs, files in os.walk(package_root):
+                for file in files:
+                    file_path = Path(root)/file
+                    relative_path = file_path.relative_to(package_root)
+                    package_zip.write(file_path, relative_path)
+
+    def delete_dir(package_root):
+        shutil.rmtree(package_root)
+
+    def print_package_url(hash):
+        platform = 'windows' if sys.platform == 'win32' else sys.platform
+        print('Please find the package at http://webrtc-22.sh.intel.com:5050/%s/%s.zip' %
+              (platform, hash))
+
     pack_headers(path)
     pack_binaries(path)
-    # TODO: Replace example.com with the web server hosting QUIC SDKs.
-    print('Please find the package in https://example.com/%s'%hash)
+    zip_sdk(path, hash)
+    delete_dir(path)
+    print_package_url(hash)
 
 
 def main():
