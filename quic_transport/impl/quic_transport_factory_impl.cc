@@ -9,6 +9,7 @@
 #include "base/bind.h"
 #include "base/command_line.h"
 #include "base/logging.h"
+#include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread.h"
 #include "impl/proof_source_owt.h"
 #include "impl/quic_transport_owt_client_impl.h"
@@ -25,6 +26,7 @@ namespace owt {
 namespace quic {
 
 QuicTransportFactory* QuicTransportFactory::Create() {
+  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("quic_transport_thread_pool");
   QuicTransportFactoryImpl* factory = new QuicTransportFactoryImpl();
   factory->InitializeAtExitManager();
   return factory;
