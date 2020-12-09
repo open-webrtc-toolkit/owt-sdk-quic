@@ -36,7 +36,8 @@ QuicTransportOwtServerSession::QuicTransportOwtServerSession(
     const ::quic::QuicCryptoServerConfig* crypto_config,
     ::quic::QuicCompressedCertsCache* compressed_certs_cache,
     std::vector<url::Origin> accepted_origins,
-    base::TaskRunner* runner)
+    base::TaskRunner* runner,
+    base::TaskRunner* event_runner)
     : QuicTransportServerSession(connection,
                                  owner,
                                  config,
@@ -47,7 +48,11 @@ QuicTransportOwtServerSession::QuicTransportOwtServerSession(
       owns_connection_(owns_connection),
       accepted_origins_(accepted_origins),
       visitor_(nullptr),
-      runner_(runner) {}
+      runner_(runner),
+      event_runner_(event_runner) {
+  CHECK(runner_);
+  CHECK(event_runner_);
+}
 
 QuicTransportOwtServerSession::~QuicTransportOwtServerSession() {
   if (owns_connection_) {
@@ -90,7 +95,8 @@ QuicTransportOwtServerSession::CreateBidirectionalStreamOnCurrentThread() {
       std::make_unique<::quic::QuicTransportStream>(
           GetNextOutgoingUnidirectionalStreamId(), this, this);
   std::unique_ptr<QuicTransportStreamImpl> stream_impl =
-      std::make_unique<QuicTransportStreamImpl>(stream.get(), runner_);
+      std::make_unique<QuicTransportStreamImpl>(stream.get(), runner_,
+                                                event_runner_);
   ActivateStream(std::move(stream));
   QuicTransportStreamImpl* stream_ptr(stream_impl.get());
   streams_.push_back(std::move(stream_impl));
@@ -101,18 +107,41 @@ void QuicTransportOwtServerSession::OnIncomingDataStream(
     ::quic::QuicTransportStream* stream) {
   if (visitor_) {
     std::unique_ptr<QuicTransportStreamImpl> stream_impl =
-        std::make_unique<QuicTransportStreamImpl>(stream, runner_);
+        std::make_unique<QuicTransportStreamImpl>(stream, runner_,
+                                                  event_runner_);
     QuicTransportStreamImpl* stream_ptr(stream_impl.get());
     streams_.push_back(std::move(stream_impl));
-    visitor_->OnIncomingStream(stream_ptr);
+    event_runner_->PostTask(
+        FROM_HERE,
+        base::BindOnce(
+            [](base::WeakPtr<QuicTransportOwtServerSession> session,
+               QuicTransportStreamImpl* stream_ptr) {
+              if (!session) {
+                return;
+              }
+              if (session->visitor_) {
+                session->visitor_->OnIncomingStream(stream_ptr);
+              }
+            },
+            weak_factory_.GetWeakPtr(), base::Unretained(stream_ptr)));
   }
 }
 
 void QuicTransportOwtServerSession::OnCanCreateNewOutgoingStream(
     bool unidirectional) {
-  if (visitor_) {
-    visitor_->OnCanCreateNewOutgoingStream(unidirectional);
-  }
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](base::WeakPtr<QuicTransportOwtServerSession> session,
+             bool unidirectional) {
+            if (!session) {
+              return;
+            }
+            if (session->visitor_) {
+              session->visitor_->OnCanCreateNewOutgoingStream(unidirectional);
+            }
+          },
+          weak_factory_.GetWeakPtr(), unidirectional));
 }
 
 void QuicTransportOwtServerSession::SetVisitor(

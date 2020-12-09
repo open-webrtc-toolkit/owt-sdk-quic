@@ -30,7 +30,8 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
                                 public ::quic::QuicTransportStream::Visitor {
  public:
   explicit QuicTransportStreamImpl(::quic::QuicTransportStream* stream,
-                                   base::TaskRunner* runner);
+                                   base::TaskRunner* runner,
+                                   base::TaskRunner* event_runner);
   ~QuicTransportStreamImpl() override;
 
   // Overrides QuicTransportStreamInterface.
@@ -51,11 +52,18 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
  protected:
   ::quic::QuicTransportStream* stream_;
   base::TaskRunner* runner_;
+  base::TaskRunner* event_runner_;
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
   base::ThreadChecker thread_checker_;
 
  private:
   void WriteOnCurrentThread(std::vector<uint8_t> data);
+
+  void OnCanReadOnCurrentThread();
+  void OnFinReadOnCurrentThread();
+  void OnCanWriteOnCurrentThread();
+
+  base::WeakPtrFactory<QuicTransportStreamImpl> weak_factory_{this};
 };
 }  // namespace quic
 }  // namespace owt

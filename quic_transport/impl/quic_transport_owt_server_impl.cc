@@ -55,11 +55,12 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
     int port,
     std::vector<url::Origin> accepted_origins,
     std::unique_ptr<::quic::ProofSource> proof_source,
-    base::Thread* io_thread)
+    base::Thread* io_thread,
+    base::Thread* event_thread)
     : port_(port),
       version_manager_(
           {::quic::ParsedQuicVersion(::quic::PROTOCOL_TLS1_3,
-                                     ::quic::QUIC_VERSION_IETF_DRAFT_27)}),
+                                     ::quic::QUIC_VERSION_IETF_DRAFT_29)}),
       clock_(::quic::QuicChromiumClock::GetInstance()),
       crypto_config_(kSourceAddressTokenSecret,
                      ::quic::QuicRandom::GetInstance(),
@@ -67,10 +68,12 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
                      ::quic::KeyExchangeSource::Default()),
       dispatcher_(nullptr),
       task_runner_(io_thread->task_runner()),
+      event_runner_(event_thread->task_runner()),
       read_buffer_(
           base::MakeRefCounted<net::IOBufferWithSize>(kReadBufferSize)),
       visitor_(nullptr) {
-  LOG(INFO) << "QuicTransportOwtServerImpl::QuicTransportOwtServerImpl";
+  CHECK(task_runner_);
+  CHECK(event_runner_);
   dispatcher_ = std::make_unique<QuicTransportOwtServerDispatcher>(
       &config_, &crypto_config_, &version_manager_,
       std::make_unique<net::QuicChromiumConnectionHelper>(
@@ -78,7 +81,8 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
       std::make_unique<QuicTransportOwtServerImplSessionHelper>(),
       std::make_unique<net::QuicChromiumAlarmFactory>(task_runner_.get(),
                                                       clock_),
-      ::quic::kQuicDefaultConnectionIdLength, accepted_origins, task_runner_.get());
+      ::quic::kQuicDefaultConnectionIdLength, accepted_origins,
+      task_runner_.get(), event_runner_.get());
   dispatcher_->SetVisitor(this);
 }
 

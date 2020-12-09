@@ -38,11 +38,13 @@ QuicTransportFactory* QuicTransportFactory::CreateForTesting() {
 
 QuicTransportFactoryImpl::QuicTransportFactoryImpl()
     : at_exit_manager_(nullptr),
-      io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")) {
+      io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")),
+      event_thread_(
+          std::make_unique<base::Thread>("quic_transport_event_thread")) {
   base::Thread::Options options;
   options.message_pump_type = base::MessagePumpType::IO;
   io_thread_->StartWithOptions(options);
-  // TODO: Move logging settings to somewhere else.
+  event_thread_->StartWithOptions(options);
   Init();
 }
 
@@ -66,7 +68,7 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
   }
   return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
                                         std::move(proof_source),
-                                        io_thread_.get());
+                                        io_thread_.get(), event_thread_.get());
 }
 
 QuicTransportServerInterface*
@@ -81,7 +83,7 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
   }
   return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
                                         std::move(proof_source),
-                                        io_thread_.get());
+                                        io_thread_.get(), event_thread_.get());
 }
 
 void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
@@ -117,17 +119,19 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
       FROM_HERE,
       base::BindOnce(
           [](const char* url, const net::QuicTransportClient::Parameters& param,
-             base::Thread* io_thread, QuicTransportClientInterface** result,
+             base::Thread* io_thread, base::Thread* event_thread,
+             QuicTransportClientInterface** result,
              base::WaitableEvent* event) {
             url::Origin origin = url::Origin::Create(GURL(url));
             QuicTransportClientInterface* client =
                 new QuicTransportOwtClientImpl(GURL(std::string(url)), origin,
-                                               param, io_thread);
+                                               param, io_thread, event_thread);
             *result = client;
             event->Signal();
           },
           base::Unretained(url), param, base::Unretained(io_thread_.get()),
-          base::Unretained(&result), base::Unretained(&done)));
+          base::Unretained(event_thread_.get()), base::Unretained(&result),
+          base::Unretained(&done)));
   done.Wait();
   return result;
 }

@@ -15,26 +15,40 @@ namespace quic {
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
-    base::Thread* thread)
+    base::Thread* io_thread,
+    base::Thread* event_thread)
     : QuicTransportOwtClientImpl(url,
                                  origin,
                                  net::QuicTransportClient::Parameters(),
-                                 thread) {}
+                                 io_thread,
+                                 event_thread) {}
 
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
     const net::QuicTransportClient::Parameters& parameters,
-    base::Thread* thread)
-    : QuicTransportOwtClientImpl(url, origin, parameters, nullptr, thread) {}
+    base::Thread* io_thread,
+    base::Thread* event_thread)
+    : QuicTransportOwtClientImpl(url,
+                                 origin,
+                                 parameters,
+                                 nullptr,
+                                 io_thread,
+                                 event_thread) {}
 
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
     const net::QuicTransportClient::Parameters& parameters,
     net::URLRequestContext* context,
-    base::Thread* io_thread)
-    : url_(url), origin_(origin), parameters_(parameters), context_(context) {
+    base::Thread* io_thread,
+    base::Thread* event_thread)
+    : url_(url),
+      origin_(origin),
+      parameters_(parameters),
+      event_runner_(event_thread->task_runner()),
+      context_(context) {
+  CHECK(event_runner_);
   if (!io_thread) {
     LOG(INFO) << "Create a new IO stream.";
     io_thread_owned_ =
@@ -58,6 +72,11 @@ QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
 QuicTransportOwtClientImpl::~QuicTransportOwtClientImpl() {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::CloseOnCurrentThread,
+                     base::Unretained(this), &done));
+  done.Wait();
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(
                      [](std::unique_ptr<net::QuicTransportClient> client,
@@ -85,6 +104,17 @@ void QuicTransportOwtClientImpl::Connect() {
   done.Wait();
 }
 
+void QuicTransportOwtClientImpl::Close() {
+  VLOG(1) << "Closing QuicTransportOwtClient.";
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::CloseOnCurrentThread,
+                     base::Unretained(this), &done));
+  done.Wait();
+}
+
 void QuicTransportOwtClientImpl::ConnectOnCurrentThread(
     base::WaitableEvent* event) {
   CHECK(context_);
@@ -96,21 +126,35 @@ void QuicTransportOwtClientImpl::ConnectOnCurrentThread(
   event->Signal();
 }
 
+void QuicTransportOwtClientImpl::CloseOnCurrentThread(
+    base::WaitableEvent* event) {
+  if (client_ && client_->session() && client_->session()->connection()) {
+    client_->session()->connection()->CloseConnection(
+        ::quic::QuicErrorCode::QUIC_NO_ERROR, "Close connection.",
+        ::quic::ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
+  }
+  event->Signal();
+}
+
 void QuicTransportOwtClientImpl::SetVisitor(
     QuicTransportClientInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 
 void QuicTransportOwtClientImpl::OnConnected() {
-  if (visitor_) {
-    visitor_->OnConnected();
-  }
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::FireEvent,
+                     weak_factory_.GetWeakPtr(),
+                     &QuicTransportClientInterface::Visitor::OnConnected));
 }
 
 void QuicTransportOwtClientImpl::OnConnectionFailed() {
-  if (visitor_) {
-    visitor_->OnConnectionFailed();
-  }
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          &QuicTransportOwtClientImpl::FireEvent, weak_factory_.GetWeakPtr(),
+          &QuicTransportClientInterface::Visitor::OnConnectionFailed));
 }
 
 QuicTransportStreamInterface*
@@ -153,11 +197,17 @@ QuicTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
 }
 
 void QuicTransportOwtClientImpl::OnIncomingBidirectionalStreamAvailable() {
-  OnIncomingStreamAvailable(true);
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::OnIncomingStreamAvailable,
+                     weak_factory_.GetWeakPtr(), true));
 }
 
 void QuicTransportOwtClientImpl::OnIncomingUnidirectionalStreamAvailable() {
-  OnIncomingStreamAvailable(false);
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOwtClientImpl::OnIncomingStreamAvailable,
+                     weak_factory_.GetWeakPtr(), false));
 }
 
 void QuicTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
@@ -178,10 +228,18 @@ QuicTransportStreamInterface*
 QuicTransportOwtClientImpl::OwtStreamForNativeStream(
     ::quic::QuicTransportStream* stream) {
   std::unique_ptr<QuicTransportStreamImpl> stream_impl =
-      std::make_unique<QuicTransportStreamImpl>(stream, task_runner_.get());
+      std::make_unique<QuicTransportStreamImpl>(stream, task_runner_.get(),
+                                                event_runner_.get());
   QuicTransportStreamImpl* stream_ptr(stream_impl.get());
   streams_.push_back(std::move(stream_impl));
   return stream_ptr;
+}
+
+void QuicTransportOwtClientImpl::FireEvent(
+    std::function<void(QuicTransportClientInterface::Visitor&)> func) {
+  if (visitor_) {
+    func(*visitor_);
+  }
 }
 
 }  // namespace quic
