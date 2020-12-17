@@ -190,6 +190,9 @@ QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
 QuicTransportStreamInterface*
 QuicTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
     bool bidirectional) {
+  if (!client_->session()) {
+    return nullptr;
+  }
   ::quic::QuicTransportStream* stream =
       bidirectional ? client_->session()->OpenOutgoingBidirectionalStream()
                     : client_->session()->OpenOutgoingUnidirectionalStream();
@@ -217,6 +220,7 @@ void QuicTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
   CHECK(stream);
   if (visitor_) {
     auto* owt_stream = OwtStreamForNativeStream(stream);
+    CHECK(owt_stream);
     visitor_->OnIncomingStream(owt_stream);
   } else {
     // No one cares about incoming streams.
