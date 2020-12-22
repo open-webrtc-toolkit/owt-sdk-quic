@@ -117,8 +117,8 @@ if (is_win) {
   test("owt_quic_transport_dll_tests") {
     testonly = true
     sources = [
-      "//net/test/run_all_unittests.cc",
       "impl/dllmain_unittest.cc",
+      "impl/tests/run_all_unittests.cc",
     ]
     deps = [
       ":owt_quic_transport",
