@@ -89,6 +89,11 @@ def pack():
                 shutil.copyfile(SRC_PATH/'out'/scheme / file_name,
                                 package_root/'bin'/scheme/file_name)
 
+    def pack_third_party_licenses(package_root):
+        Path.mkdir(package_root/'docs')
+        shutil.copyfile(SRC_PATH/'owt'/'quic_transport'/'docs' /
+                        'third_party_licenses.txt', package_root/'docs'/'third_party_licenses.txt')
+
     def zip_sdk(package_root, hash):
         with zipfile.ZipFile(PACKAGE_PATH/(hash+'.zip'), 'w', zipfile.ZIP_DEFLATED) as package_zip:
             for root, dirs, files in os.walk(package_root):
@@ -107,6 +112,7 @@ def pack():
 
     pack_headers(path)
     pack_binaries(path)
+    pack_third_party_licenses(path)
     zip_sdk(path, hash)
     delete_dir(path)
     print_package_url(hash)
