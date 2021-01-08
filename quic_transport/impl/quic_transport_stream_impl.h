@@ -16,7 +16,7 @@
 #define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_STREAM_IMPL_H_
 
 #include "base/memory/weak_ptr.h"
-#include "base/task_runner.h"
+#include "base/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
 #include "owt/quic/quic_transport_stream_interface.h"
@@ -30,8 +30,8 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
                                 public ::quic::QuicTransportStream::Visitor {
  public:
   explicit QuicTransportStreamImpl(::quic::QuicTransportStream* stream,
-                                   base::TaskRunner* runner,
-                                   base::TaskRunner* event_runner);
+                                   base::SingleThreadTaskRunner* runner,
+                                   base::SingleThreadTaskRunner* event_runner);
   ~QuicTransportStreamImpl() override;
 
   // Overrides QuicTransportStreamInterface.
@@ -51,10 +51,9 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
 
  protected:
   ::quic::QuicTransportStream* stream_;
-  base::TaskRunner* runner_;
-  base::TaskRunner* event_runner_;
+  base::SingleThreadTaskRunner* io_runner_;
+  base::SingleThreadTaskRunner* event_runner_;
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
-  base::ThreadChecker thread_checker_;
 
  private:
   void WriteOnCurrentThread(std::vector<uint8_t> data);

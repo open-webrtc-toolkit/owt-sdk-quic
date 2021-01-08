@@ -7,6 +7,8 @@
 #include "impl/quic_transport_stream_impl.h"
 #include "base/synchronization/waitable_event.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
+#include "base/threading/platform_thread.h"
+#include "base/debug/stack_trace.h"
 
 namespace owt {
 namespace quic {
@@ -34,14 +36,14 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
 
 QuicTransportStreamImpl::QuicTransportStreamImpl(
     ::quic::QuicTransportStream* stream,
-    base::TaskRunner* runner,
-    base::TaskRunner* event_runner)
+    base::SingleThreadTaskRunner* runner,
+    base::SingleThreadTaskRunner* event_runner)
     : stream_(stream),
-      runner_(runner),
+      io_runner_(runner),
       event_runner_(event_runner),
       visitor_(nullptr) {
   CHECK(stream_);
-  CHECK(runner_);
+  CHECK(io_runner_);
   CHECK(event_runner_);
   stream_->set_visitor(std::make_unique<VisitorAdapter>(this));
 }
@@ -94,17 +96,17 @@ uint32_t QuicTransportStreamImpl::Id() const {
 }
 
 size_t QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
-  if (thread_checker_.CalledOnValidThread()) {
+  CHECK(io_runner_);
+  if (io_runner_->BelongsToCurrentThread()) {
     return stream_->Write(
                quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length))
                ? length
                : 0;
   }
-  CHECK(runner_);
   bool result;
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
-  runner_->PostTask(
+  io_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportStreamImpl* stream, uint8_t* data, size_t& length,
@@ -125,8 +127,8 @@ size_t QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
 
 void QuicTransportStreamImpl::Close() {
   if (stream_->CanWrite()) {
-    CHECK(runner_);
-    runner_->PostTaskAndReplyWithResult(
+    CHECK(io_runner_);
+    io_runner_->PostTaskAndReplyWithResult(
         FROM_HERE,
         base::BindOnce(&::quic::QuicTransportStream::SendFin,
                        base::Unretained(stream_)),
@@ -137,16 +139,14 @@ void QuicTransportStreamImpl::Close() {
 }
 
 size_t QuicTransportStreamImpl::Read(uint8_t* data, size_t length) {
-  if (thread_checker_.CalledOnValidThread()) {
-    LOG(INFO)<<"Read on valid thread.";
+  CHECK(io_runner_);
+  if (io_runner_->BelongsToCurrentThread()) {
     return stream_->Read(reinterpret_cast<char*>(data), length);
   }
-  LOG(INFO)<<"Read on invalid thread.";
-  CHECK(runner_);
   size_t result;
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
-  runner_->PostTask(
+  io_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportStreamImpl* stream, uint8_t* data, size_t length,
