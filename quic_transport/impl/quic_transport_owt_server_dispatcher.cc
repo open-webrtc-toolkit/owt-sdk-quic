@@ -38,8 +38,8 @@ QuicTransportOwtServerDispatcher::QuicTransportOwtServerDispatcher(
     std::unique_ptr<QuicAlarmFactory> alarm_factory,
     uint8_t expected_server_connection_id_length,
     std::vector<url::Origin> accepted_origins,
-    base::TaskRunner* task_runner,
-    base::TaskRunner* event_runner)
+    base::SingleThreadTaskRunner* task_runner,
+    base::SingleThreadTaskRunner* event_runner)
     : QuicDispatcher(config,
                      crypto_config,
                      version_manager,

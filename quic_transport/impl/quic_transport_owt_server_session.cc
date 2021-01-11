@@ -36,8 +36,8 @@ QuicTransportOwtServerSession::QuicTransportOwtServerSession(
     const ::quic::QuicCryptoServerConfig* crypto_config,
     ::quic::QuicCompressedCertsCache* compressed_certs_cache,
     std::vector<url::Origin> accepted_origins,
-    base::TaskRunner* runner,
-    base::TaskRunner* event_runner)
+    base::SingleThreadTaskRunner* runner,
+    base::SingleThreadTaskRunner* event_runner)
     : QuicTransportServerSession(connection,
                                  owner,
                                  config,
@@ -69,7 +69,7 @@ const char* QuicTransportOwtServerSession::ConnectionId() {
 
 QuicTransportStreamInterface*
 QuicTransportOwtServerSession::CreateBidirectionalStream() {
-  if (thread_checker_.CalledOnValidThread()) {
+  if (runner_->BelongsToCurrentThread()) {
     return CreateBidirectionalStreamOnCurrentThread();
   }
   QuicTransportStreamInterface* result(nullptr);
