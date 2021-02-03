@@ -22,8 +22,9 @@ class OWT_EXPORT QuicTransportSessionInterface {
     virtual void OnCanCreateNewOutgoingStream(bool unidirectional) = 0;
   };
   virtual ~QuicTransportSessionInterface() = default;
-  virtual const char* ConnectionId() = 0;
+  virtual const char* ConnectionId() const = 0;
   virtual void SetVisitor(Visitor* visitor) = 0;
+  virtual bool IsSessionReady() const = 0;
   virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
   // Get connection stats.
   virtual const ConnectionStats& GetStats() = 0;

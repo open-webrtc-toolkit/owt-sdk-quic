@@ -60,11 +60,15 @@ QuicTransportOwtServerSession::~QuicTransportOwtServerSession() {
   }
 }
 
-const char* QuicTransportOwtServerSession::ConnectionId() {
+const char* QuicTransportOwtServerSession::ConnectionId() const {
   const std::string& connection_id_str = connection_id().ToString();
   char* id = new char[connection_id_str.size() + 1];
   strcpy(id, connection_id_str.c_str());
   return id;
+}
+
+bool QuicTransportOwtServerSession::IsSessionReady() const {
+  return ::quic::QuicTransportServerSession::IsSessionReady();
 }
 
 QuicTransportStreamInterface*
@@ -93,7 +97,7 @@ QuicTransportStreamInterface*
 QuicTransportOwtServerSession::CreateBidirectionalStreamOnCurrentThread() {
   std::unique_ptr<::quic::QuicTransportStream> stream =
       std::make_unique<::quic::QuicTransportStream>(
-          GetNextOutgoingUnidirectionalStreamId(), this, this);
+          GetNextOutgoingBidirectionalStreamId(), this, this);
   std::unique_ptr<QuicTransportStreamImpl> stream_impl =
       std::make_unique<QuicTransportStreamImpl>(stream.get(), runner_,
                                                 event_runner_);
@@ -182,5 +186,6 @@ const ConnectionStats& QuicTransportOwtServerSession::GetStats() {
   stats_.estimated_bandwidth = stats.estimated_bandwidth.ToBitsPerSecond();
   return stats_;
 }
+
 }  // namespace quic
 }  // namespace owt

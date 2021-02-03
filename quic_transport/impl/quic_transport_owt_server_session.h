@@ -53,7 +53,8 @@ class QuicTransportOwtServerSession
   void SetVisitor(
       owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
   // Caller needs to free the connection ID returned.
-  const char* ConnectionId() override;
+  const char* ConnectionId() const override;
+  bool IsSessionReady() const override;
   QuicTransportStreamInterface* CreateBidirectionalStream() override;
   const ConnectionStats& GetStats() override;
 
