@@ -58,6 +58,9 @@ class QuicTransportOwtServerSession
   QuicTransportStreamInterface* CreateBidirectionalStream() override;
   const ConnectionStats& GetStats() override;
 
+  void OnConnectionClosed(const ::quic::QuicConnectionCloseFrame& frame,
+                          ::quic::ConnectionCloseSource source) override;
+
  protected:
   void OnIncomingDataStream(::quic::QuicTransportStream* stream) override;
   void OnCanCreateNewOutgoingStream(bool unidirectional) override;
