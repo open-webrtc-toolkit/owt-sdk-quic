@@ -20,7 +20,9 @@ class OWT_EXPORT QuicTransportStreamInterface {
     virtual ~Visitor() = default;
     // Called when new data is available.
     virtual void OnCanRead() = 0;
-    // Called when stream is ready to write.
+    // Called when stream is ready to write new data. It doesn't called before
+    // first write. Before first write, please check IsSessionReady().
+    // TODO: Add OnSessionReady to QuicTransportSessionInterface::Visitor.
     virtual void OnCanWrite() = 0;
     // Called when final incoming data is read.
     virtual void OnFinRead() = 0;
