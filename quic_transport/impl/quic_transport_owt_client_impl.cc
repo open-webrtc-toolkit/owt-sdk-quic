@@ -128,6 +128,19 @@ void QuicTransportOwtClientImpl::ConnectOnCurrentThread(
 
 void QuicTransportOwtClientImpl::CloseOnCurrentThread(
     base::WaitableEvent* event) {
+  if (client_ == nullptr) {
+    return;
+  }
+  if (client_->session() == nullptr) {
+    return;
+  }
+  if (client_->session()->connection() == nullptr) {
+    return;
+  }
+  CHECK(client_);
+  CHECK(client_->session());
+  CHECK(client_->session()->connection());
+  // Above code just makes code scan tools happy.
   if (client_ && client_->session() && client_->session()->connection()) {
     client_->session()->connection()->CloseConnection(
         ::quic::QuicErrorCode::QUIC_NO_ERROR, "Close connection.",
@@ -177,6 +190,7 @@ QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
                      [](QuicTransportOwtClientImpl* client,
                         QuicTransportStreamInterface** result,
                         bool bidirectional, base::WaitableEvent* event) {
+                      CHECK(client);
                        *result = client->CreateOutgoingStreamOnCurrentThread(
                            bidirectional);
                        event->Signal();
