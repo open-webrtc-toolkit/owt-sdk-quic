@@ -175,5 +175,9 @@ uint64_t QuicTransportStreamImpl::BufferedDataBytes() const {
   return stream_->BufferedDataBytes();
 }
 
+bool QuicTransportStreamImpl::CanWrite() const {
+  return stream_->CanWrite();
+}
+
 }  // namespace quic
 }  // namespace owt

@@ -189,5 +189,14 @@ const ConnectionStats& QuicTransportOwtServerSession::GetStats() {
   return stats_;
 }
 
+void QuicTransportOwtServerSession::OnConnectionClosed(
+    const ::quic::QuicConnectionCloseFrame& frame,
+    ::quic::ConnectionCloseSource source) {
+  ::quic::QuicTransportServerSession::OnConnectionClosed(frame, source);
+  if (visitor_) {
+    visitor_->OnConnectionClosed();
+  }
+}
+
 }  // namespace quic
 }  // namespace owt
