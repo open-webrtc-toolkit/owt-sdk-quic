@@ -123,6 +123,7 @@ void QuicTransportOwtServerSession::OnIncomingDataStream(
               if (!session) {
                 return;
               }
+              CHECK(session);
               if (session->visitor_) {
                 session->visitor_->OnIncomingStream(stream_ptr);
               }
@@ -141,6 +142,7 @@ void QuicTransportOwtServerSession::OnCanCreateNewOutgoingStream(
             if (!session) {
               return;
             }
+            CHECK(session);
             if (session->visitor_) {
               session->visitor_->OnCanCreateNewOutgoingStream(unidirectional);
             }
