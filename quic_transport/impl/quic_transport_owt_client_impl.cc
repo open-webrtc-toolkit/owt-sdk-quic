@@ -129,12 +129,15 @@ void QuicTransportOwtClientImpl::ConnectOnCurrentThread(
 void QuicTransportOwtClientImpl::CloseOnCurrentThread(
     base::WaitableEvent* event) {
   if (client_ == nullptr) {
+    event->Signal();
     return;
   }
   if (client_->session() == nullptr) {
+    event->Signal();
     return;
   }
   if (client_->session()->connection() == nullptr) {
+    event->Signal();
     return;
   }
   CHECK(client_);
