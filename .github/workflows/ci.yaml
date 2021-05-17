@@ -1,0 +1,42 @@
+name: Continuous Integration
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+      - id: build-and-test
+        name: Build SDK and run tests
+        run: |
+          docker run -id quic-sdk-ubuntu >> container_id.out
+          container_id="$(cat container_id.out)"
+          docker exec $container_id git config --global user.name "github-actions"
+          docker exec $container_id git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          docker exec -w /workspace/quic/src/owt $container_id git fetch origin $GITHUB_REF
+          docker exec -w /workspace/quic/src/owt $container_id git checkout FETCH_HEAD
+          docker exec -w /workspace/quic/src/owt $container_id git rev-parse HEAD >> git_sha.out
+          git_sha="$(cat git_sha.out)"
+          echo "::set-output name=git_sha::$git_sha"
+          docker exec $container_id python3 owt/test/scripts/build.py
+          docker cp $container_id:/workspace/quic/packages/$git_sha.zip .
+          docker stop $container_id
+          unzip $git_sha.zip -d $git_sha
+          rm $git_sha.zip
+      - uses: actions/upload-artifact@v2
+        name: Upload SDK
+        if: ${{ github.event_name == 'push' }}
+        with:
+          name: quic-sdk-ubuntu-x64-ci
+          path: ${{ steps.build-and-test.outputs.git_sha}}
+      - id: cleanup
+        name: Clean up
+        if: ${{ always() }}
+        run: |
+          # They should be stopped earlier in the first step, but if there are containers running, kill them.
+          if [ docker ps -q --filter ancestor=quic-sdk-ubuntu ]; then
+            docker kill $(docker ps -q --filter ancestor=quic-sdk-ubuntu)
+          fi
+          rm container_id.out
+          rm git_sha.out
+          rm -r ${{ steps.build-and-test.outputs.git_sha}}
