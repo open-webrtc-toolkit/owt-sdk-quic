@@ -123,6 +123,7 @@ void QuicTransportOwtServerSession::OnIncomingDataStream(
               if (!session) {
                 return;
               }
+              CHECK(session);
               if (session->visitor_) {
                 session->visitor_->OnIncomingStream(stream_ptr);
               }
@@ -141,6 +142,7 @@ void QuicTransportOwtServerSession::OnCanCreateNewOutgoingStream(
             if (!session) {
               return;
             }
+            CHECK(session);
             if (session->visitor_) {
               session->visitor_->OnCanCreateNewOutgoingStream(unidirectional);
             }
@@ -185,6 +187,15 @@ const ConnectionStats& QuicTransportOwtServerSession::GetStats() {
   const ::quic::QuicConnectionStats& stats = connection()->GetStats();
   stats_.estimated_bandwidth = stats.estimated_bandwidth.ToBitsPerSecond();
   return stats_;
+}
+
+void QuicTransportOwtServerSession::OnConnectionClosed(
+    const ::quic::QuicConnectionCloseFrame& frame,
+    ::quic::ConnectionCloseSource source) {
+  ::quic::QuicTransportServerSession::OnConnectionClosed(frame, source);
+  if (visitor_) {
+    visitor_->OnConnectionClosed();
+  }
 }
 
 }  // namespace quic
