@@ -43,6 +43,7 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   size_t ReadableBytes() const override;
   void Close() override;
   uint64_t BufferedDataBytes() const override;
+  bool CanWrite() const override;
 
   // Overrides ::quic::QuicTransportStream::Visitor.
   void OnCanRead() override;

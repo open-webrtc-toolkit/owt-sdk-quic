@@ -43,6 +43,8 @@ class OWT_EXPORT QuicTransportStreamInterface {
   virtual void Close() = 0;
   // Bytes of data buffered.
   virtual uint64_t BufferedDataBytes() const = 0;
+  // Ready to write new data.
+  virtual bool CanWrite() const = 0;
 };
 }  // namespace quic
 }  // namespace owt
