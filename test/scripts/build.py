@@ -20,13 +20,13 @@ import zipfile
 import argparse
 
 SRC_PATH = Path(__file__).resolve().parents[3]
-PATCH_PATH = SRC_PATH/'owt'/'quic_transport'/'patches'
+PATCH_PATH = SRC_PATH/'owt'/'web_transport'/'patches'
 PACKAGE_PATH = SRC_PATH.parent/'packages'
-SDK_TARGETS = ['owt_quic_transport']
-TEST_TARGETS = ['owt_quic_transport_tests']
-TEST_TARGETS_WIN = ['owt_quic_transport_dll_tests']
+SDK_TARGETS = ['owt_web_transport']
+TEST_TARGETS = ['owt_web_transport_tests']
+TEST_TARGETS_WIN = ['owt_web_transport_dll_tests']
 PATCH_LIST = [
-    ('0001-Add-owt_quic_transport-to-BUILD.gn.patch', SRC_PATH)
+    ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH)
 ]
 
 
@@ -87,7 +87,7 @@ def pack():
     Path.mkdir(path, parents=True)
 
     def pack_headers(package_root):
-        shutil.copytree(SRC_PATH/'owt'/'quic_transport' /
+        shutil.copytree(SRC_PATH/'owt'/'web_transport' /
                         'api', package_root/'include')
 
     def pack_binaries(package_root):
@@ -105,7 +105,7 @@ def pack():
 
     def pack_third_party_licenses(package_root):
         Path.mkdir(package_root/'docs')
-        shutil.copyfile(SRC_PATH/'owt'/'quic_transport'/'docs' /
+        shutil.copyfile(SRC_PATH/'owt'/'web_transport'/'docs' /
                         'third_party_licenses.txt', package_root/'docs'/'third_party_licenses.txt')
 
     def zip_sdk(package_root, hash):
