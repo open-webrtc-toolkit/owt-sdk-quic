@@ -6,7 +6,7 @@
 
 #include "owt/quic/version.h"
 #include <string>
-#include "owt/quic_transport/version_info_values.h"
+#include "owt/web_transport/version_info_values.h"
 
 namespace owt {
 namespace quic {

@@ -35,7 +35,7 @@ You will see a `src` directory after sync completes. Switch to the `src` directo
 
 Some manually changes to Chromium code are needed before building SDK.
 
-1. Add `"//owt/quic_transport:owt_quic_transport",` to `BUILD.gn`, after line 91. You need to revert this change before rolling Chromium revision, and redo this change after rolling.
+1. Add `"//owt/web_transport:owt_quic_transport",` to `BUILD.gn`, after line 91. You need to revert this change before rolling Chromium revision, and redo this change after rolling.
 
 1. Create a file `gclient_args.gni` in `build/config` with following code.
 

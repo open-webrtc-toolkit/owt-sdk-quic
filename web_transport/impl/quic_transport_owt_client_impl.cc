@@ -19,14 +19,14 @@ QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     base::Thread* event_thread)
     : QuicTransportOwtClientImpl(url,
                                  origin,
-                                 net::QuicTransportClient::Parameters(),
+                                 net::WebTransportParameters(),
                                  io_thread,
                                  event_thread) {}
 
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
-    const net::QuicTransportClient::Parameters& parameters,
+    const net::WebTransportParameters& parameters,
     base::Thread* io_thread,
     base::Thread* event_thread)
     : QuicTransportOwtClientImpl(url,
@@ -39,7 +39,7 @@ QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
-    const net::QuicTransportClient::Parameters& parameters,
+    const net::WebTransportParameters& parameters,
     net::URLRequestContext* context,
     base::Thread* io_thread,
     base::Thread* event_thread)
@@ -132,20 +132,21 @@ void QuicTransportOwtClientImpl::CloseOnCurrentThread(
     event->Signal();
     return;
   }
-  if (client_->session() == nullptr) {
+  if (client_->quic_session() == nullptr) {
     event->Signal();
     return;
   }
-  if (client_->session()->connection() == nullptr) {
+  if (client_->quic_session()->connection() == nullptr) {
     event->Signal();
     return;
   }
   CHECK(client_);
-  CHECK(client_->session());
-  CHECK(client_->session()->connection());
+  CHECK(client_->quic_session());
+  CHECK(client_->quic_session()->connection());
   // Above code just makes code scan tools happy.
-  if (client_ && client_->session() && client_->session()->connection()) {
-    client_->session()->connection()->CloseConnection(
+  if (client_ && client_->quic_session() &&
+      client_->quic_session()->connection()) {
+    client_->quic_session()->connection()->CloseConnection(
         ::quic::QuicErrorCode::QUIC_NO_ERROR, "Close connection.",
         ::quic::ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
   }
@@ -207,12 +208,12 @@ QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
 QuicTransportStreamInterface*
 QuicTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
     bool bidirectional) {
-  if (!client_->session()) {
+  if (!client_->quic_session()) {
     return nullptr;
   }
   ::quic::QuicTransportStream* stream =
-      bidirectional ? client_->session()->OpenOutgoingBidirectionalStream()
-                    : client_->session()->OpenOutgoingUnidirectionalStream();
+      bidirectional ? client_->quic_session()->OpenOutgoingBidirectionalStream()
+                    : client_->quic_session()->OpenOutgoingUnidirectionalStream();
   return OwtStreamForNativeStream(stream);
 }
 
@@ -232,8 +233,8 @@ void QuicTransportOwtClientImpl::OnIncomingUnidirectionalStreamAvailable() {
 
 void QuicTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
   auto* stream = bidirectional
-                     ? client_->session()->AcceptIncomingBidirectionalStream()
-                     : client_->session()->AcceptIncomingUnidirectionalStream();
+                     ? client_->quic_session()->AcceptIncomingBidirectionalStream()
+                     : client_->quic_session()->AcceptIncomingUnidirectionalStream();
   CHECK(stream);
   if (visitor_) {
     auto* owt_stream = OwtStreamForNativeStream(stream);

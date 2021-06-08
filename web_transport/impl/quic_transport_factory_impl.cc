@@ -103,7 +103,7 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
     const char* url,
     const QuicTransportClientInterface::Parameters& parameters) {
   QuicTransportClientInterface* result(nullptr);
-  net::QuicTransportClient::Parameters param;
+  net::WebTransportParameters param;
   for (size_t i = 0; i < parameters.server_certificate_fingerprints_length;
        i++) {
     owt::quic::CertificateFingerprint fingerprint =
@@ -118,7 +118,7 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
   io_thread_->task_runner()->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](const char* url, const net::QuicTransportClient::Parameters& param,
+          [](const char* url, const net::WebTransportParameters& param,
              base::Thread* io_thread, base::Thread* event_thread,
              QuicTransportClientInterface** result,
              base::WaitableEvent* event) {

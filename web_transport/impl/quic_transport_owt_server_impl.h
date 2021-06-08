@@ -28,7 +28,7 @@
 #include "net/third_party/quiche/src/quic/core/quic_version_manager.h"
 #include "net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h"
 #include "owt/quic/quic_transport_server_interface.h"
-#include "owt/quic_transport/impl/quic_transport_owt_server_dispatcher.h"
+#include "owt/web_transport/impl/quic_transport_owt_server_dispatcher.h"
 #include "url/origin.h"
 
 namespace owt {

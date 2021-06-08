@@ -50,8 +50,9 @@ class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
       ::quic::QuicConnectionId server_connection_id,
       const ::quic::QuicSocketAddress& self_address,
       const ::quic::QuicSocketAddress& peer_address,
-      quiche::QuicheStringPiece alpn,
-      const ::quic::ParsedQuicVersion& version) override;
+      absl::string_view alpn,
+      const ::quic::ParsedQuicVersion& version,
+      absl::string_view sni) override;
 
   std::vector<url::Origin> accepted_origins_;
   Visitor* visitor_;

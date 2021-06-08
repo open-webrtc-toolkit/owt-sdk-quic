@@ -13,9 +13,9 @@
 namespace owt {
 namespace quic {
 
-class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
+class VisitorAdapter : public ::quic::WebTransportStreamVisitor {
  public:
-  VisitorAdapter(::quic::QuicTransportStream::Visitor* visitor)
+  VisitorAdapter(::quic::WebTransportStreamVisitor* visitor)
       : visitor_(visitor) {}
 
   void OnCanRead() override {
@@ -23,7 +23,6 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
       visitor_->OnCanRead();
     }
   }
-  void OnFinRead() override {}
   void OnCanWrite() override {
     if(visitor_){
       visitor_->OnCanWrite();
@@ -31,7 +30,7 @@ class VisitorAdapter : public ::quic::QuicTransportStream::Visitor {
   }
 
  private:
-  ::quic::QuicTransportStream::Visitor* visitor_;
+  ::quic::WebTransportStreamVisitor* visitor_;
 };
 
 QuicTransportStreamImpl::QuicTransportStreamImpl(
@@ -45,7 +44,7 @@ QuicTransportStreamImpl::QuicTransportStreamImpl(
   CHECK(stream_);
   CHECK(io_runner_);
   CHECK(event_runner_);
-  stream_->set_visitor(std::make_unique<VisitorAdapter>(this));
+  stream_->SetVisitor(std::make_unique<VisitorAdapter>(this));
 }
 
 QuicTransportStreamImpl::~QuicTransportStreamImpl() = default;
@@ -62,12 +61,6 @@ void QuicTransportStreamImpl::OnCanRead() {
                      weak_factory_.GetWeakPtr()));
 }
 
-void QuicTransportStreamImpl::OnFinRead() {
-  event_runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(&QuicTransportStreamImpl::OnFinReadOnCurrentThread,
-                     weak_factory_.GetWeakPtr()));
-}
 void QuicTransportStreamImpl::OnCanWrite() {
   event_runner_->PostTask(
       FROM_HERE,
@@ -80,11 +73,7 @@ void QuicTransportStreamImpl::OnCanReadOnCurrentThread() {
     visitor_->OnCanRead();
   }
 }
-void QuicTransportStreamImpl::OnFinReadOnCurrentThread() {
-  if (visitor_) {
-    visitor_->OnFinRead();
-  }
-}
+
 void QuicTransportStreamImpl::OnCanWriteOnCurrentThread() {
   if (visitor_) {
     visitor_->OnCanWrite();
@@ -92,14 +81,14 @@ void QuicTransportStreamImpl::OnCanWriteOnCurrentThread() {
 }
 
 uint32_t QuicTransportStreamImpl::Id() const {
-  return stream_->id();
+  return stream_->GetStreamId();
 }
 
 size_t QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
   CHECK(io_runner_);
   if (io_runner_->BelongsToCurrentThread()) {
     return stream_->Write(
-               quiche::QuicheStringPiece(reinterpret_cast<char*>(data), length))
+               absl::string_view(reinterpret_cast<char*>(data), length))
                ? length
                : 0;
   }
@@ -112,7 +101,7 @@ size_t QuicTransportStreamImpl::Write(uint8_t* data, size_t length) {
           [](QuicTransportStreamImpl* stream, uint8_t* data, size_t& length,
              bool& result, base::WaitableEvent* event) {
             if (stream->stream_->CanWrite()) {
-              result = stream->stream_->Write(quiche::QuicheStringPiece(
+              result = stream->stream_->Write(absl::string_view(
                   reinterpret_cast<char*>(data), length));
             } else {
               result = false;
@@ -141,7 +130,8 @@ void QuicTransportStreamImpl::Close() {
 size_t QuicTransportStreamImpl::Read(uint8_t* data, size_t length) {
   CHECK(io_runner_);
   if (io_runner_->BelongsToCurrentThread()) {
-    return stream_->Read(reinterpret_cast<char*>(data), length);
+    // TODO: FIN is not handled.
+    return stream_->Read(reinterpret_cast<char*>(data), length).bytes_read;
   }
   size_t result;
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
@@ -151,8 +141,10 @@ size_t QuicTransportStreamImpl::Read(uint8_t* data, size_t length) {
       base::BindOnce(
           [](QuicTransportStreamImpl* stream, uint8_t* data, size_t length,
              size_t& result, base::WaitableEvent* event) {
+            // TODO: FIN is not handled.
             result =
-                stream->stream_->Read(reinterpret_cast<char*>(data), length);
+                stream->stream_->Read(reinterpret_cast<char*>(data), length)
+                    .bytes_read;
             event->Signal();
           },
           base::Unretained(this), base::Unretained(data), length,
@@ -166,13 +158,14 @@ size_t QuicTransportStreamImpl::ReadableBytes() const {
 }
 
 void QuicTransportStreamImpl::WriteOnCurrentThread(std::vector<uint8_t> data) {
-  bool result = stream_->Write(quiche::QuicheStringPiece(
+  bool result = stream_->Write(absl::string_view(
       reinterpret_cast<char*>(data.data()), data.size()));
   DCHECK(result);
 }
 
 uint64_t QuicTransportStreamImpl::BufferedDataBytes() const {
-  return stream_->BufferedDataBytes();
+  NOTIMPLEMENTED();
+  return 0;
 }
 
 bool QuicTransportStreamImpl::CanWrite() const {

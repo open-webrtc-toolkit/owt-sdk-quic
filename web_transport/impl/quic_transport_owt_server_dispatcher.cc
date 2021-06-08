@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "impl/quic_transport_owt_server_session.h"
-#include "net/third_party/quiche/src/common/platform/api/quiche_string_piece.h"
 #include "net/third_party/quiche/src/quic/core/quic_connection.h"
 #include "net/third_party/quiche/src/quic/core/quic_dispatcher.h"
 #include "net/third_party/quiche/src/quic/core/quic_types.h"
@@ -62,8 +61,9 @@ QuicTransportOwtServerDispatcher::CreateQuicSession(
     QuicConnectionId server_connection_id,
     const QuicSocketAddress& self_address,
     const QuicSocketAddress& peer_address,
-    quiche::QuicheStringPiece /*alpn*/,
-    const ParsedQuicVersion& version) {
+    absl::string_view /*alpn*/,
+    const ParsedQuicVersion& version,
+    absl::string_view /*sni*/) {
   auto connection = std::make_unique<QuicConnection>(
       server_connection_id, self_address, peer_address, helper(),
       alarm_factory(), writer(), /*owns_writer=*/false, Perspective::IS_SERVER,

@@ -11,7 +11,7 @@
 #include "base/single_thread_task_runner.h"
 #include "net/quic/quic_transport_client.h"
 #include "owt/quic/quic_transport_client_interface.h"
-#include "owt/quic_transport/impl/quic_transport_stream_impl.h"
+#include "owt/web_transport/impl/quic_transport_stream_impl.h"
 #include "url/gurl.h"
 
 namespace owt {
@@ -20,7 +20,7 @@ namespace quic {
 // This class is thread-safe. All calls to //net will be delegated to
 // io_thread_.
 class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
-                                   public net::QuicTransportClient::Visitor {
+                                   public net::WebTransportClientVisitor {
  public:
   QuicTransportOwtClientImpl(const GURL& url,
                              const url::Origin& origin,
@@ -29,7 +29,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   QuicTransportOwtClientImpl(
       const GURL& url,
       const url::Origin& origin,
-      const net::QuicTransportClient::Parameters& parameters,
+      const net::WebTransportParameters& parameters,
       base::Thread* io_thread,
       base::Thread* event_thread);
   // `context` could has its user defined wall time, which can be used for
@@ -37,7 +37,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   QuicTransportOwtClientImpl(
       const GURL& url,
       const url::Origin& origin,
-      const net::QuicTransportClient::Parameters& parameters,
+      const net::WebTransportParameters& parameters,
       net::URLRequestContext* context,
       base::Thread* io_thread,
       base::Thread* event_thread);
@@ -50,7 +50,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream() override;
 
  protected:
-  // Overrides net::QuicTransportClient::Visitor.
+  // Overrides net::WebTransportClientVisitor.
   void OnConnected() override;
   void OnConnectionFailed() override;
   void OnClosed() override {}
@@ -60,6 +60,8 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   void OnDatagramReceived(base::StringPiece datagram) override {}
   void OnCanCreateNewOutgoingBidirectionalStream() override {}
   void OnCanCreateNewOutgoingUnidirectionalStream() override {}
+  void OnDatagramProcessed(
+      absl::optional<::quic::MessageStatus> status) override {}
 
  private:
   void ConnectOnCurrentThread(base::WaitableEvent* event);
@@ -77,7 +79,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   std::unique_ptr<base::Thread> io_thread_owned_;
   GURL url_;
   url::Origin origin_;
-  net::QuicTransportClient::Parameters parameters_;
+  net::WebTransportParameters parameters_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
   std::unique_ptr<net::URLRequestContext> context_owned_;
