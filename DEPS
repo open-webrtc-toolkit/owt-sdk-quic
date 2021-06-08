@@ -38,7 +38,7 @@ vars = {
 }
 deps = {
   'src':
-    Var('chromium_git') + '/chromium/src' + '@' + '92eeac911591a33d319c53313725a157b52d7719',
+    Var('chromium_git') + '/chromium/src' + '@' + 'refs/tags/93.0.4535.1',
 }
 
 recursedeps = [
