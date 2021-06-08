@@ -25,7 +25,7 @@
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_server_session.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
 #include "owt/quic/quic_transport_session_interface.h"
-#include "owt/quic_transport/impl/quic_transport_stream_impl.h"
+#include "owt/web_transport/impl/quic_transport_stream_impl.h"
 #include "url/origin.h"
 
 namespace owt {
@@ -66,7 +66,7 @@ class QuicTransportOwtServerSession
   void OnCanCreateNewOutgoingStream(bool unidirectional) override;
   bool CheckOrigin(url::Origin origin) override;
   bool ProcessPath(const GURL& url) override;
-  void OnMessageReceived(quiche::QuicheStringPiece message) override;
+  void OnMessageReceived(absl::string_view message) override;
 
  private:
   QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();

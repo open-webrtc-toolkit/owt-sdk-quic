@@ -24,7 +24,7 @@
 #include "owt/quic/quic_transport_client_interface.h"
 #include "owt/quic/quic_transport_factory.h"
 #include "owt/quic/quic_transport_stream_interface.h"
-#include "owt/quic_transport/impl/quic_transport_owt_client_impl.h"
+#include "owt/web_transport/impl/quic_transport_owt_client_impl.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -135,7 +135,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
         base::BindOnce(&QuicTransportOwtEndToEndTest::InitContextOnIOThread,
                        base::Unretained(this), &done));
     done.Wait();
-    net::QuicTransportClient::Parameters parameters;
+    net::WebTransportParameters parameters;
     parameters.server_certificate_fingerprints.push_back(
         ::quic::CertificateFingerprint{
             .algorithm = ::quic::CertificateFingerprint::kSha256,

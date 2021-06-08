@@ -179,7 +179,7 @@ bool QuicTransportOwtServerSession::ProcessPath(const GURL& url) {
 }
 
 void QuicTransportOwtServerSession::OnMessageReceived(
-    quiche::QuicheStringPiece message) {
+    absl::string_view message) {
   LOG(INFO) << "Received message.";
 }
 

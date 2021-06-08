@@ -18,6 +18,7 @@
 #include "base/memory/weak_ptr.h"
 #include "base/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
+#include "net/third_party/quiche/src/quic/core/web_transport_interface.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
 #include "owt/quic/quic_transport_stream_interface.h"
 
@@ -27,7 +28,7 @@ namespace quic {
 // QuicTransportStreamImpl is a proxy for ::quic::QuicTransportStream. All calls
 // to ::quic::QuicTransportStream run in runner_.
 class QuicTransportStreamImpl : public QuicTransportStreamInterface,
-                                public ::quic::QuicTransportStream::Visitor {
+                                public ::quic::WebTransportStreamVisitor {
  public:
   explicit QuicTransportStreamImpl(::quic::QuicTransportStream* stream,
                                    base::SingleThreadTaskRunner* runner,
@@ -45,9 +46,8 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   uint64_t BufferedDataBytes() const override;
   bool CanWrite() const override;
 
-  // Overrides ::quic::QuicTransportStream::Visitor.
+  // Overrides ::quic::WebTransportStreamVisitor.
   void OnCanRead() override;
-  void OnFinRead() override;
   void OnCanWrite() override;
 
  protected:
