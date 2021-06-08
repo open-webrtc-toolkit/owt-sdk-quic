@@ -9,6 +9,7 @@
  * Reference: net/quic/quic_transport_end_to_end_test.cc
  */
 
+#include "base/strings/strcat.h"
 #include "base/threading/thread.h"
 #include "net/base/host_port_pair.h"
 #include "net/proxy_resolution/configured_proxy_resolution_service.h"
@@ -165,8 +166,8 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   }
 
   GURL GetServerUrl(const std::string& suffix) {
-    return GURL{quiche::QuicheStrCat(
-        "quic-transport://test.example.com:", port_, suffix)};
+    return GURL{base::StrCat({"quic-transport://test.example.com:",
+                              base::NumberToString(port_), suffix})};
   }
 
   void Run() {
@@ -260,7 +261,8 @@ TEST_F(QuicTransportOwtEndToEndTest, EchoUnidirectionalStream) {
   stream->Close();
   QuicTransportStreamInterface* receive_stream(nullptr);
   EXPECT_CALL(visitor_, OnIncomingStream)
-      .WillOnce(DoAll(testing::SaveArg<0>(&receive_stream), StopRunning()));
+      .WillOnce(::testing::DoAll(testing::SaveArg<0>(&receive_stream),
+                                 StopRunning()));
   Run();
   EXPECT_TRUE(receive_stream != nullptr);
   EXPECT_EQ(receive_stream->ReadableBytes(), data_size);
