@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 import shutil
 import zipfile
+import argparse
 
 SRC_PATH = Path(__file__).resolve().parents[3]
 PATCH_PATH = SRC_PATH/'owt'/'quic_transport'/'patches'
@@ -126,7 +127,18 @@ def pack():
     delete_dir(path)
 
 
+def checkout(ref):
+    print('Checkout '+ref)
+    subprocess.call(
+        ['git', 'fetch', 'origin', ref, '&&', 'git', 'checkout', 'FETCH_HEAD'], cwd=SRC_PATH/'owt')
+
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ref', help='Refs to be tested against.')
+    opts=parser.parse_args()
+    if opts.ref:
+        checkout(opts.ref)
     if not sync():
         return 1
     patch()
