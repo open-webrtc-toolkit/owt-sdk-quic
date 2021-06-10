@@ -28,7 +28,7 @@ TEST_TARGETS_WIN = ['owt_web_transport_dll_tests']
 PATCH_LIST = [
     ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH)
 ]
-
+GIT_BIN = 'git.bat' if sys.platform == 'win32' else 'git'
 
 def sync():
     gclient_bin = 'gclient.bat' if sys.platform == 'win32' else 'gclient'
@@ -39,8 +39,8 @@ def sync():
 
 def patch():
     for file_name, path in PATCH_LIST:
-        if(subprocess.call(['git', 'am', str(PATCH_PATH/file_name)], cwd=path)) != 0:
-            subprocess.call(['git', 'am', '--skip'], cwd=path)
+        if(subprocess.call([GIT_BIN, 'am', str(PATCH_PATH/file_name)], cwd=path)) != 0:
+            subprocess.call([GIT_BIN, 'am', '--skip'], cwd=path)
 
 
 def create_gclient_args():
@@ -80,7 +80,7 @@ def build():
 
 def pack():
     hash = subprocess.check_output(
-        ['git', 'rev-parse', 'HEAD'], cwd=SRC_PATH/'owt').strip().decode('utf-8')
+        [GIT_BIN, 'rev-parse', 'HEAD'], cwd=SRC_PATH/'owt').strip().decode('utf-8')
     path = PACKAGE_PATH/hash
     if Path.exists(path):
         shutil.rmtree(path)
@@ -128,9 +128,8 @@ def pack():
 
 
 def checkout(ref):
-    print('Checkout '+ref)
     subprocess.call(
-        ['git', 'fetch', 'origin', ref, '&&', 'git', 'checkout', 'FETCH_HEAD'], cwd=SRC_PATH/'owt')
+        [GIT_BIN, 'fetch', 'origin', ref, '&&', GIT_BIN, 'checkout', 'FETCH_HEAD'], cwd=SRC_PATH/'owt')
 
 
 def main():
