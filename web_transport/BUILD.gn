@@ -7,8 +7,8 @@ import("//testing/test.gni")
 
 config("owt_web_transport_config") {
   include_dirs = [
-    "./",
-    "api",
+    "sdk",
+    "sdk/api",
   ]
   defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
 }
@@ -23,26 +23,26 @@ source_set("owt_web_transport_impl") {
     "//third_party/boringssl",
   ]
   sources = [
-    "api/owt/quic/quic_definitions.h",
-    "api/owt/quic/quic_transport_client_interface.h",
-    "api/owt/quic/quic_transport_factory.h",
-    "api/owt/quic/quic_transport_server_interface.h",
-    "api/owt/quic/version.h",
-    "impl/proof_source_owt.cc",
-    "impl/proof_source_owt.h",
-    "impl/quic_transport_factory_impl.cc",
-    "impl/quic_transport_factory_impl.h",
-    "impl/quic_transport_owt_client_impl.cc",
-    "impl/quic_transport_owt_client_impl.h",
-    "impl/quic_transport_owt_server_dispatcher.cc",
-    "impl/quic_transport_owt_server_dispatcher.h",
-    "impl/quic_transport_owt_server_impl.cc",
-    "impl/quic_transport_owt_server_impl.h",
-    "impl/quic_transport_owt_server_session.cc",
-    "impl/quic_transport_owt_server_session.h",
-    "impl/quic_transport_stream_impl.cc",
-    "impl/quic_transport_stream_impl.h",
-    "impl/version.cc",
+    "sdk/api/owt/quic/quic_definitions.h",
+    "sdk/api/owt/quic/quic_transport_client_interface.h",
+    "sdk/api/owt/quic/quic_transport_factory.h",
+    "sdk/api/owt/quic/quic_transport_server_interface.h",
+    "sdk/api/owt/quic/version.h",
+    "sdk/impl/proof_source_owt.cc",
+    "sdk/impl/proof_source_owt.h",
+    "sdk/impl/quic_transport_factory_impl.cc",
+    "sdk/impl/quic_transport_factory_impl.h",
+    "sdk/impl/quic_transport_owt_client_impl.cc",
+    "sdk/impl/quic_transport_owt_client_impl.h",
+    "sdk/impl/quic_transport_owt_server_dispatcher.cc",
+    "sdk/impl/quic_transport_owt_server_dispatcher.h",
+    "sdk/impl/quic_transport_owt_server_impl.cc",
+    "sdk/impl/quic_transport_owt_server_impl.h",
+    "sdk/impl/quic_transport_owt_server_session.cc",
+    "sdk/impl/quic_transport_owt_server_session.h",
+    "sdk/impl/quic_transport_stream_impl.cc",
+    "sdk/impl/quic_transport_stream_impl.h",
+    "sdk/impl/version.cc",
   ]
   configs += [ ":owt_web_transport_config" ]
 }
@@ -50,10 +50,10 @@ source_set("owt_web_transport_impl") {
 if (is_win) {
   process_version_rc_template("owt_web_transport_dll_version") {
     deps = [ ":update_last_change" ]
-    template_file = "resources/owt_version.rc.version"
+    template_file = "sdk/resources/owt_version.rc.version"
     sources = [
       "$target_gen_dir/lastchange",
-      "VER",
+      "sdk/VER",
     ]
     output = "$target_gen_dir/owt_web_transport_dll_version.rc"
   }
@@ -74,10 +74,10 @@ action("update_last_change") {
 
 process_version("generate_version_info") {
   deps = [ ":update_last_change" ]
-  template_file = "impl/version_info_values.h.template"
+  template_file = "sdk/impl/version_info_values.h.template"
   sources = [
     "$target_gen_dir/lastchange",
-    "VER",
+    "sdk/VER",
   ]
   output = "$target_gen_dir/version_info_values.h"
 }
@@ -87,18 +87,18 @@ shared_library("owt_web_transport") {
   configs += [ ":owt_web_transport_config" ]
   if (is_win) {
     deps += [ ":owt_web_transport_dll_version" ]
-    sources = [ "impl/dllmain.cc" ]
+    sources = [ "sdk/impl/dllmain.cc" ]
   }
 }
 
 test("owt_web_transport_tests") {
   testonly = true
   sources = [
-    "impl/proof_source_owt_unittest.cc",
-    "impl/quic_transport_factory_impl_unittest.cc",
-    "impl/tests/quic_transport_owt_end_to_end_test.cc",
-    "impl/tests/run_all_unittests.cc",
-    "impl/version_unittest.cc",
+    "sdk/impl/proof_source_owt_unittest.cc",
+    "sdk/impl/quic_transport_factory_impl_unittest.cc",
+    "sdk/impl/tests/quic_transport_owt_end_to_end_test.cc",
+    "sdk/impl/tests/run_all_unittests.cc",
+    "sdk/impl/version_unittest.cc",
   ]
   configs += [
     "//build/config:precompiled_headers",
@@ -117,8 +117,8 @@ if (is_win) {
   test("owt_web_transport_dll_tests") {
     testonly = true
     sources = [
-      "impl/dllmain_unittest.cc",
-      "impl/tests/run_all_unittests.cc",
+      "sdk/impl/dllmain_unittest.cc",
+      "sdk/impl/tests/run_all_unittests.cc",
     ]
     deps = [
       ":owt_web_transport",
