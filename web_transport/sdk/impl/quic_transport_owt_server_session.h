@@ -25,7 +25,7 @@
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_server_session.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
 #include "owt/quic/quic_transport_session_interface.h"
-#include "owt/web_transport/impl/quic_transport_stream_impl.h"
+#include "owt/web_transport/sdk/impl/quic_transport_stream_impl.h"
 #include "url/origin.h"
 
 namespace owt {

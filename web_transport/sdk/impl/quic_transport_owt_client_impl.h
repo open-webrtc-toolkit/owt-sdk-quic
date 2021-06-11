@@ -11,7 +11,7 @@
 #include "base/single_thread_task_runner.h"
 #include "net/quic/quic_transport_client.h"
 #include "owt/quic/quic_transport_client_interface.h"
-#include "owt/web_transport/impl/quic_transport_stream_impl.h"
+#include "owt/web_transport/sdk/impl/quic_transport_stream_impl.h"
 #include "url/gurl.h"
 
 namespace owt {

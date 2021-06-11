@@ -87,7 +87,7 @@ def pack():
     Path.mkdir(path, parents=True)
 
     def pack_headers(package_root):
-        shutil.copytree(SRC_PATH/'owt'/'web_transport' /
+        shutil.copytree(SRC_PATH/'owt'/'web_transport' / 'sdk' /
                         'api', package_root/'include')
 
     def pack_binaries(package_root):

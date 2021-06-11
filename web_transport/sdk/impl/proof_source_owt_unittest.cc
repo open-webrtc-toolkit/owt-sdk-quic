@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "owt/web_transport/impl/proof_source_owt.h"
+#include "owt/web_transport/sdk/impl/proof_source_owt.h"
 #include "base/files/file_path.h"
 #include "base/path_service.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -14,7 +14,7 @@ namespace quic {
 namespace test {
 
 const base::FilePath::CharType kCertificatePath[] =
-    FILE_PATH_LITERAL("owt/web_transport/data/ssl/certificates");
+    FILE_PATH_LITERAL("owt/web_transport/sdk/resources/ssl/certificates");
 
 TEST(ProofSourceOwtTest, InitializeProofSourceWithValidPassword) {
   owt::quic::ProofSourceOwt proof_source;
