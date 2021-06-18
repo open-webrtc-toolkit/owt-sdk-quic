@@ -25,14 +25,14 @@
 namespace owt {
 namespace quic {
 
-QuicTransportFactory* QuicTransportFactory::Create() {
+WebTransportFactory* WebTransportFactory::Create() {
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("quic_transport_thread_pool");
   QuicTransportFactoryImpl* factory = new QuicTransportFactoryImpl();
   factory->InitializeAtExitManager();
   return factory;
 }
 
-QuicTransportFactory* QuicTransportFactory::CreateForTesting() {
+WebTransportFactory* WebTransportFactory::CreateForTesting() {
   return new QuicTransportFactoryImpl();
 }
 
@@ -54,7 +54,7 @@ void QuicTransportFactoryImpl::InitializeAtExitManager() {
   at_exit_manager_ = std::make_unique<base::AtExitManager>();
 }
 
-QuicTransportServerInterface*
+WebTransportServerInterface*
 QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
                                                     const char* cert_path,
                                                     const char* key_path,
@@ -71,7 +71,7 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
                                         io_thread_.get(), event_thread_.get());
 }
 
-QuicTransportServerInterface*
+WebTransportServerInterface*
 QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
                                                     const char* pfx_path,
                                                     const char* password) {
@@ -87,22 +87,22 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
 }
 
 void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
-    const QuicTransportServerInterface* server) {
+    const WebTransportServerInterface* server) {
   delete reinterpret_cast<const QuicTransportOwtServerImpl*>(server);
 }
 
-QuicTransportClientInterface*
+WebTransportClientInterface*
 QuicTransportFactoryImpl::CreateQuicTransportClient(const char* url) {
-  QuicTransportClientInterface::Parameters param;
+  WebTransportClientInterface::Parameters param;
   param.server_certificate_fingerprints_length = 0;
   return CreateQuicTransportClient(url, param);
 }
 
-QuicTransportClientInterface*
+WebTransportClientInterface*
 QuicTransportFactoryImpl::CreateQuicTransportClient(
     const char* url,
-    const QuicTransportClientInterface::Parameters& parameters) {
-  QuicTransportClientInterface* result(nullptr);
+    const WebTransportClientInterface::Parameters& parameters) {
+  WebTransportClientInterface* result(nullptr);
   net::WebTransportParameters param;
   for (size_t i = 0; i < parameters.server_certificate_fingerprints_length;
        i++) {
@@ -120,10 +120,10 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
       base::BindOnce(
           [](const char* url, const net::WebTransportParameters& param,
              base::Thread* io_thread, base::Thread* event_thread,
-             QuicTransportClientInterface** result,
+             WebTransportClientInterface** result,
              base::WaitableEvent* event) {
             url::Origin origin = url::Origin::Create(GURL(url));
-            QuicTransportClientInterface* client =
+            WebTransportClientInterface* client =
                 new QuicTransportOwtClientImpl(GURL(std::string(url)), origin,
                                                param, io_thread, event_thread);
             *result = client;

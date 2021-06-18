@@ -11,8 +11,8 @@
 // This class is similar to net/quic/crypto/proof_source_chromium.h, but it
 // accepts PKCS12 file as input.
 
-#ifndef OWT_QUIC_TRANSPORT_PROOF_SOURCE_OWT_H_
-#define OWT_QUIC_TRANSPORT_PROOF_SOURCE_OWT_H_
+#ifndef OWT_WEB_TRANSPORT_PROOF_SOURCE_OWT_H_
+#define OWT_WEB_TRANSPORT_PROOF_SOURCE_OWT_H_
 
 #include "base/files/file_path.h"
 #include "crypto/rsa_private_key.h"

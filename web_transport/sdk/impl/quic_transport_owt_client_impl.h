@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_CLIENT_IMPL_H_
-#define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_CLIENT_IMPL_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_CLIENT_IMPL_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_CLIENT_IMPL_H_
 
 #include "base/memory/weak_ptr.h"
 #include "base/single_thread_task_runner.h"
 #include "net/quic/quic_transport_client.h"
-#include "owt/quic/quic_transport_client_interface.h"
+#include "owt/quic/web_transport_client_interface.h"
 #include "owt/web_transport/sdk/impl/quic_transport_stream_impl.h"
 #include "url/gurl.h"
 
@@ -19,7 +19,7 @@ namespace quic {
 // A server accepts WebTransport - QuicTransport connections.
 // This class is thread-safe. All calls to //net will be delegated to
 // io_thread_.
-class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
+class QuicTransportOwtClientImpl : public WebTransportClientInterface,
                                    public net::WebTransportClientVisitor {
  public:
   QuicTransportOwtClientImpl(const GURL& url,
@@ -43,11 +43,11 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
       base::Thread* event_thread);
   ~QuicTransportOwtClientImpl() override;
 
-  void SetVisitor(QuicTransportClientInterface::Visitor* visitor) override;
+  void SetVisitor(WebTransportClientInterface::Visitor* visitor) override;
   void Connect() override;
   void Close() override;
-  QuicTransportStreamInterface* CreateBidirectionalStream() override;
-  QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream() override;
+  WebTransportStreamInterface* CreateBidirectionalStream() override;
+  WebTransportStreamInterface* CreateOutgoingUnidirectionalStream() override;
 
  protected:
   // Overrides net::WebTransportClientVisitor.
@@ -66,15 +66,15 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
  private:
   void ConnectOnCurrentThread(base::WaitableEvent* event);
   void CloseOnCurrentThread(base::WaitableEvent* event);
-  QuicTransportStreamInterface* CreateOutgoingStream(bool bidirectional);
-  QuicTransportStreamInterface* CreateOutgoingStreamOnCurrentThread(
+  WebTransportStreamInterface* CreateOutgoingStream(bool bidirectional);
+  WebTransportStreamInterface* CreateOutgoingStreamOnCurrentThread(
       bool bidirectional);
   void OnIncomingStreamAvailable(bool bidirectional);
   // This method also adds created stream to `streams_`.
-  QuicTransportStreamInterface* OwtStreamForNativeStream(
+  WebTransportStreamInterface* OwtStreamForNativeStream(
       ::quic::QuicTransportStream* stream);
   void FireEvent(
-      std::function<void(QuicTransportClientInterface::Visitor&)> func);
+      std::function<void(WebTransportClientInterface::Visitor&)> func);
 
   std::unique_ptr<base::Thread> io_thread_owned_;
   GURL url_;
@@ -85,7 +85,7 @@ class QuicTransportOwtClientImpl : public QuicTransportClientInterface,
   std::unique_ptr<net::URLRequestContext> context_owned_;
   net::URLRequestContext* context_;
   std::unique_ptr<net::QuicTransportClient> client_;
-  QuicTransportClientInterface::Visitor* visitor_;
+  WebTransportClientInterface::Visitor* visitor_;
   std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
 
   base::WeakPtrFactory<QuicTransportOwtClientImpl> weak_factory_{this};

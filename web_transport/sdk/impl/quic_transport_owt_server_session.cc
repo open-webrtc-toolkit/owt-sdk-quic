@@ -71,19 +71,19 @@ bool QuicTransportOwtServerSession::IsSessionReady() const {
   return ::quic::QuicTransportServerSession::IsSessionReady();
 }
 
-QuicTransportStreamInterface*
+WebTransportStreamInterface*
 QuicTransportOwtServerSession::CreateBidirectionalStream() {
   if (runner_->BelongsToCurrentThread()) {
     return CreateBidirectionalStreamOnCurrentThread();
   }
-  QuicTransportStreamInterface* result(nullptr);
+  WebTransportStreamInterface* result(nullptr);
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportOwtServerSession* session,
-             QuicTransportStreamInterface** result, base::WaitableEvent* event) {
+             WebTransportStreamInterface** result, base::WaitableEvent* event) {
             *result = session->CreateBidirectionalStreamOnCurrentThread();
             event->Signal();
           },
@@ -93,7 +93,7 @@ QuicTransportOwtServerSession::CreateBidirectionalStream() {
   return result;
 }
 
-QuicTransportStreamInterface*
+WebTransportStreamInterface*
 QuicTransportOwtServerSession::CreateBidirectionalStreamOnCurrentThread() {
   std::unique_ptr<::quic::QuicTransportStream> stream =
       std::make_unique<::quic::QuicTransportStream>(
@@ -151,7 +151,7 @@ void QuicTransportOwtServerSession::OnCanCreateNewOutgoingStream(
 }
 
 void QuicTransportOwtServerSession::SetVisitor(
-    owt::quic::QuicTransportSessionInterface::Visitor* visitor) {
+    owt::quic::WebTransportSessionInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 

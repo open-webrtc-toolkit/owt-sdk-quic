@@ -22,9 +22,9 @@
 #include "net/tools/quic/quic_transport_simple_server.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
-#include "owt/quic/quic_transport_client_interface.h"
-#include "owt/quic/quic_transport_factory.h"
-#include "owt/quic/quic_transport_stream_interface.h"
+#include "owt/quic/web_transport_client_interface.h"
+#include "owt/quic/web_transport_factory.h"
+#include "owt/quic/web_transport_stream_interface.h"
 #include "owt/web_transport/sdk/impl/quic_transport_owt_client_impl.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
@@ -33,14 +33,14 @@ namespace owt {
 namespace quic {
 namespace test {
 
-class ClientMockVisitor : public QuicTransportClientInterface::Visitor {
+class ClientMockVisitor : public WebTransportClientInterface::Visitor {
  public:
   MOCK_METHOD0(OnConnected, void());
   MOCK_METHOD0(OnConnectionFailed, void());
-  MOCK_METHOD1(OnIncomingStream, void(QuicTransportStreamInterface*));
+  MOCK_METHOD1(OnIncomingStream, void(WebTransportStreamInterface*));
 };
 
-class StreamMockVisitor : public QuicTransportStreamInterface::Visitor {
+class StreamMockVisitor : public WebTransportStreamInterface::Visitor {
  public:
   MOCK_METHOD0(OnCanRead, void());
   MOCK_METHOD0(OnCanWrite, void());
@@ -89,8 +89,8 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
             "quic_transport_end_to_end_test_io_thread")),
         event_thread_(std::make_unique<base::Thread>(
             "quic_transport_end_to_end_event_thread")),
-        factory_(std::unique_ptr<QuicTransportFactory>(
-            QuicTransportFactory::CreateForTesting())),
+        factory_(std::unique_ptr<WebTransportFactory>(
+            WebTransportFactory::CreateForTesting())),
         port_(0),
         origin_(url::Origin::Create(GURL{"https://example.org"})) {
     base::Thread::Options options;
@@ -128,7 +128,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
     event->Signal();
   }
 
-  std::unique_ptr<QuicTransportClientInterface> CreateClient(const GURL& url) {
+  std::unique_ptr<WebTransportClientInterface> CreateClient(const GURL& url) {
     base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                              base::WaitableEvent::InitialState::NOT_SIGNALED);
     io_thread_->task_runner()->PostTask(
@@ -146,7 +146,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
     // (2020-06-05T20:35:00.000Z).
     helper_->clock().set_wall_now(
         ::quic::QuicWallTime::FromUNIXSeconds(1591389300));
-    return std::unique_ptr<QuicTransportClientInterface>(
+    return std::unique_ptr<WebTransportClientInterface>(
         new QuicTransportOwtClientImpl(url, origin_, parameters, context_.get(),
                                        io_thread_.get(), event_thread_.get()));
   }
@@ -182,7 +182,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
  protected:
   std::unique_ptr<base::Thread> io_thread_;
   std::unique_ptr<base::Thread> event_thread_;
-  std::unique_ptr<QuicTransportFactory> factory_;
+  std::unique_ptr<WebTransportFactory> factory_;
   std::unique_ptr<net::QuicTransportSimpleServer> simple_server_;
   int port_;
   url::Origin origin_;
@@ -190,7 +190,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   std::unique_ptr<net::URLRequestContext> context_;
   TestConnectionHelper* helper_;  // Owned by |context_|.
   ClientMockVisitor visitor_;
-  std::unique_ptr<QuicTransportClientInterface> client_;
+  std::unique_ptr<WebTransportClientInterface> client_;
 };
 
 TEST_F(QuicTransportOwtEndToEndTest, Connect) {
@@ -204,8 +204,8 @@ TEST_F(QuicTransportOwtEndToEndTest, Connect) {
 
 TEST_F(QuicTransportOwtEndToEndTest, InvalidCertificate) {
   StartSimpleServer();
-  std::unique_ptr<QuicTransportClientInterface> client =
-      std::unique_ptr<QuicTransportClientInterface>(
+  std::unique_ptr<WebTransportClientInterface> client =
+      std::unique_ptr<WebTransportClientInterface>(
           factory_->CreateQuicTransportClient(
               GetServerUrl("/discard").spec().c_str()));
   client->SetVisitor(&visitor_);
@@ -259,7 +259,7 @@ TEST_F(QuicTransportOwtEndToEndTest, EchoUnidirectionalStream) {
   // For unidirectional streams, QuicTransportSimpleServer echos after stream is
   // closed.
   stream->Close();
-  QuicTransportStreamInterface* receive_stream(nullptr);
+  WebTransportStreamInterface* receive_stream(nullptr);
   EXPECT_CALL(visitor_, OnIncomingStream)
       .WillOnce(::testing::DoAll(testing::SaveArg<0>(&receive_stream),
                                  StopRunning()));

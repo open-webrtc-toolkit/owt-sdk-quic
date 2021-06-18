@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef OWT_QUIC_TRANSPORT_VERSION_H_
-#define OWT_QUIC_TRANSPORT_VERSION_H_
+#ifndef OWT_WEB_TRANSPORT_VERSION_H_
+#define OWT_WEB_TRANSPORT_VERSION_H_
 
 #include "export.h"
 

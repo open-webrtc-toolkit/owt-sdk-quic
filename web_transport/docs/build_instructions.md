@@ -17,7 +17,7 @@ Create a new directory for the check out, and create a `.gclient` file in this d
 ```
 solutions = [
   { "name"        : "src/owt",
-    "url"         : "https://github.com/open-webrtc-toolkit/owt-deps-quic.git",
+    "url"         : "https://github.com/open-webrtc-toolkit/owt-sdk-quic.git",
     "deps_file"   : "DEPS",
     "managed"     : False,
     "custom_deps" : {
@@ -35,7 +35,7 @@ You will see a `src` directory after sync completes. Switch to the `src` directo
 
 Some manually changes to Chromium code are needed before building SDK.
 
-1. Add `"//owt/web_transport:owt_quic_transport",` to `BUILD.gn`, after line 91. You need to revert this change before rolling Chromium revision, and redo this change after rolling.
+1. Add `"//owt/web_transport:owt_web_transport",` to `BUILD.gn`, after line 91. You need to revert this change before rolling Chromium revision, and redo this change after rolling.
 
 1. Create a file `gclient_args.gni` in `build/config` with following code.
 
@@ -65,7 +65,7 @@ symbol_level=1
 
 You may want to set `is_component_build` to `false` in order to get a single shared library, but you can also set it to `true` to reduce the compiling time for debugging. `symbol_level` is set to `1` since `2` is conflicted with `is_component_build=false`.
 
-Then run `ninja -C out/debug/ owt_quic_transport` to build the SDK or `ninja -C out/debug/ owt_quic_transport_tests` for end to end tests.
+Then run `ninja -C out/debug/ owt_web_transport` to build the SDK or `ninja -C out/debug/ owt_web_transport_tests` for end to end tests.
 
 ## Certificates
 

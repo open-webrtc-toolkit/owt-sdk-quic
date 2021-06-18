@@ -12,22 +12,22 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.h
 // with modifications.
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_STREAM_IMPL_H_
-#define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_STREAM_IMPL_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_STREAM_IMPL_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_STREAM_IMPL_H_
 
 #include "base/memory/weak_ptr.h"
 #include "base/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
 #include "net/third_party/quiche/src/quic/core/web_transport_interface.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
-#include "owt/quic/quic_transport_stream_interface.h"
+#include "owt/quic/web_transport_stream_interface.h"
 
 namespace owt {
 namespace quic {
 
 // QuicTransportStreamImpl is a proxy for ::quic::QuicTransportStream. All calls
 // to ::quic::QuicTransportStream run in runner_.
-class QuicTransportStreamImpl : public QuicTransportStreamInterface,
+class QuicTransportStreamImpl : public WebTransportStreamInterface,
                                 public ::quic::WebTransportStreamVisitor {
  public:
   explicit QuicTransportStreamImpl(::quic::QuicTransportStream* stream,
@@ -35,9 +35,9 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
                                    base::SingleThreadTaskRunner* event_runner);
   ~QuicTransportStreamImpl() override;
 
-  // Overrides QuicTransportStreamInterface.
+  // Overrides WebTransportStreamInterface.
   void SetVisitor(
-      owt::quic::QuicTransportStreamInterface::Visitor* visitor) override;
+      owt::quic::WebTransportStreamInterface::Visitor* visitor) override;
   uint32_t Id() const override;
   size_t Write(uint8_t* data, size_t length) override;
   size_t Read(uint8_t* data, size_t length) override;
@@ -54,7 +54,7 @@ class QuicTransportStreamImpl : public QuicTransportStreamInterface,
   ::quic::QuicTransportStream* stream_;
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
-  owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
+  owt::quic::WebTransportStreamInterface::Visitor* visitor_;
 
  private:
   void WriteOnCurrentThread(std::vector<uint8_t> data);

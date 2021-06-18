@@ -127,7 +127,7 @@ void QuicTransportOwtServerImpl::StartOnCurrentThread(
 void QuicTransportOwtServerImpl::Stop() {}
 
 void QuicTransportOwtServerImpl::SetVisitor(
-    QuicTransportServerInterface::Visitor* visitor) {
+    WebTransportServerInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 

@@ -12,8 +12,8 @@
 // Chromium/net/tools/quic/quic_transport_simple_server.h
 // with modifications.
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
-#define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
 
 #include <string>
 #include <vector>
@@ -27,14 +27,14 @@
 #include "net/third_party/quiche/src/quic/core/quic_config.h"
 #include "net/third_party/quiche/src/quic/core/quic_version_manager.h"
 #include "net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h"
-#include "owt/quic/quic_transport_server_interface.h"
+#include "owt/quic/web_transport_server_interface.h"
 #include "owt/web_transport/sdk/impl/quic_transport_owt_server_dispatcher.h"
 #include "url/origin.h"
 
 namespace owt {
 namespace quic {
 // A server accepts WebTransport - QuicTransport connections.
-class QuicTransportOwtServerImpl : public QuicTransportServerInterface,
+class QuicTransportOwtServerImpl : public WebTransportServerInterface,
                                    public QuicTransportOwtServerDispatcher::Visitor {
  public:
   QuicTransportOwtServerImpl() = delete;
@@ -47,7 +47,7 @@ class QuicTransportOwtServerImpl : public QuicTransportServerInterface,
   ~QuicTransportOwtServerImpl() override;
   int Start() override;
   void Stop() override;
-  void SetVisitor(QuicTransportServerInterface::Visitor* visitor) override;
+  void SetVisitor(WebTransportServerInterface::Visitor* visitor) override;
 
  protected:
   // Implements QuicTransportOwtServerDispatcher::Visitor.
@@ -82,7 +82,7 @@ class QuicTransportOwtServerImpl : public QuicTransportServerInterface,
   scoped_refptr<net::IOBufferWithSize> read_buffer_;
   net::IPEndPoint client_address_;
 
-  QuicTransportServerInterface::Visitor* visitor_;
+  WebTransportServerInterface::Visitor* visitor_;
 
   base::WeakPtrFactory<QuicTransportOwtServerImpl> weak_factory_{this};
 };

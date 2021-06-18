@@ -23,10 +23,10 @@ source_set("owt_web_transport_impl") {
     "//third_party/boringssl",
   ]
   sources = [
-    "sdk/api/owt/quic/quic_definitions.h",
-    "sdk/api/owt/quic/quic_transport_client_interface.h",
-    "sdk/api/owt/quic/quic_transport_factory.h",
-    "sdk/api/owt/quic/quic_transport_server_interface.h",
+    "sdk/api/owt/quic/web_transport_definitions.h",
+    "sdk/api/owt/quic/web_transport_client_interface.h",
+    "sdk/api/owt/quic/web_transport_factory.h",
+    "sdk/api/owt/quic/web_transport_server_interface.h",
     "sdk/api/owt/quic/version.h",
     "sdk/impl/proof_source_owt.cc",
     "sdk/impl/proof_source_owt.h",

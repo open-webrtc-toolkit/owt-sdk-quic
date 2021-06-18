@@ -50,7 +50,7 @@ QuicTransportStreamImpl::QuicTransportStreamImpl(
 QuicTransportStreamImpl::~QuicTransportStreamImpl() = default;
 
 void QuicTransportStreamImpl::SetVisitor(
-    owt::quic::QuicTransportStreamInterface::Visitor* visitor) {
+    owt::quic::WebTransportStreamInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 

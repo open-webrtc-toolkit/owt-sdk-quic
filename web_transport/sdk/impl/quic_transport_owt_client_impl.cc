@@ -154,7 +154,7 @@ void QuicTransportOwtClientImpl::CloseOnCurrentThread(
 }
 
 void QuicTransportOwtClientImpl::SetVisitor(
-    QuicTransportClientInterface::Visitor* visitor) {
+    WebTransportClientInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 
@@ -163,7 +163,7 @@ void QuicTransportOwtClientImpl::OnConnected() {
       FROM_HERE,
       base::BindOnce(&QuicTransportOwtClientImpl::FireEvent,
                      weak_factory_.GetWeakPtr(),
-                     &QuicTransportClientInterface::Visitor::OnConnected));
+                     &WebTransportClientInterface::Visitor::OnConnected));
 }
 
 void QuicTransportOwtClientImpl::OnConnectionFailed() {
@@ -171,28 +171,28 @@ void QuicTransportOwtClientImpl::OnConnectionFailed() {
       FROM_HERE,
       base::BindOnce(
           &QuicTransportOwtClientImpl::FireEvent, weak_factory_.GetWeakPtr(),
-          &QuicTransportClientInterface::Visitor::OnConnectionFailed));
+          &WebTransportClientInterface::Visitor::OnConnectionFailed));
 }
 
-QuicTransportStreamInterface*
+WebTransportStreamInterface*
 QuicTransportOwtClientImpl::CreateBidirectionalStream() {
   return CreateOutgoingStream(true);
 }
 
-QuicTransportStreamInterface*
+WebTransportStreamInterface*
 QuicTransportOwtClientImpl::CreateOutgoingUnidirectionalStream() {
   return CreateOutgoingStream(false);
 }
 
-QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
+WebTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
     bool bidirectional) {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
-  QuicTransportStreamInterface* stream(nullptr);
+  WebTransportStreamInterface* stream(nullptr);
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(
                      [](QuicTransportOwtClientImpl* client,
-                        QuicTransportStreamInterface** result,
+                        WebTransportStreamInterface** result,
                         bool bidirectional, base::WaitableEvent* event) {
                       CHECK(client);
                        *result = client->CreateOutgoingStreamOnCurrentThread(
@@ -205,7 +205,7 @@ QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
   return stream;
 }
 
-QuicTransportStreamInterface*
+WebTransportStreamInterface*
 QuicTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
     bool bidirectional) {
   if (!client_->quic_session()) {
@@ -246,7 +246,7 @@ void QuicTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
   }
 }
 
-QuicTransportStreamInterface*
+WebTransportStreamInterface*
 QuicTransportOwtClientImpl::OwtStreamForNativeStream(
     ::quic::QuicTransportStream* stream) {
   std::unique_ptr<QuicTransportStreamImpl> stream_impl =
@@ -258,7 +258,7 @@ QuicTransportOwtClientImpl::OwtStreamForNativeStream(
 }
 
 void QuicTransportOwtClientImpl::FireEvent(
-    std::function<void(QuicTransportClientInterface::Visitor&)> func) {
+    std::function<void(WebTransportClientInterface::Visitor&)> func) {
   if (visitor_) {
     func(*visitor_);
   }

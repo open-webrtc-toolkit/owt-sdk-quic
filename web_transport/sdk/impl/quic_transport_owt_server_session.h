@@ -12,8 +12,8 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.h
 // with modifications.
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
-#define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
 
 #include <memory>
 #include <vector>
@@ -24,7 +24,7 @@
 #include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_server_session.h"
 #include "net/third_party/quiche/src/quic/quic_transport/quic_transport_stream.h"
-#include "owt/quic/quic_transport_session_interface.h"
+#include "owt/quic/web_transport_session_interface.h"
 #include "owt/web_transport/sdk/impl/quic_transport_stream_impl.h"
 #include "url/origin.h"
 
@@ -32,7 +32,7 @@ namespace owt {
 namespace quic {
 
 class QuicTransportOwtServerSession
-    : public QuicTransportSessionInterface,
+    : public WebTransportSessionInterface,
       public ::quic::QuicTransportServerSession,
       ::quic::QuicTransportServerSession::ServerVisitor {
  public:
@@ -51,11 +51,11 @@ class QuicTransportOwtServerSession
 
   // Override QuicTransportSessionInterface.
   void SetVisitor(
-      owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
+      owt::quic::WebTransportSessionInterface::Visitor* visitor) override;
   // Caller needs to free the connection ID returned.
   const char* ConnectionId() const override;
   bool IsSessionReady() const override;
-  QuicTransportStreamInterface* CreateBidirectionalStream() override;
+  WebTransportStreamInterface* CreateBidirectionalStream() override;
   const ConnectionStats& GetStats() override;
 
   void OnConnectionClosed(const ::quic::QuicConnectionCloseFrame& frame,
@@ -69,11 +69,11 @@ class QuicTransportOwtServerSession
   void OnMessageReceived(absl::string_view message) override;
 
  private:
-  QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
+  WebTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
 
   const bool owns_connection_;
   std::vector<url::Origin> accepted_origins_;
-  owt::quic::QuicTransportSessionInterface::Visitor* visitor_;
+  owt::quic::WebTransportSessionInterface::Visitor* visitor_;
   std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
   base::SingleThreadTaskRunner* runner_;
   base::SingleThreadTaskRunner* event_runner_;
