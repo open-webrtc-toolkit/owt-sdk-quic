@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "impl/quic_transport_factory_impl.h"
+#include "impl/web_transport_factory_impl.h"
 #include "base/at_exit.h"
 #include "base/bind.h"
 #include "base/command_line.h"
@@ -13,7 +13,7 @@
 #include "base/threading/thread.h"
 #include "impl/proof_source_owt.h"
 #include "impl/quic_transport_owt_client_impl.h"
-#include "impl/quic_transport_owt_server_impl.h"
+#include "impl/web_transport_owt_server_impl.h"
 #include "net/quic/crypto/proof_source_chromium.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 #include "net/quic/quic_chromium_alarm_factory.h"
@@ -66,7 +66,7 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
     LOG(ERROR) << "Failed to initialize proof source.";
     return nullptr;
   }
-  return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
+  return new WebTransportOwtServerImpl(port, std::vector<url::Origin>(),
                                         std::move(proof_source),
                                         io_thread_.get(), event_thread_.get());
 }
@@ -81,14 +81,14 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
     LOG(ERROR) << "Failed to initialize proof source.";
     return nullptr;
   }
-  return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
+  return new WebTransportOwtServerImpl(port, std::vector<url::Origin>(),
                                         std::move(proof_source),
                                         io_thread_.get(), event_thread_.get());
 }
 
 void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
     const WebTransportServerInterface* server) {
-  delete reinterpret_cast<const QuicTransportOwtServerImpl*>(server);
+  delete reinterpret_cast<const WebTransportOwtServerImpl*>(server);
 }
 
 WebTransportClientInterface*

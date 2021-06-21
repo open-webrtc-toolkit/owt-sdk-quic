@@ -5,7 +5,7 @@
  */
 
 #include "owt/quic/web_transport_factory.h"
-#include "owt/web_transport/sdk/impl/quic_transport_factory_impl.h"
+#include "owt/web_transport/sdk/impl/web_transport_factory_impl.h"
 #include "base/logging.h"
 #include "testing/gtest/include/gtest/gtest.h"
 

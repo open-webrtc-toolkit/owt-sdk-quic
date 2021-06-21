@@ -12,8 +12,8 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h
 // with modifications.
 
-#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_DISPATCHER_H_
-#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_DISPATCHER_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_SERVER_DISPATCHER_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_SERVER_DISPATCHER_H_
 
 #include "base/single_thread_task_runner.h"
 #include "net/third_party/quiche/src/quic/core/quic_dispatcher.h"
@@ -22,14 +22,14 @@
 namespace owt {
 namespace quic {
 class QuicTransportOwtServerSession;
-class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
+class WebTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
  public:
   class Visitor {
    public:
     virtual ~Visitor() = default;
     virtual void OnSession(QuicTransportOwtServerSession*) = 0;
   };
-  QuicTransportOwtServerDispatcher(
+  WebTransportOwtServerDispatcher(
       const ::quic::QuicConfig* config,
       const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicVersionManager* version_manager,
@@ -43,7 +43,7 @@ class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
       base::SingleThreadTaskRunner* event_runner);
   void SetVisitor(Visitor* visitor);
 
-  ~QuicTransportOwtServerDispatcher() override;
+  ~WebTransportOwtServerDispatcher() override;
 
  protected:
   std::unique_ptr<::quic::QuicSession> CreateQuicSession(

@@ -12,7 +12,7 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.cc
 // with modifications.
 
-#include "impl/quic_transport_owt_server_dispatcher.h"
+#include "impl/web_transport_owt_server_dispatcher.h"
 
 #include <memory>
 
@@ -28,7 +28,7 @@ namespace quic {
 
 using namespace ::quic;
 
-QuicTransportOwtServerDispatcher::QuicTransportOwtServerDispatcher(
+WebTransportOwtServerDispatcher::WebTransportOwtServerDispatcher(
     const QuicConfig* config,
     const QuicCryptoServerConfig* crypto_config,
     QuicVersionManager* version_manager,
@@ -54,10 +54,10 @@ QuicTransportOwtServerDispatcher::QuicTransportOwtServerDispatcher(
   CHECK(event_runner_);
 }
 
-QuicTransportOwtServerDispatcher::~QuicTransportOwtServerDispatcher() = default;
+WebTransportOwtServerDispatcher::~WebTransportOwtServerDispatcher() = default;
 
 std::unique_ptr<QuicSession>
-QuicTransportOwtServerDispatcher::CreateQuicSession(
+WebTransportOwtServerDispatcher::CreateQuicSession(
     QuicConnectionId server_connection_id,
     const QuicSocketAddress& self_address,
     const QuicSocketAddress& peer_address,
@@ -80,7 +80,7 @@ QuicTransportOwtServerDispatcher::CreateQuicSession(
   return session;
 }
 
-void QuicTransportOwtServerDispatcher::SetVisitor(Visitor* visitor) {
+void WebTransportOwtServerDispatcher::SetVisitor(Visitor* visitor) {
   visitor_ = visitor;
 }
 }  // namespace quic

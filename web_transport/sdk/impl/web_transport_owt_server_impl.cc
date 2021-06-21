@@ -12,11 +12,11 @@
 // Chromium/net/tools/quic/quic_transport_simple_server.cc
 // with modifications.
 
-#include "impl/quic_transport_owt_server_impl.h"
+#include "impl/web_transport_owt_server_impl.h"
 #include "base/bind.h"
 #include "base/threading/thread.h"
 #include "base/threading/thread_task_runner_handle.h"
-#include "impl/quic_transport_owt_server_dispatcher.h"
+#include "impl/web_transport_owt_server_dispatcher.h"
 #include "impl/quic_transport_owt_server_session.h"
 #include "net/base/net_errors.h"
 #include "net/quic/address_utils.h"
@@ -39,7 +39,7 @@ constexpr size_t kMaxReadsPerEvent = 32;
 constexpr size_t kMaxNewConnectionsPerEvent = 32;
 constexpr int kReadBufferSize = 2 * ::quic::kMaxIncomingPacketSize;
 
-class QuicTransportOwtServerImplSessionHelper
+class WebTransportOwtServerImplSessionHelper
     : public ::quic::QuicCryptoServerStreamBase::Helper {
  public:
   bool CanAcceptClientHello(const ::quic::CryptoHandshakeMessage& /*message*/,
@@ -51,7 +51,7 @@ class QuicTransportOwtServerImplSessionHelper
   }
 };
 
-QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
+WebTransportOwtServerImpl::WebTransportOwtServerImpl(
     int port,
     std::vector<url::Origin> accepted_origins,
     std::unique_ptr<::quic::ProofSource> proof_source,
@@ -74,11 +74,11 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
       visitor_(nullptr) {
   CHECK(task_runner_);
   CHECK(event_runner_);
-  dispatcher_ = std::make_unique<QuicTransportOwtServerDispatcher>(
+  dispatcher_ = std::make_unique<WebTransportOwtServerDispatcher>(
       &config_, &crypto_config_, &version_manager_,
       std::make_unique<net::QuicChromiumConnectionHelper>(
           clock_, ::quic::QuicRandom::GetInstance()),
-      std::make_unique<QuicTransportOwtServerImplSessionHelper>(),
+      std::make_unique<WebTransportOwtServerImplSessionHelper>(),
       std::make_unique<net::QuicChromiumAlarmFactory>(task_runner_.get(),
                                                       clock_),
       ::quic::kQuicDefaultConnectionIdLength, accepted_origins,
@@ -86,14 +86,14 @@ QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
   dispatcher_->SetVisitor(this);
 }
 
-QuicTransportOwtServerImpl::~QuicTransportOwtServerImpl() {}
+WebTransportOwtServerImpl::~WebTransportOwtServerImpl() {}
 
-int QuicTransportOwtServerImpl::Start() {
+int WebTransportOwtServerImpl::Start() {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOwtServerImpl::StartOnCurrentThread,
+      base::BindOnce(&WebTransportOwtServerImpl::StartOnCurrentThread,
                      base::Unretained(this), &done));
   done.Wait();
   if (socket_) {
@@ -106,9 +106,9 @@ int QuicTransportOwtServerImpl::Start() {
   }
 }
 
-void QuicTransportOwtServerImpl::StartOnCurrentThread(
+void WebTransportOwtServerImpl::StartOnCurrentThread(
     base::WaitableEvent* done) {
-  LOG(INFO) << "QuicTransportOwtServerImpl::StartOnCurrentThread";
+  LOG(INFO) << "WebTransportOwtServerImpl::StartOnCurrentThread";
   socket_ = net::CreateQuicSimpleServerSocket(
       net::IPEndPoint{net::IPAddress::IPv6AllZeros(), port_}, &server_address_);
   if (socket_ == nullptr) {
@@ -120,29 +120,29 @@ void QuicTransportOwtServerImpl::StartOnCurrentThread(
       new net::QuicSimpleServerPacketWriter(socket_.get(), dispatcher_.get()));
   ScheduleReadPackets();
   done->Signal();
-  LOG(INFO) << "End of QuicTransportOwtServerImpl::StartOnCurrentThread";
+  LOG(INFO) << "End of WebTransportOwtServerImpl::StartOnCurrentThread";
   return;
 }
 
-void QuicTransportOwtServerImpl::Stop() {}
+void WebTransportOwtServerImpl::Stop() {}
 
-void QuicTransportOwtServerImpl::SetVisitor(
+void WebTransportOwtServerImpl::SetVisitor(
     WebTransportServerInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 
-void QuicTransportOwtServerImpl::ScheduleReadPackets() {
+void WebTransportOwtServerImpl::ScheduleReadPackets() {
   task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&QuicTransportOwtServerImpl::ReadPackets,
+      FROM_HERE, base::BindOnce(&WebTransportOwtServerImpl::ReadPackets,
                                 weak_factory_.GetWeakPtr()));
 }
 
-void QuicTransportOwtServerImpl::ReadPackets() {
+void WebTransportOwtServerImpl::ReadPackets() {
   dispatcher_->ProcessBufferedChlos(kMaxNewConnectionsPerEvent);
   for (size_t i = 0; i < kMaxReadsPerEvent; i++) {
     int result = socket_->RecvFrom(
         read_buffer_.get(), read_buffer_->size(), &client_address_,
-        base::BindOnce(&QuicTransportOwtServerImpl::OnReadComplete,
+        base::BindOnce(&WebTransportOwtServerImpl::OnReadComplete,
                        base::Unretained(this)));
     if (result == net::ERR_IO_PENDING) {
       return;
@@ -152,12 +152,12 @@ void QuicTransportOwtServerImpl::ReadPackets() {
   ScheduleReadPackets();
 }
 
-void QuicTransportOwtServerImpl::OnReadComplete(int result) {
+void WebTransportOwtServerImpl::OnReadComplete(int result) {
   ProcessReadPacket(result);
   ReadPackets();
 }
 
-void QuicTransportOwtServerImpl::ProcessReadPacket(int result) {
+void WebTransportOwtServerImpl::ProcessReadPacket(int result) {
   if (result == 0)
     result = net::ERR_CONNECTION_CLOSED;
   if (result < 0) {
@@ -173,7 +173,7 @@ void QuicTransportOwtServerImpl::ProcessReadPacket(int result) {
                              net::ToQuicSocketAddress(client_address_), packet);
 }
 
-void QuicTransportOwtServerImpl::OnSession(
+void WebTransportOwtServerImpl::OnSession(
     QuicTransportOwtServerSession* session) {
   if (visitor_) {
     CHECK(session);

@@ -12,8 +12,8 @@
 // Chromium/net/tools/quic/quic_transport_simple_server.h
 // with modifications.
 
-#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
-#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_IMPL_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_SERVER_IMPL_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_SERVER_IMPL_H_
 
 #include <string>
 #include <vector>
@@ -28,29 +28,29 @@
 #include "net/third_party/quiche/src/quic/core/quic_version_manager.h"
 #include "net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h"
 #include "owt/quic/web_transport_server_interface.h"
-#include "owt/web_transport/sdk/impl/quic_transport_owt_server_dispatcher.h"
+#include "owt/web_transport/sdk/impl/web_transport_owt_server_dispatcher.h"
 #include "url/origin.h"
 
 namespace owt {
 namespace quic {
-// A server accepts WebTransport - QuicTransport connections.
-class QuicTransportOwtServerImpl : public WebTransportServerInterface,
-                                   public QuicTransportOwtServerDispatcher::Visitor {
+// A server accepts WebTransport connections.
+class WebTransportOwtServerImpl : public WebTransportServerInterface,
+                                   public WebTransportOwtServerDispatcher::Visitor {
  public:
-  QuicTransportOwtServerImpl() = delete;
-  explicit QuicTransportOwtServerImpl(
+  WebTransportOwtServerImpl() = delete;
+  explicit WebTransportOwtServerImpl(
       int port,
       std::vector<url::Origin> accepted_origins,
       std::unique_ptr<::quic::ProofSource> proof_source,
       base::Thread* io_thread,
       base::Thread* event_thread);
-  ~QuicTransportOwtServerImpl() override;
+  ~WebTransportOwtServerImpl() override;
   int Start() override;
   void Stop() override;
   void SetVisitor(WebTransportServerInterface::Visitor* visitor) override;
 
  protected:
-  // Implements QuicTransportOwtServerDispatcher::Visitor.
+  // Implements WebTransportOwtServerDispatcher::Visitor.
   void OnSession(QuicTransportOwtServerSession* session) override;
 
  private:
@@ -72,7 +72,7 @@ class QuicTransportOwtServerImpl : public WebTransportServerInterface,
   ::quic::QuicConfig config_;
   ::quic::QuicCryptoServerConfig crypto_config_;
 
-  std::unique_ptr<QuicTransportOwtServerDispatcher> dispatcher_;
+  std::unique_ptr<WebTransportOwtServerDispatcher> dispatcher_;
   std::unique_ptr<net::UDPServerSocket> socket_;
   net::IPEndPoint server_address_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
@@ -84,7 +84,9 @@ class QuicTransportOwtServerImpl : public WebTransportServerInterface,
 
   WebTransportServerInterface::Visitor* visitor_;
 
-  base::WeakPtrFactory<QuicTransportOwtServerImpl> weak_factory_{this};
+  base::WeakPtrFactory<WebTransportOwtServerImpl> weak_factory_{this};
+
+  DISALLOW_COPY_AND_ASSIGN(WebTransportOwtServerImpl);
 };
 }  // namespace quic
 }  // namespace owt
