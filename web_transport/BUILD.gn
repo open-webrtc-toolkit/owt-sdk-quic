@@ -28,6 +28,10 @@ source_set("owt_web_transport_impl") {
     "sdk/api/owt/quic/web_transport_factory.h",
     "sdk/api/owt/quic/web_transport_server_interface.h",
     "sdk/api/owt/quic/version.h",
+    "sdk/impl/http3_server_session.cc",
+    "sdk/impl/http3_server_session.h",
+    "sdk/impl/http3_server_stream.cc",
+    "sdk/impl/http3_server_stream.h",
     "sdk/impl/proof_source_owt.cc",
     "sdk/impl/proof_source_owt.h",
     "sdk/impl/quic_transport_factory_impl.cc",
@@ -43,6 +47,10 @@ source_set("owt_web_transport_impl") {
     "sdk/impl/quic_transport_stream_impl.cc",
     "sdk/impl/quic_transport_stream_impl.h",
     "sdk/impl/version.cc",
+    "sdk/impl/web_transport_server_session.cc",
+    "sdk/impl/web_transport_server_session.h",
+    "sdk/impl/web_transport_server_stream.cc",
+    "sdk/impl/web_transport_server_stream.h",
   ]
   configs += [ ":owt_web_transport_config" ]
 }
@@ -98,6 +106,7 @@ test("owt_web_transport_tests") {
     "sdk/impl/quic_transport_factory_impl_unittest.cc",
     "sdk/impl/tests/quic_transport_owt_end_to_end_test.cc",
     "sdk/impl/tests/run_all_unittests.cc",
+    "sdk/impl/tests/web_transport_owt_end_to_end_test.cc",
     "sdk/impl/version_unittest.cc",
   ]
   configs += [

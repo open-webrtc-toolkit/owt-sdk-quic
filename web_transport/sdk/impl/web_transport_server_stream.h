@@ -52,8 +52,6 @@ class WebTransportServerStream : public WebTransportStreamInterface,
   void OnCanWrite() override;
 
  private:
-  void WriteOnCurrentThread(std::vector<uint8_t> data);
-
   void OnCanReadOnCurrentThread();
   void OnFinReadOnCurrentThread();
   void OnCanWriteOnCurrentThread();

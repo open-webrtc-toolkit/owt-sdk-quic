@@ -25,7 +25,10 @@ WebTransportServerSession::WebTransportServerSession(
     ::quic::WebTransportHttp3* session,
     base::SingleThreadTaskRunner* io_runner,
     base::SingleThreadTaskRunner* event_runner)
-    : session_(session), io_runner_(io_runner), event_runner_(event_runner) {
+    : session_(session),
+      io_runner_(io_runner),
+      event_runner_(event_runner),
+      visitor_(nullptr) {
   CHECK(session_);
   CHECK(io_runner_);
   CHECK(event_runner_);
@@ -43,5 +46,31 @@ WebTransportServerSession::CreateBidirectionalStream() {
   streams_.push_back(std::move(stream));
   return stream_ptr;
 }
+
+uint64_t WebTransportServerSession::SessionId() const {
+  return session_->id();
+}
+
+const char* WebTransportServerSession::ConnectionId() const {
+  const std::string& session_id_str = std::to_string(SessionId());
+  char* id = new char[session_id_str.size() + 1];
+  strcpy(id, session_id_str.c_str());
+  return id;
+}
+
+bool WebTransportServerSession::IsSessionReady() const {
+  // A WebTransport session is created after a QUIC session is ready.
+  return true;
+}
+
+void WebTransportServerSession::SetVisitor(
+    WebTransportSessionInterface::Visitor* visitor) {
+  visitor_ = visitor;
+}
+
+const ConnectionStats& WebTransportServerSession::GetStats() {
+  return stats_;
+}
+
 }  // namespace quic
 }  // namespace owt

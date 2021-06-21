@@ -29,11 +29,15 @@ class WebTransportServerSession : public WebTransportSessionInterface {
       base::SingleThreadTaskRunner* event_runner);
   ~WebTransportServerSession() override;
 
+  // This method is going to replace ConnectionId();
+  uint64_t SessionId() const;
+
   // Override QuicTransportSessionInterface.
   const char* ConnectionId() const override;
   void SetVisitor(WebTransportSessionInterface::Visitor* visitor) override;
   bool IsSessionReady() const override;
   WebTransportStreamInterface* CreateBidirectionalStream() override;
+  // TODO: This method is not implemented.
   const ConnectionStats& GetStats() override;
 
  private:
@@ -41,6 +45,8 @@ class WebTransportServerSession : public WebTransportSessionInterface {
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
   std::vector<std::unique_ptr<WebTransportStreamInterface>> streams_;
+  WebTransportSessionInterface::Visitor* visitor_;
+  ConnectionStats stats_;
 };
 }  // namespace quic
 }  // namespace owt
