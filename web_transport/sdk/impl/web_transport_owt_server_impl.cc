@@ -16,8 +16,8 @@
 #include "base/bind.h"
 #include "base/threading/thread.h"
 #include "base/threading/thread_task_runner_handle.h"
+#include "impl/http3_server_session.h"
 #include "impl/web_transport_owt_server_dispatcher.h"
-#include "impl/quic_transport_owt_server_session.h"
 #include "net/base/net_errors.h"
 #include "net/quic/address_utils.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
@@ -132,9 +132,9 @@ void WebTransportOwtServerImpl::SetVisitor(
 }
 
 void WebTransportOwtServerImpl::ScheduleReadPackets() {
-  task_runner_->PostTask(
-      FROM_HERE, base::BindOnce(&WebTransportOwtServerImpl::ReadPackets,
-                                weak_factory_.GetWeakPtr()));
+  task_runner_->PostTask(FROM_HERE,
+                         base::BindOnce(&WebTransportOwtServerImpl::ReadPackets,
+                                        weak_factory_.GetWeakPtr()));
 }
 
 void WebTransportOwtServerImpl::ReadPackets() {
@@ -161,7 +161,7 @@ void WebTransportOwtServerImpl::ProcessReadPacket(int result) {
   if (result == 0)
     result = net::ERR_CONNECTION_CLOSED;
   if (result < 0) {
-    LOG(ERROR) << "QuicTransportSimpleServer read failed: "
+    LOG(ERROR) << "WebTransportOwtServer read failed: "
                << net::ErrorToString(result);
     dispatcher_->Shutdown();
     return;
@@ -174,7 +174,7 @@ void WebTransportOwtServerImpl::ProcessReadPacket(int result) {
 }
 
 void WebTransportOwtServerImpl::OnSession(
-    QuicTransportOwtServerSession* session) {
+    WebTransportSessionInterface* session) {
   if (visitor_) {
     CHECK(session);
     LOG(INFO) << "Connection ID: " << session->ConnectionId();

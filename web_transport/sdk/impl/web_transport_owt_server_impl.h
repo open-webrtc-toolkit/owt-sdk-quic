@@ -33,9 +33,11 @@
 
 namespace owt {
 namespace quic {
-// A server accepts WebTransport connections.
-class WebTransportOwtServerImpl : public WebTransportServerInterface,
-                                   public WebTransportOwtServerDispatcher::Visitor {
+// An HTTP/3 server accepts WebTransport connections. HTTP/2 fallback is not
+// supported.
+class WebTransportOwtServerImpl
+    : public WebTransportServerInterface,
+      public WebTransportOwtServerDispatcher::Visitor {
  public:
   WebTransportOwtServerImpl() = delete;
   explicit WebTransportOwtServerImpl(
@@ -51,7 +53,7 @@ class WebTransportOwtServerImpl : public WebTransportServerInterface,
 
  protected:
   // Implements WebTransportOwtServerDispatcher::Visitor.
-  void OnSession(QuicTransportOwtServerSession* session) override;
+  void OnSession(WebTransportSessionInterface* session) override;
 
  private:
   // Schedules a ReadPackets() call on the next iteration of the event loop.

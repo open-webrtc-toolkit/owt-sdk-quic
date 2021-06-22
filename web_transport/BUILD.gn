@@ -36,8 +36,6 @@ source_set("owt_web_transport_impl") {
     "sdk/impl/proof_source_owt.h",
     "sdk/impl/quic_transport_owt_client_impl.cc",
     "sdk/impl/quic_transport_owt_client_impl.h",
-    "sdk/impl/quic_transport_owt_server_session.cc",
-    "sdk/impl/quic_transport_owt_server_session.h",
     "sdk/impl/quic_transport_stream_impl.cc",
     "sdk/impl/quic_transport_stream_impl.h",
     "sdk/impl/version.cc",
@@ -103,7 +101,6 @@ test("owt_web_transport_tests") {
   testonly = true
   sources = [
     "sdk/impl/proof_source_owt_unittest.cc",
-    "sdk/impl/tests/quic_transport_owt_end_to_end_test.cc",
     "sdk/impl/tests/run_all_unittests.cc",
     "sdk/impl/tests/web_transport_owt_end_to_end_test.cc",
     "sdk/impl/version_unittest.cc",

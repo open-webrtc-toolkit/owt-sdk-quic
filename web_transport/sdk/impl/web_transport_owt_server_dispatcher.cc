@@ -13,15 +13,12 @@
 // with modifications.
 
 #include "impl/web_transport_owt_server_dispatcher.h"
-
 #include <memory>
-
-#include "impl/quic_transport_owt_server_session.h"
+#include "impl/http3_server_session.h"
 #include "net/third_party/quiche/src/quic/core/quic_connection.h"
 #include "net/third_party/quiche/src/quic/core/quic_dispatcher.h"
 #include "net/third_party/quiche/src/quic/core/quic_types.h"
 #include "net/third_party/quiche/src/quic/core/quic_versions.h"
-#include "net/third_party/quiche/src/quic/tools/quic_transport_simple_server_session.h"
 
 namespace owt {
 namespace quic {
@@ -56,8 +53,7 @@ WebTransportOwtServerDispatcher::WebTransportOwtServerDispatcher(
 
 WebTransportOwtServerDispatcher::~WebTransportOwtServerDispatcher() = default;
 
-std::unique_ptr<QuicSession>
-WebTransportOwtServerDispatcher::CreateQuicSession(
+std::unique_ptr<QuicSession> WebTransportOwtServerDispatcher::CreateQuicSession(
     QuicConnectionId server_connection_id,
     const QuicSocketAddress& self_address,
     const QuicSocketAddress& peer_address,
@@ -68,14 +64,11 @@ WebTransportOwtServerDispatcher::CreateQuicSession(
       server_connection_id, self_address, peer_address, helper(),
       alarm_factory(), writer(), /*owns_writer=*/false, Perspective::IS_SERVER,
       ParsedQuicVersionVector{version});
-  auto session = std::make_unique<QuicTransportOwtServerSession>(
-      connection.release(), /*owns_connection=*/true, this, config(),
-      GetSupportedVersions(), crypto_config(), compressed_certs_cache(),
-      accepted_origins_, runner_, event_runner_);
+  auto session = std::make_unique<Http3ServerSession>(
+      config(), GetSupportedVersions(), connection.release(), this,
+      session_helper(), crypto_config(), compressed_certs_cache(), runner_,
+      event_runner_);
   session->Initialize();
-  if (visitor_) {
-    visitor_->OnSession(session.get());
-  }
   DLOG(INFO) << "Create a new session for " << peer_address.ToString();
   return session;
 }

@@ -26,7 +26,7 @@ namespace owt {
 namespace quic {
 
 WebTransportFactory* WebTransportFactory::Create() {
-  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("quic_transport_thread_pool");
+  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("web_transport_thread_pool");
   QuicTransportFactoryImpl* factory = new QuicTransportFactoryImpl();
   factory->InitializeAtExitManager();
   return factory;

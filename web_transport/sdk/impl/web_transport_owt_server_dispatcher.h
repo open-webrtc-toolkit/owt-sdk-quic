@@ -21,13 +21,13 @@
 
 namespace owt {
 namespace quic {
-class QuicTransportOwtServerSession;
+class WebTransportSessionInterface;
 class WebTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
  public:
   class Visitor {
    public:
     virtual ~Visitor() = default;
-    virtual void OnSession(QuicTransportOwtServerSession*) = 0;
+    virtual void OnSession(WebTransportSessionInterface*) = 0;
   };
   WebTransportOwtServerDispatcher(
       const ::quic::QuicConfig* config,
