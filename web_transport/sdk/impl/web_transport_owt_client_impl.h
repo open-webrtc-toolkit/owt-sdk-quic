@@ -4,44 +4,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_CLIENT_IMPL_H_
-#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_QUIC_TRANSPORT_OWT_CLIENT_IMPL_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_CLIENT_IMPL_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_CLIENT_IMPL_H_
 
 #include "base/memory/weak_ptr.h"
-#include "base/single_thread_task_runner.h"
-#include "net/quic/quic_transport_client.h"
+#include "base/threading/thread.h"
+#include "net/quic/dedicated_web_transport_http3_client.h"
 #include "owt/quic/web_transport_client_interface.h"
-#include "owt/web_transport/sdk/impl/quic_transport_stream_impl.h"
+#include "owt/web_transport/sdk/impl/web_transport_stream_impl.h"
 #include "url/gurl.h"
 
 namespace owt {
 namespace quic {
-// A server accepts WebTransport - QuicTransport connections.
+// A HTTP/3 based WebTransport client. No HTTP/2 support.
 // This class is thread-safe. All calls to //net will be delegated to
 // io_thread_.
-class QuicTransportOwtClientImpl : public WebTransportClientInterface,
-                                   public net::WebTransportClientVisitor {
+class WebTransportOwtClientImpl : public WebTransportClientInterface,
+                                  public net::WebTransportClientVisitor {
  public:
-  QuicTransportOwtClientImpl(const GURL& url,
-                             const url::Origin& origin,
-                             base::Thread* io_thread,
-                             base::Thread* event_thread);
-  QuicTransportOwtClientImpl(
-      const GURL& url,
-      const url::Origin& origin,
-      const net::WebTransportParameters& parameters,
-      base::Thread* io_thread,
-      base::Thread* event_thread);
+  WebTransportOwtClientImpl(const GURL& url,
+                            const url::Origin& origin,
+                            base::Thread* io_thread,
+                            base::Thread* event_thread);
+  WebTransportOwtClientImpl(const GURL& url,
+                            const url::Origin& origin,
+                            const net::WebTransportParameters& parameters,
+                            base::Thread* io_thread,
+                            base::Thread* event_thread);
   // `context` could has its user defined wall time, which can be used for
   // certificate verification in testing.
-  QuicTransportOwtClientImpl(
-      const GURL& url,
-      const url::Origin& origin,
-      const net::WebTransportParameters& parameters,
-      net::URLRequestContext* context,
-      base::Thread* io_thread,
-      base::Thread* event_thread);
-  ~QuicTransportOwtClientImpl() override;
+  WebTransportOwtClientImpl(const GURL& url,
+                            const url::Origin& origin,
+                            const net::WebTransportParameters& parameters,
+                            net::URLRequestContext* context,
+                            base::Thread* io_thread,
+                            base::Thread* event_thread);
+  ~WebTransportOwtClientImpl() override;
 
   void SetVisitor(WebTransportClientInterface::Visitor* visitor) override;
   void Connect() override;
@@ -72,7 +70,7 @@ class QuicTransportOwtClientImpl : public WebTransportClientInterface,
   void OnIncomingStreamAvailable(bool bidirectional);
   // This method also adds created stream to `streams_`.
   WebTransportStreamInterface* OwtStreamForNativeStream(
-      ::quic::QuicTransportStream* stream);
+      ::quic::WebTransportStream* stream);
   void FireEvent(
       std::function<void(WebTransportClientInterface::Visitor&)> func);
 
@@ -84,11 +82,11 @@ class QuicTransportOwtClientImpl : public WebTransportClientInterface,
   scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
   std::unique_ptr<net::URLRequestContext> context_owned_;
   net::URLRequestContext* context_;
-  std::unique_ptr<net::QuicTransportClient> client_;
+  std::unique_ptr<net::WebTransportClient> client_;
   WebTransportClientInterface::Visitor* visitor_;
-  std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
+  std::vector<std::unique_ptr<WebTransportStreamImpl>> streams_;
 
-  base::WeakPtrFactory<QuicTransportOwtClientImpl> weak_factory_{this};
+  base::WeakPtrFactory<WebTransportOwtClientImpl> weak_factory_{this};
 };
 }  // namespace quic
 }  // namespace owt

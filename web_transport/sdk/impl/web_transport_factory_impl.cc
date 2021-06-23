@@ -12,7 +12,7 @@
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread.h"
 #include "impl/proof_source_owt.h"
-#include "impl/quic_transport_owt_client_impl.h"
+#include "impl/web_transport_owt_client_impl.h"
 #include "impl/web_transport_owt_server_impl.h"
 #include "net/quic/crypto/proof_source_chromium.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
@@ -124,7 +124,7 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
              base::WaitableEvent* event) {
             url::Origin origin = url::Origin::Create(GURL(url));
             WebTransportClientInterface* client =
-                new QuicTransportOwtClientImpl(GURL(std::string(url)), origin,
+                new WebTransportOwtClientImpl(GURL(std::string(url)), origin,
                                                param, io_thread, event_thread);
             *result = client;
             event->Signal();

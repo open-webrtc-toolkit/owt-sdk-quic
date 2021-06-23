@@ -12,14 +12,14 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_simple_server_stream.cc
 // with modifications.
 
-#include "impl/web_transport_server_stream.h"
+#include "impl/web_transport_stream_impl.h"
 #include "base/logging.h"
 #include "base/synchronization/waitable_event.h"
 
 namespace owt {
 namespace quic {
 
-WebTransportServerStream::WebTransportServerStream(
+WebTransportStreamImpl::WebTransportStreamImpl(
     ::quic::WebTransportStream* stream,
     base::SingleThreadTaskRunner* io_runner,
     base::SingleThreadTaskRunner* event_runner)
@@ -32,13 +32,13 @@ WebTransportServerStream::WebTransportServerStream(
   CHECK(event_runner_);
 }
 
-WebTransportServerStream::~WebTransportServerStream() {}
+WebTransportStreamImpl::~WebTransportStreamImpl() {}
 
-uint32_t WebTransportServerStream::Id() const {
+uint32_t WebTransportStreamImpl::Id() const {
   return stream_->GetStreamId();
 }
 
-size_t WebTransportServerStream::Write(uint8_t* data, size_t length) {
+size_t WebTransportStreamImpl::Write(uint8_t* data, size_t length) {
   DCHECK_EQ(sizeof(uint8_t), sizeof(char));
   CHECK(io_runner_);
   if (io_runner_->BelongsToCurrentThread()) {
@@ -51,7 +51,7 @@ size_t WebTransportServerStream::Write(uint8_t* data, size_t length) {
   io_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](WebTransportServerStream* stream, uint8_t* data, size_t& length,
+          [](WebTransportStreamImpl* stream, uint8_t* data, size_t& length,
              bool& result, base::WaitableEvent* event) {
             if (stream->stream_->CanWrite()) {
               result = stream->stream_->Write(
@@ -67,12 +67,12 @@ size_t WebTransportServerStream::Write(uint8_t* data, size_t length) {
   return result ? length : 0;
 }
 
-void WebTransportServerStream::SetVisitor(
+void WebTransportStreamImpl::SetVisitor(
     owt::quic::WebTransportStreamInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 
-size_t WebTransportServerStream::Read(uint8_t* data, size_t length) {
+size_t WebTransportStreamImpl::Read(uint8_t* data, size_t length) {
   // TODO: Post to IO runner.
   DCHECK_EQ(sizeof(uint8_t), sizeof(char));
   auto read_result = stream_->Read(reinterpret_cast<char*>(data), length);
@@ -80,48 +80,48 @@ size_t WebTransportServerStream::Read(uint8_t* data, size_t length) {
   return read_result.bytes_read;
 }
 
-size_t WebTransportServerStream::ReadableBytes() const {
+size_t WebTransportStreamImpl::ReadableBytes() const {
   return stream_->ReadableBytes();
 }
 
-void WebTransportServerStream::Close() {
+void WebTransportStreamImpl::Close() {
   // TODO: Post to IO runner.
   if (!stream_->SendFin()) {
     LOG(ERROR) << "Failed to send FIN.";
   }
 }
 
-uint64_t WebTransportServerStream::BufferedDataBytes() const {
+uint64_t WebTransportStreamImpl::BufferedDataBytes() const {
   // TODO: Not supported.
   LOG(WARNING) << "Get buffered data bytes is not supported.";
   return 0;
 }
 
-bool WebTransportServerStream::CanWrite() const {
+bool WebTransportStreamImpl::CanWrite() const {
   return stream_->CanWrite();
 }
 
-void WebTransportServerStream::OnCanRead() {
+void WebTransportStreamImpl::OnCanRead() {
   event_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&WebTransportServerStream::OnCanReadOnCurrentThread,
+      base::BindOnce(&WebTransportStreamImpl::OnCanReadOnCurrentThread,
                      weak_factory_.GetWeakPtr()));
 }
 
-void WebTransportServerStream::OnCanWrite() {
+void WebTransportStreamImpl::OnCanWrite() {
   event_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&WebTransportServerStream::OnCanWriteOnCurrentThread,
+      base::BindOnce(&WebTransportStreamImpl::OnCanWriteOnCurrentThread,
                      weak_factory_.GetWeakPtr()));
 }
 
-void WebTransportServerStream::OnCanReadOnCurrentThread() {
+void WebTransportStreamImpl::OnCanReadOnCurrentThread() {
   if (visitor_) {
     visitor_->OnCanRead();
   }
 }
 
-void WebTransportServerStream::OnCanWriteOnCurrentThread() {
+void WebTransportStreamImpl::OnCanWriteOnCurrentThread() {
   if (visitor_) {
     visitor_->OnCanWrite();
   }

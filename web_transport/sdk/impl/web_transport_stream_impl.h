@@ -12,8 +12,8 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_simple_server_stream.h
 // with modifications.
 
-#ifndef OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_SERVER_STREAM_H_
-#define OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_SERVER_STREAM_H_
+#ifndef OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_STREAM_IMPL_H_
+#define OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_STREAM_IMPL_H_
 
 #include "base/memory/weak_ptr.h"
 #include "base/single_thread_task_runner.h"
@@ -26,15 +26,15 @@
 namespace owt {
 namespace quic {
 
-// WebTransportServerStream is a proxy for ::quic::WebTransportStream. All calls
+// WebTransportStreamImpl is a proxy for ::quic::WebTransportStream. All calls
 // to ::quic::WebTransportStream run in runner_.
-class WebTransportServerStream : public WebTransportStreamInterface,
+class WebTransportStreamImpl : public WebTransportStreamInterface,
                                  public ::quic::WebTransportStreamVisitor {
  public:
-  explicit WebTransportServerStream(::quic::WebTransportStream* stream,
+  explicit WebTransportStreamImpl(::quic::WebTransportStream* stream,
                                     base::SingleThreadTaskRunner* io_runner,
                                     base::SingleThreadTaskRunner* event_runner);
-  ~WebTransportServerStream() override;
+  ~WebTransportStreamImpl() override;
 
   // Overrides WebTransportStreamInterface.
   void SetVisitor(
@@ -60,7 +60,7 @@ class WebTransportServerStream : public WebTransportStreamInterface,
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
   owt::quic::WebTransportStreamInterface::Visitor* visitor_;
-  base::WeakPtrFactory<WebTransportServerStream> weak_factory_{this};
+  base::WeakPtrFactory<WebTransportStreamImpl> weak_factory_{this};
 };
 }  // namespace quic
 }  // namespace owt

@@ -147,7 +147,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
     helper_->clock().set_wall_now(
         ::quic::QuicWallTime::FromUNIXSeconds(1591389300));
     return std::unique_ptr<WebTransportClientInterface>(
-        new QuicTransportOwtClientImpl(url, origin_, parameters, context_.get(),
+        new WebTransportOwtClientImpl(url, origin_, parameters, context_.get(),
                                        io_thread_.get(), event_thread_.get()));
   }
 

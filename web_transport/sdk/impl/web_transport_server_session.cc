@@ -14,7 +14,7 @@
 
 #include "impl/web_transport_server_session.h"
 #include <vector>
-#include "impl/web_transport_server_stream.h"
+#include "impl/web_transport_stream_impl.h"
 #include "net/third_party/quiche/src/quic/core/http/quic_server_initiated_spdy_stream.h"
 #include "net/third_party/quiche/src/quic/core/http/quic_spdy_stream.h"
 
@@ -39,7 +39,7 @@ WebTransportServerSession::~WebTransportServerSession() {}
 WebTransportStreamInterface*
 WebTransportServerSession::CreateBidirectionalStream() {
   std::unique_ptr<WebTransportStreamInterface> stream =
-      std::make_unique<WebTransportServerStream>(
+      std::make_unique<WebTransportStreamImpl>(
           session_->OpenOutgoingBidirectionalStream(), io_runner_,
           event_runner_);
   WebTransportStreamInterface* stream_ptr(stream.get());

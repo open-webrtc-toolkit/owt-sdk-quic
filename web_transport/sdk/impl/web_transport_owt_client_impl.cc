@@ -4,39 +4,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "impl/quic_transport_owt_client_impl.h"
+#include "impl/web_transport_owt_client_impl.h"
 #include "base/threading/thread.h"
 #include "net/proxy_resolution/configured_proxy_resolution_service.h"
+#include "net/third_party/quiche/src/quic/core/web_transport_interface.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
 
 namespace owt {
 namespace quic {
-QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
-    const GURL& url,
-    const url::Origin& origin,
-    base::Thread* io_thread,
-    base::Thread* event_thread)
-    : QuicTransportOwtClientImpl(url,
-                                 origin,
-                                 net::WebTransportParameters(),
-                                 io_thread,
-                                 event_thread) {}
+WebTransportOwtClientImpl::WebTransportOwtClientImpl(const GURL& url,
+                                                     const url::Origin& origin,
+                                                     base::Thread* io_thread,
+                                                     base::Thread* event_thread)
+    : WebTransportOwtClientImpl(url,
+                                origin,
+                                net::WebTransportParameters(),
+                                io_thread,
+                                event_thread) {}
 
-QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
+WebTransportOwtClientImpl::WebTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
     const net::WebTransportParameters& parameters,
     base::Thread* io_thread,
     base::Thread* event_thread)
-    : QuicTransportOwtClientImpl(url,
-                                 origin,
-                                 parameters,
-                                 nullptr,
-                                 io_thread,
-                                 event_thread) {}
+    : WebTransportOwtClientImpl(url,
+                                origin,
+                                parameters,
+                                nullptr,
+                                io_thread,
+                                event_thread) {}
 
-QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
+WebTransportOwtClientImpl::WebTransportOwtClientImpl(
     const GURL& url,
     const url::Origin& origin,
     const net::WebTransportParameters& parameters,
@@ -69,17 +69,12 @@ QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
   }
 }
 
-QuicTransportOwtClientImpl::~QuicTransportOwtClientImpl() {
+WebTransportOwtClientImpl::~WebTransportOwtClientImpl() {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   task_runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(&QuicTransportOwtClientImpl::CloseOnCurrentThread,
-                     base::Unretained(this), &done));
-  done.Wait();
-  task_runner_->PostTask(
       FROM_HERE, base::BindOnce(
-                     [](std::unique_ptr<net::QuicTransportClient> client,
+                     [](std::unique_ptr<net::WebTransportClient> client,
                         std::unique_ptr<net::URLRequestContext> context,
                         base::WaitableEvent* event) {
                        if (client) {
@@ -94,107 +89,79 @@ QuicTransportOwtClientImpl::~QuicTransportOwtClientImpl() {
   done.Wait();
 }
 
-void QuicTransportOwtClientImpl::Connect() {
+void WebTransportOwtClientImpl::Connect() {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOwtClientImpl::ConnectOnCurrentThread,
+      base::BindOnce(&WebTransportOwtClientImpl::ConnectOnCurrentThread,
                      base::Unretained(this), &done));
   done.Wait();
 }
 
-void QuicTransportOwtClientImpl::Close() {
-  VLOG(1) << "Closing QuicTransportOwtClient.";
-  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
-                           base::WaitableEvent::InitialState::NOT_SIGNALED);
-  task_runner_->PostTask(
-      FROM_HERE,
-      base::BindOnce(&QuicTransportOwtClientImpl::CloseOnCurrentThread,
-                     base::Unretained(this), &done));
-  done.Wait();
+void WebTransportOwtClientImpl::Close() {
+  LOG(WARNING) << "Close is not implemented.";
 }
 
-void QuicTransportOwtClientImpl::ConnectOnCurrentThread(
+void WebTransportOwtClientImpl::ConnectOnCurrentThread(
     base::WaitableEvent* event) {
   CHECK(context_);
   CHECK(context_->quic_context());
-  client_ = std::make_unique<net::QuicTransportClient>(
+  client_ = std::make_unique<net::DedicatedWebTransportHttp3Client>(
       url_, origin_, this, net::NetworkIsolationKey(origin_, origin_), context_,
       parameters_);
   client_->Connect();
   event->Signal();
 }
 
-void QuicTransportOwtClientImpl::CloseOnCurrentThread(
+void WebTransportOwtClientImpl::CloseOnCurrentThread(
     base::WaitableEvent* event) {
-  if (client_ == nullptr) {
-    event->Signal();
-    return;
-  }
-  if (client_->quic_session() == nullptr) {
-    event->Signal();
-    return;
-  }
-  if (client_->quic_session()->connection() == nullptr) {
-    event->Signal();
-    return;
-  }
-  CHECK(client_);
-  CHECK(client_->quic_session());
-  CHECK(client_->quic_session()->connection());
-  // Above code just makes code scan tools happy.
-  if (client_ && client_->quic_session() &&
-      client_->quic_session()->connection()) {
-    client_->quic_session()->connection()->CloseConnection(
-        ::quic::QuicErrorCode::QUIC_NO_ERROR, "Close connection.",
-        ::quic::ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
-  }
+  LOG(WARNING) << "Close is not implemented.";
   event->Signal();
 }
 
-void QuicTransportOwtClientImpl::SetVisitor(
+void WebTransportOwtClientImpl::SetVisitor(
     WebTransportClientInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 
-void QuicTransportOwtClientImpl::OnConnected() {
+void WebTransportOwtClientImpl::OnConnected() {
   event_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOwtClientImpl::FireEvent,
+      base::BindOnce(&WebTransportOwtClientImpl::FireEvent,
                      weak_factory_.GetWeakPtr(),
                      &WebTransportClientInterface::Visitor::OnConnected));
 }
 
-void QuicTransportOwtClientImpl::OnConnectionFailed() {
+void WebTransportOwtClientImpl::OnConnectionFailed() {
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          &QuicTransportOwtClientImpl::FireEvent, weak_factory_.GetWeakPtr(),
+          &WebTransportOwtClientImpl::FireEvent, weak_factory_.GetWeakPtr(),
           &WebTransportClientInterface::Visitor::OnConnectionFailed));
 }
 
 WebTransportStreamInterface*
-QuicTransportOwtClientImpl::CreateBidirectionalStream() {
+WebTransportOwtClientImpl::CreateBidirectionalStream() {
   return CreateOutgoingStream(true);
 }
 
 WebTransportStreamInterface*
-QuicTransportOwtClientImpl::CreateOutgoingUnidirectionalStream() {
+WebTransportOwtClientImpl::CreateOutgoingUnidirectionalStream() {
   return CreateOutgoingStream(false);
 }
 
-WebTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
+WebTransportStreamInterface* WebTransportOwtClientImpl::CreateOutgoingStream(
     bool bidirectional) {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   WebTransportStreamInterface* stream(nullptr);
   task_runner_->PostTask(
       FROM_HERE, base::BindOnce(
-                     [](QuicTransportOwtClientImpl* client,
+                     [](WebTransportOwtClientImpl* client,
                         WebTransportStreamInterface** result,
                         bool bidirectional, base::WaitableEvent* event) {
-                      CHECK(client);
+                       CHECK(client);
                        *result = client->CreateOutgoingStreamOnCurrentThread(
                            bidirectional);
                        event->Signal();
@@ -206,35 +173,42 @@ WebTransportStreamInterface* QuicTransportOwtClientImpl::CreateOutgoingStream(
 }
 
 WebTransportStreamInterface*
-QuicTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
+WebTransportOwtClientImpl::CreateOutgoingStreamOnCurrentThread(
     bool bidirectional) {
-  if (!client_->quic_session()) {
-    return nullptr;
+  ::quic::WebTransportStream* stream(nullptr);
+  if (bidirectional) {
+    if (!client_->session()->CanOpenNextOutgoingBidirectionalStream()) {
+      return nullptr;
+    }
+    stream = client_->session()->OpenOutgoingBidirectionalStream();
+  } else {
+    if (!client_->session()->CanOpenNextOutgoingUnidirectionalStream()) {
+      return nullptr;
+    }
+    stream = client_->session()->OpenOutgoingUnidirectionalStream();
   }
-  ::quic::QuicTransportStream* stream =
-      bidirectional ? client_->quic_session()->OpenOutgoingBidirectionalStream()
-                    : client_->quic_session()->OpenOutgoingUnidirectionalStream();
+  DCHECK(stream);
   return OwtStreamForNativeStream(stream);
 }
 
-void QuicTransportOwtClientImpl::OnIncomingBidirectionalStreamAvailable() {
+void WebTransportOwtClientImpl::OnIncomingBidirectionalStreamAvailable() {
   event_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOwtClientImpl::OnIncomingStreamAvailable,
+      base::BindOnce(&WebTransportOwtClientImpl::OnIncomingStreamAvailable,
                      weak_factory_.GetWeakPtr(), true));
 }
 
-void QuicTransportOwtClientImpl::OnIncomingUnidirectionalStreamAvailable() {
+void WebTransportOwtClientImpl::OnIncomingUnidirectionalStreamAvailable() {
   event_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOwtClientImpl::OnIncomingStreamAvailable,
+      base::BindOnce(&WebTransportOwtClientImpl::OnIncomingStreamAvailable,
                      weak_factory_.GetWeakPtr(), false));
 }
 
-void QuicTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
+void WebTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
   auto* stream = bidirectional
-                     ? client_->quic_session()->AcceptIncomingBidirectionalStream()
-                     : client_->quic_session()->AcceptIncomingUnidirectionalStream();
+                     ? client_->session()->AcceptIncomingBidirectionalStream()
+                     : client_->session()->AcceptIncomingUnidirectionalStream();
   CHECK(stream);
   if (visitor_) {
     auto* owt_stream = OwtStreamForNativeStream(stream);
@@ -247,17 +221,17 @@ void QuicTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
 }
 
 WebTransportStreamInterface*
-QuicTransportOwtClientImpl::OwtStreamForNativeStream(
-    ::quic::QuicTransportStream* stream) {
-  std::unique_ptr<QuicTransportStreamImpl> stream_impl =
-      std::make_unique<QuicTransportStreamImpl>(stream, task_runner_.get(),
-                                                event_runner_.get());
-  QuicTransportStreamImpl* stream_ptr(stream_impl.get());
+WebTransportOwtClientImpl::OwtStreamForNativeStream(
+    ::quic::WebTransportStream* stream) {
+  std::unique_ptr<WebTransportStreamImpl> stream_impl =
+      std::make_unique<WebTransportStreamImpl>(stream, task_runner_.get(),
+                                               event_runner_.get());
+  WebTransportStreamImpl* stream_ptr(stream_impl.get());
   streams_.push_back(std::move(stream_impl));
   return stream_ptr;
 }
 
-void QuicTransportOwtClientImpl::FireEvent(
+void WebTransportOwtClientImpl::FireEvent(
     std::function<void(WebTransportClientInterface::Visitor&)> func) {
   if (visitor_) {
     func(*visitor_);
