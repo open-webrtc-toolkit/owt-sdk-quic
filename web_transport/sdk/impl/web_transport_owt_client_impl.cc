@@ -126,6 +126,7 @@ void WebTransportOwtClientImpl::SetVisitor(
 }
 
 void WebTransportOwtClientImpl::OnConnected() {
+  LOG(INFO) << "OnConnected.";
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&WebTransportOwtClientImpl::FireEvent,
@@ -134,11 +135,20 @@ void WebTransportOwtClientImpl::OnConnected() {
 }
 
 void WebTransportOwtClientImpl::OnConnectionFailed() {
+  LOG(INFO) << "OnConnectionFailed.";
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           &WebTransportOwtClientImpl::FireEvent, weak_factory_.GetWeakPtr(),
           &WebTransportClientInterface::Visitor::OnConnectionFailed));
+}
+
+void WebTransportOwtClientImpl::OnError() {
+  LOG(INFO) << "OnError.";
+}
+
+void WebTransportOwtClientImpl::OnClosed() {
+  LOG(INFO) << "OnClosed.";
 }
 
 WebTransportStreamInterface*

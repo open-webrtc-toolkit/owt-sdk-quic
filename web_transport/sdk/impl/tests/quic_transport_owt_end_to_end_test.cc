@@ -18,6 +18,7 @@
 #include "net/quic/quic_transport_client.h"
 #include "net/test/test_data_directory.h"
 #include "net/test/test_with_task_environment.h"
+#include "net/third_party/quiche/src/quic/core/quic_simple_buffer_allocator.h"
 #include "net/third_party/quiche/src/quic/test_tools/crypto_test_utils.h"
 #include "net/tools/quic/quic_transport_simple_server.h"
 #include "net/url_request/url_request_context.h"
@@ -148,7 +149,7 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
         ::quic::QuicWallTime::FromUNIXSeconds(1591389300));
     return std::unique_ptr<WebTransportClientInterface>(
         new WebTransportOwtClientImpl(url, origin_, parameters, context_.get(),
-                                       io_thread_.get(), event_thread_.get()));
+                                      io_thread_.get(), event_thread_.get()));
   }
 
   void StartSimpleServer() {

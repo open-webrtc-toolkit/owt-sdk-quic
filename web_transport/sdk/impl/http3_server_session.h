@@ -39,6 +39,10 @@ class Http3ServerSession : public ::quic::QuicServerSessionBase {
       const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicCompressedCertsCache* compressed_certs_cache) override;
 
+  // Overrides QuicSpdySession.
+  bool ShouldNegotiateWebTransport() override;
+  bool ShouldNegotiateHttp3Datagram() override;
+
  private:
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;

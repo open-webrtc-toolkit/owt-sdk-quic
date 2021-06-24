@@ -108,5 +108,13 @@ Http3ServerSession::CreateQuicCryptoServerStream(
                                   stream_helper());
 }
 
+bool Http3ServerSession::ShouldNegotiateWebTransport() {
+  return true;
+}
+
+bool Http3ServerSession::ShouldNegotiateHttp3Datagram() {
+  return true;
+}
+
 }  // namespace quic
 }  // namespace owt

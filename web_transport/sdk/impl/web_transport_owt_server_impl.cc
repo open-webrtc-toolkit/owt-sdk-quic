@@ -86,7 +86,20 @@ WebTransportOwtServerImpl::WebTransportOwtServerImpl(
   dispatcher_->SetVisitor(this);
 }
 
-WebTransportOwtServerImpl::~WebTransportOwtServerImpl() {}
+WebTransportOwtServerImpl::~WebTransportOwtServerImpl() {
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](WebTransportOwtServerImpl* server, base::WaitableEvent* done) {
+            server->weak_factory_.InvalidateWeakPtrs();
+            server->socket_.reset();
+            done->Signal();
+          },
+          base::Unretained(this), &done));
+  done.Wait();
+}
 
 int WebTransportOwtServerImpl::Start() {
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
@@ -97,7 +110,7 @@ int WebTransportOwtServerImpl::Start() {
                      base::Unretained(this), &done));
   done.Wait();
   if (socket_) {
-    LOG(INFO) << "QUIC transport server is listening "
+    LOG(INFO) << "WebTransport server is listening "
               << server_address_.ToString();
     return EXIT_SUCCESS;
   } else {
@@ -108,7 +121,6 @@ int WebTransportOwtServerImpl::Start() {
 
 void WebTransportOwtServerImpl::StartOnCurrentThread(
     base::WaitableEvent* done) {
-  LOG(INFO) << "WebTransportOwtServerImpl::StartOnCurrentThread";
   socket_ = net::CreateQuicSimpleServerSocket(
       net::IPEndPoint{net::IPAddress::IPv6AllZeros(), port_}, &server_address_);
   if (socket_ == nullptr) {
@@ -120,7 +132,6 @@ void WebTransportOwtServerImpl::StartOnCurrentThread(
       new net::QuicSimpleServerPacketWriter(socket_.get(), dispatcher_.get()));
   ScheduleReadPackets();
   done->Signal();
-  LOG(INFO) << "End of WebTransportOwtServerImpl::StartOnCurrentThread";
   return;
 }
 
