@@ -21,7 +21,8 @@ namespace quic {
 
 // A proxy of ::quic::WebTransportHttp3. WebTransport over HTTP/2 is not
 // supported.
-class WebTransportServerSession : public WebTransportSessionInterface {
+class WebTransportServerSession : public WebTransportSessionInterface,
+                                  public ::quic::WebTransportVisitor {
  public:
   explicit WebTransportServerSession(
       ::quic::WebTransportHttp3* session,
@@ -39,6 +40,16 @@ class WebTransportServerSession : public WebTransportSessionInterface {
   WebTransportStreamInterface* CreateBidirectionalStream() override;
   // TODO: This method is not implemented.
   const ConnectionStats& GetStats() override;
+
+  // Overrides ::quic::WebTransportVisitor.
+  void OnSessionReady() override {}
+  void OnIncomingBidirectionalStreamAvailable() override;
+  void OnIncomingUnidirectionalStreamAvailable() override;
+  void OnDatagramReceived(absl::string_view datagram) override {}
+  void OnCanCreateNewOutgoingUnidirectionalStream() override {}
+  void OnCanCreateNewOutgoingBidirectionalStream() override {}
+
+  void AcceptIncomingStream(::quic::WebTransportStream* stream);
 
  private:
   ::quic::WebTransportHttp3* session_;

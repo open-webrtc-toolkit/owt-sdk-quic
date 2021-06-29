@@ -29,6 +29,7 @@
 #include "net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h"
 #include "owt/quic/web_transport_server_interface.h"
 #include "owt/web_transport/sdk/impl/web_transport_owt_server_dispatcher.h"
+#include "owt/web_transport/sdk/impl/web_transport_server_backend.h"
 #include "url/origin.h"
 
 namespace owt {
@@ -77,14 +78,13 @@ class WebTransportOwtServerImpl
   std::unique_ptr<WebTransportOwtServerDispatcher> dispatcher_;
   std::unique_ptr<net::UDPServerSocket> socket_;
   net::IPEndPoint server_address_;
+  std::unique_ptr<WebTransportServerBackend> backend_;
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
 
   // Results of the potentially asynchronous read operation.
   scoped_refptr<net::IOBufferWithSize> read_buffer_;
   net::IPEndPoint client_address_;
-
-  WebTransportServerInterface::Visitor* visitor_;
 
   base::WeakPtrFactory<WebTransportOwtServerImpl> weak_factory_{this};
 

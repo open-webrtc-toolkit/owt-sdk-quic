@@ -19,6 +19,21 @@
 namespace owt {
 namespace quic {
 
+class WebTransportStreamVisitorAdapter
+    : public ::quic::WebTransportStreamVisitor {
+ public:
+  explicit WebTransportStreamVisitorAdapter(
+      ::quic::WebTransportStreamVisitor* visitor)
+      : visitor_(visitor) {}
+
+  void OnCanRead() override { visitor_->OnCanRead(); }
+
+  void OnCanWrite() override { visitor_->OnCanWrite(); }
+
+ private:
+  ::quic::WebTransportStreamVisitor* visitor_;
+};
+
 WebTransportStreamImpl::WebTransportStreamImpl(
     ::quic::WebTransportStream* stream,
     base::SingleThreadTaskRunner* io_runner,
@@ -30,6 +45,7 @@ WebTransportStreamImpl::WebTransportStreamImpl(
   CHECK(stream_);
   CHECK(io_runner_);
   CHECK(event_runner_);
+  stream_->SetVisitor(std::make_unique<WebTransportStreamVisitorAdapter>(this));
 }
 
 WebTransportStreamImpl::~WebTransportStreamImpl() {}
@@ -116,6 +132,7 @@ void WebTransportStreamImpl::OnCanWrite() {
 }
 
 void WebTransportStreamImpl::OnCanReadOnCurrentThread() {
+  LOG(INFO) << "On can read.";
   if (visitor_) {
     visitor_->OnCanRead();
   }

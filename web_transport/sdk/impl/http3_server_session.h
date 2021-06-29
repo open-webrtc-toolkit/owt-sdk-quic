@@ -13,6 +13,8 @@
 namespace owt {
 namespace quic {
 
+class WebTransportServerBackend;
+
 class Http3ServerSession : public ::quic::QuicServerSessionBase {
  public:
   explicit Http3ServerSession(
@@ -23,6 +25,7 @@ class Http3ServerSession : public ::quic::QuicServerSessionBase {
       ::quic::QuicCryptoServerStreamBase::Helper* helper,
       const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicCompressedCertsCache* compressed_certs_cache,
+      WebTransportServerBackend* backend,
       base::SingleThreadTaskRunner* io_runner,
       base::SingleThreadTaskRunner* event_runner);
 
@@ -44,6 +47,7 @@ class Http3ServerSession : public ::quic::QuicServerSessionBase {
   bool ShouldNegotiateHttp3Datagram() override;
 
  private:
+  WebTransportServerBackend* backend_;
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
   DISALLOW_COPY_AND_ASSIGN(Http3ServerSession);

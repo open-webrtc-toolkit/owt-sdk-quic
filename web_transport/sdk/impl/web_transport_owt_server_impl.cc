@@ -67,11 +67,15 @@ WebTransportOwtServerImpl::WebTransportOwtServerImpl(
                      std::move(proof_source),
                      ::quic::KeyExchangeSource::Default()),
       dispatcher_(nullptr),
+      socket_(nullptr),
+      backend_(std::make_unique<WebTransportServerBackend>(
+          io_thread->task_runner().get(),
+          event_thread->task_runner().get())),
       task_runner_(io_thread->task_runner()),
       event_runner_(event_thread->task_runner()),
       read_buffer_(
-          base::MakeRefCounted<net::IOBufferWithSize>(kReadBufferSize)),
-      visitor_(nullptr) {
+          base::MakeRefCounted<net::IOBufferWithSize>(kReadBufferSize)) {
+  CHECK(backend_);
   CHECK(task_runner_);
   CHECK(event_runner_);
   dispatcher_ = std::make_unique<WebTransportOwtServerDispatcher>(
@@ -81,7 +85,7 @@ WebTransportOwtServerImpl::WebTransportOwtServerImpl(
       std::make_unique<WebTransportOwtServerImplSessionHelper>(),
       std::make_unique<net::QuicChromiumAlarmFactory>(task_runner_.get(),
                                                       clock_),
-      ::quic::kQuicDefaultConnectionIdLength, accepted_origins,
+      ::quic::kQuicDefaultConnectionIdLength, accepted_origins, backend_.get(),
       task_runner_.get(), event_runner_.get());
   dispatcher_->SetVisitor(this);
 }
@@ -139,7 +143,7 @@ void WebTransportOwtServerImpl::Stop() {}
 
 void WebTransportOwtServerImpl::SetVisitor(
     WebTransportServerInterface::Visitor* visitor) {
-  visitor_ = visitor;
+  backend_->SetVisitor(visitor);
 }
 
 void WebTransportOwtServerImpl::ScheduleReadPackets() {
@@ -186,11 +190,7 @@ void WebTransportOwtServerImpl::ProcessReadPacket(int result) {
 
 void WebTransportOwtServerImpl::OnSession(
     WebTransportSessionInterface* session) {
-  if (visitor_) {
-    CHECK(session);
-    LOG(INFO) << "Connection ID: " << session->ConnectionId();
-    visitor_->OnSession(session);
-  }
+  LOG(INFO) << "On HTTP session, connection ID: " << session->ConnectionId();
 }
 
 }  // namespace quic

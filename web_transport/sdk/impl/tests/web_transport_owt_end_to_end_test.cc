@@ -45,6 +45,56 @@ class StreamMockVisitor : public WebTransportStreamInterface::Visitor {
   MOCK_METHOD0(OnFinRead, void());
 };
 
+class StreamEchoVisitor : public WebTransportStreamInterface::Visitor {
+ public:
+  explicit StreamEchoVisitor(WebTransportStreamInterface* stream)
+      : stream_(stream) {
+    CHECK(stream);
+  }
+  MOCK_METHOD0(OnCanWrite, void());
+  MOCK_METHOD0(OnFinRead, void());
+  void OnCanRead() override {
+    auto read_size = stream_->ReadableBytes();
+    LOG(INFO)<<"Stream on can read. size: "<<read_size;
+    std::vector<uint8_t> data(read_size);
+    stream_->Read(data.data(), read_size);
+    stream_->Write(data.data(), read_size);
+  }
+
+ private:
+  WebTransportStreamInterface* stream_;
+};
+class SessionEchoVisitor : public WebTransportSessionInterface::Visitor {
+ public:
+  MOCK_METHOD1(OnCanCreateNewOutgoingStream, void(bool));
+  MOCK_METHOD0(OnConnectionClosed, void());
+  void OnIncomingStream(WebTransportStreamInterface* stream) override {
+    LOG(INFO)<<"Session on incoming stream.";
+    std::unique_ptr<StreamEchoVisitor> visitor =
+        std::make_unique<StreamEchoVisitor>(stream);
+    stream->SetVisitor(visitor.get());
+    stream_visitors_.push_back(std::move(visitor));
+  }
+
+ private:
+  std::vector<std::unique_ptr<StreamEchoVisitor>> stream_visitors_;
+};
+class ServerEchoVisitor : public WebTransportServerInterface::Visitor {
+ public:
+  MOCK_METHOD0(OnEnded, void());
+  void OnSession(WebTransportSessionInterface* session) override {
+    CHECK(session);
+    LOG(INFO) << "Server on session.";
+    std::unique_ptr<SessionEchoVisitor> visitor =
+        std::make_unique<SessionEchoVisitor>();
+    session->SetVisitor(visitor.get());
+    session_visitors_.push_back(std::move(visitor));
+  }
+
+ private:
+  std::vector<std::unique_ptr<SessionEchoVisitor>> session_visitors_;
+};
+
 // A clock that only mocks out WallNow(), but uses real Now() and
 // ApproximateNow().  Useful for certificate verification.
 class TestWallClock : public ::quic::QuicClock {
@@ -119,6 +169,8 @@ class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
             certs_dir.AppendASCII("quic-short-lived.pem").value().c_str(),
             certs_dir.AppendASCII("quic-leaf-cert.key").value().c_str(),
             certs_dir.AppendASCII("quic-leaf-cert.key.sct").value().c_str()));
+    server_visitor_ = std::make_unique<ServerEchoVisitor>();
+    server_->SetVisitor(server_visitor_.get());
     server_->Start();
   }
 
@@ -185,6 +237,7 @@ class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   TestConnectionHelper* helper_;  // Owned by |context_|.
   ClientMockVisitor visitor_;
   std::unique_ptr<WebTransportClientInterface> client_;
+  std::unique_ptr<WebTransportServerInterface::Visitor> server_visitor_;
 };
 
 TEST_F(WebTransportOwtEndToEndTest, Connect) {
@@ -194,6 +247,45 @@ TEST_F(WebTransportOwtEndToEndTest, Connect) {
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
   client_->Connect();
   Run();
+}
+
+TEST_F(WebTransportOwtEndToEndTest, InvalidCertificate) {
+  StartServer();
+  std::unique_ptr<WebTransportClientInterface> client =
+      std::unique_ptr<WebTransportClientInterface>(
+          factory_->CreateQuicTransportClient(
+              GetServerUrl("/discard").spec().c_str()));
+  client->SetVisitor(&visitor_);
+  EXPECT_CALL(visitor_, OnConnectionFailed()).WillOnce(StopRunning());
+  client->Connect();
+  Run();
+}
+
+TEST_F(WebTransportOwtEndToEndTest, EchoBidirectionalStream) {
+  StartServer();
+  client_ = CreateClient(GetServerUrl("/echo"));
+  client_->SetVisitor(&visitor_);
+  EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
+  client_->Connect();
+  Run();
+  StreamMockVisitor stream_visitor;
+  auto* stream = client_->CreateBidirectionalStream();
+  EXPECT_TRUE(stream != nullptr);
+  stream->SetVisitor(&stream_visitor);
+  size_t data_size = 10;
+  uint8_t* data = new uint8_t[data_size];
+  for (size_t i = 0; i < data_size; i++) {
+    data[i] = i;
+  }
+  EXPECT_EQ(stream->Write(data, data_size), data_size);
+  EXPECT_CALL(stream_visitor, OnCanRead()).WillOnce(StopRunning());
+  Run();
+  EXPECT_EQ(stream->ReadableBytes(), data_size);
+  uint8_t* data_read = new uint8_t[data_size];
+  stream->Read(data_read, data_size);
+  for (size_t i = 0; i < data_size; i++) {
+    EXPECT_EQ(data[i], data_read[i]);
+  }
 }
 
 }  // namespace test

@@ -21,7 +21,10 @@
 
 namespace owt {
 namespace quic {
+
 class WebTransportSessionInterface;
+class WebTransportServerBackend;
+
 class WebTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
  public:
   class Visitor {
@@ -39,6 +42,7 @@ class WebTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
       std::unique_ptr<::quic::QuicAlarmFactory> alarm_factory,
       uint8_t expected_server_connection_id_length,
       std::vector<url::Origin> accepted_origins,
+      WebTransportServerBackend* backend,
       base::SingleThreadTaskRunner* task_runner,
       base::SingleThreadTaskRunner* event_runner);
   void SetVisitor(Visitor* visitor);
@@ -46,6 +50,7 @@ class WebTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
   ~WebTransportOwtServerDispatcher() override;
 
  protected:
+  // Overrides ::quic::QuicDispatcher.
   std::unique_ptr<::quic::QuicSession> CreateQuicSession(
       ::quic::QuicConnectionId server_connection_id,
       const ::quic::QuicSocketAddress& self_address,
@@ -54,8 +59,10 @@ class WebTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
       const ::quic::ParsedQuicVersion& version,
       absl::string_view sni) override;
 
+ private:
   std::vector<url::Origin> accepted_origins_;
   Visitor* visitor_;
+  WebTransportServerBackend* backend_;
   base::SingleThreadTaskRunner* runner_;
   base::SingleThreadTaskRunner* event_runner_;
 };

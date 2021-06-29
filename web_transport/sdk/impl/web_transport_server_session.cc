@@ -21,6 +21,33 @@
 namespace owt {
 namespace quic {
 
+// Copied from net/quic/dedicated_web_transport_http3_client.cc.
+class WebTransportVisitorProxy : public ::quic::WebTransportVisitor {
+ public:
+  explicit WebTransportVisitorProxy(::quic::WebTransportVisitor* visitor)
+      : visitor_(visitor) {}
+
+  void OnSessionReady() override { visitor_->OnSessionReady(); }
+  void OnIncomingBidirectionalStreamAvailable() override {
+    visitor_->OnIncomingBidirectionalStreamAvailable();
+  }
+  void OnIncomingUnidirectionalStreamAvailable() override {
+    visitor_->OnIncomingUnidirectionalStreamAvailable();
+  }
+  void OnDatagramReceived(absl::string_view datagram) override {
+    visitor_->OnDatagramReceived(datagram);
+  }
+  void OnCanCreateNewOutgoingBidirectionalStream() override {
+    visitor_->OnCanCreateNewOutgoingBidirectionalStream();
+  }
+  void OnCanCreateNewOutgoingUnidirectionalStream() override {
+    visitor_->OnCanCreateNewOutgoingUnidirectionalStream();
+  }
+
+ private:
+  ::quic::WebTransportVisitor* visitor_;
+};
+
 WebTransportServerSession::WebTransportServerSession(
     ::quic::WebTransportHttp3* session,
     base::SingleThreadTaskRunner* io_runner,
@@ -32,6 +59,7 @@ WebTransportServerSession::WebTransportServerSession(
   CHECK(session_);
   CHECK(io_runner_);
   CHECK(event_runner_);
+  session_->SetVisitor(std::make_unique<WebTransportVisitorProxy>(this));
 }
 
 WebTransportServerSession::~WebTransportServerSession() {}
@@ -70,6 +98,29 @@ void WebTransportServerSession::SetVisitor(
 
 const ConnectionStats& WebTransportServerSession::GetStats() {
   return stats_;
+}
+
+void WebTransportServerSession::OnIncomingBidirectionalStreamAvailable() {
+  auto* stream = session_->AcceptIncomingBidirectionalStream();
+  AcceptIncomingStream(stream);
+}
+
+void WebTransportServerSession::OnIncomingUnidirectionalStreamAvailable() {
+  auto* stream = session_->AcceptIncomingUnidirectionalStream();
+  AcceptIncomingStream(stream);
+}
+
+void WebTransportServerSession::AcceptIncomingStream(
+    ::quic::WebTransportStream* stream) {
+  LOG(INFO) << "Accept incoming stream.";
+  std::unique_ptr<WebTransportStreamInterface> wt_stream =
+      std::make_unique<WebTransportStreamImpl>(stream, io_runner_,
+                                               event_runner_);
+  WebTransportStreamInterface* stream_ptr = wt_stream.get();
+  streams_.push_back(std::move(wt_stream));
+  if (visitor_) {
+    visitor_->OnIncomingStream(stream_ptr);
+  }
 }
 
 }  // namespace quic

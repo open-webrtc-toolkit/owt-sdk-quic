@@ -12,16 +12,21 @@
 
 namespace owt {
 namespace quic {
+
+class WebTransportServerBackend;
+
 class Http3ServerStream : public ::quic::QuicSpdyServerStreamBase {
  public:
   explicit Http3ServerStream(::quic::QuicStreamId id,
                              ::quic::QuicSpdySession* session,
                              ::quic::StreamType type,
+                             WebTransportServerBackend* backend,
                              base::SingleThreadTaskRunner* io_runner,
                              base::SingleThreadTaskRunner* event_runner);
   explicit Http3ServerStream(::quic::PendingStream* pending,
                              ::quic::QuicSpdySession* session,
                              ::quic::StreamType type,
+                             WebTransportServerBackend* backend,
                              base::SingleThreadTaskRunner* io_runner,
                              base::SingleThreadTaskRunner* event_runner);
 
@@ -39,6 +44,7 @@ class Http3ServerStream : public ::quic::QuicSpdyServerStreamBase {
   virtual void SendErrorResponse(int resp_code);
 
  private:
+  WebTransportServerBackend* backend_;
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
   spdy::Http2HeaderBlock request_headers_;

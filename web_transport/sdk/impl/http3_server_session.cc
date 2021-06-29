@@ -27,6 +27,7 @@ Http3ServerSession::Http3ServerSession(
     ::quic::QuicCryptoServerStreamBase::Helper* helper,
     const ::quic::QuicCryptoServerConfig* crypto_config,
     ::quic::QuicCompressedCertsCache* compressed_certs_cache,
+    WebTransportServerBackend* backend,
     base::SingleThreadTaskRunner* io_runner,
     base::SingleThreadTaskRunner* event_runner)
     : QuicServerSessionBase(config,
@@ -36,6 +37,7 @@ Http3ServerSession::Http3ServerSession(
                             helper,
                             crypto_config,
                             compressed_certs_cache),
+      backend_(backend),
       io_runner_(io_runner),
       event_runner_(event_runner) {
   CHECK(io_runner_);
@@ -50,7 +52,7 @@ Http3ServerSession::Http3ServerSession(
   std::unique_ptr<::quic::QuicSpdyStream> stream =
       std::make_unique<Http3ServerStream>(id, this,
                                           ::quic::StreamType::BIDIRECTIONAL,
-                                          io_runner_, event_runner_);
+                                          backend_, io_runner_, event_runner_);
   ::quic::QuicSpdyStream* stream_ptr = stream.get();
   ActivateStream(std::move(stream));
   return stream_ptr;
@@ -61,7 +63,7 @@ Http3ServerSession::Http3ServerSession(
   std::unique_ptr<::quic::QuicSpdyStream> stream =
       std::make_unique<Http3ServerStream>(pending, this,
                                           ::quic::StreamType::BIDIRECTIONAL,
-                                          io_runner_, event_runner_);
+                                          backend_, io_runner_, event_runner_);
   ::quic::QuicSpdyStream* stream_ptr = stream.get();
   ActivateStream(std::move(stream));
   return stream_ptr;
@@ -94,7 +96,8 @@ Http3ServerSession::CreateOutgoingUnidirectionalStream() {
   std::unique_ptr<::quic::QuicSpdyStream> stream =
       std::make_unique<Http3ServerStream>(
           GetNextOutgoingUnidirectionalStreamId(), this,
-          ::quic::StreamType::WRITE_UNIDIRECTIONAL, io_runner_, event_runner_);
+          ::quic::StreamType::WRITE_UNIDIRECTIONAL, backend_, io_runner_,
+          event_runner_);
   ::quic::QuicSpdyStream* stream_ptr = stream.get();
   ActivateStream(std::move(stream));
   return stream_ptr;

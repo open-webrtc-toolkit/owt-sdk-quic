@@ -5,6 +5,7 @@
  */
 
 #include "impl/http3_server_stream.h"
+#include "impl/web_transport_server_backend.h"
 #include "net/third_party/quiche/src/quic/core/http/spdy_utils.h"
 #include "net/third_party/quiche/src/quic/core/http/web_transport_http3.h"
 
@@ -14,11 +15,14 @@ namespace quic {
 Http3ServerStream::Http3ServerStream(::quic::QuicStreamId id,
                                      ::quic::QuicSpdySession* session,
                                      ::quic::StreamType type,
+                                     WebTransportServerBackend* backend,
                                      base::SingleThreadTaskRunner* io_runner,
                                      base::SingleThreadTaskRunner* event_runner)
     : QuicSpdyServerStreamBase(id, session, type),
+      backend_(backend),
       io_runner_(io_runner),
       event_runner_(event_runner) {
+  DCHECK(backend_);
   DCHECK(io_runner_);
   DCHECK(event_runner_);
 }
@@ -26,12 +30,15 @@ Http3ServerStream::Http3ServerStream(::quic::QuicStreamId id,
 Http3ServerStream::Http3ServerStream(::quic::PendingStream* pending,
                                      ::quic::QuicSpdySession* session,
                                      ::quic::StreamType type,
+                                     WebTransportServerBackend* backend,
                                      base::SingleThreadTaskRunner* io_runner,
                                      base::SingleThreadTaskRunner* event_runner)
     : QuicSpdyServerStreamBase(pending, session, type),
+      backend_(backend),
       io_runner_(io_runner),
       event_runner_(event_runner),
       content_length_(0) {
+  DCHECK(backend_);
   DCHECK(io_runner_);
   DCHECK(event_runner_);
 }
@@ -70,6 +77,7 @@ void Http3ServerStream::SendResponse() {
     LOG(WARNING) << "Cannot find WebTransport session.";
     return SendErrorResponse(500);
   }
+  backend_->OnSessionReady(web_transport());
   spdy::Http2HeaderBlock response_headers;
   response_headers[":status"] = "200";
   WriteHeaders(std::move(response_headers), false, nullptr);

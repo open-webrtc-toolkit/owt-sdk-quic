@@ -34,6 +34,7 @@ WebTransportOwtServerDispatcher::WebTransportOwtServerDispatcher(
     std::unique_ptr<QuicAlarmFactory> alarm_factory,
     uint8_t expected_server_connection_id_length,
     std::vector<url::Origin> accepted_origins,
+    WebTransportServerBackend* backend,
     base::SingleThreadTaskRunner* task_runner,
     base::SingleThreadTaskRunner* event_runner)
     : QuicDispatcher(config,
@@ -45,8 +46,10 @@ WebTransportOwtServerDispatcher::WebTransportOwtServerDispatcher(
                      expected_server_connection_id_length),
       accepted_origins_(accepted_origins),
       visitor_(nullptr),
+      backend_(backend),
       runner_(task_runner),
       event_runner_(event_runner) {
+  CHECK(backend_);
   CHECK(runner_);
   CHECK(event_runner_);
 }
@@ -66,8 +69,8 @@ std::unique_ptr<QuicSession> WebTransportOwtServerDispatcher::CreateQuicSession(
       ParsedQuicVersionVector{version});
   auto session = std::make_unique<Http3ServerSession>(
       config(), GetSupportedVersions(), connection.release(), this,
-      session_helper(), crypto_config(), compressed_certs_cache(), runner_,
-      event_runner_);
+      session_helper(), crypto_config(), compressed_certs_cache(), backend_,
+      runner_, event_runner_);
   session->Initialize();
   DLOG(INFO) << "Create a new session for " << peer_address.ToString();
   return session;
