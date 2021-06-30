@@ -24,6 +24,7 @@
 #include "owt/quic/web_transport_client_interface.h"
 #include "owt/quic/web_transport_factory.h"
 #include "owt/quic/web_transport_server_interface.h"
+#include "owt/web_transport/sdk/impl/tests/web_transport_echo_visitors.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -43,56 +44,6 @@ class StreamMockVisitor : public WebTransportStreamInterface::Visitor {
   MOCK_METHOD0(OnCanRead, void());
   MOCK_METHOD0(OnCanWrite, void());
   MOCK_METHOD0(OnFinRead, void());
-};
-
-class StreamEchoVisitor : public WebTransportStreamInterface::Visitor {
- public:
-  explicit StreamEchoVisitor(WebTransportStreamInterface* stream)
-      : stream_(stream) {
-    CHECK(stream);
-  }
-  MOCK_METHOD0(OnCanWrite, void());
-  MOCK_METHOD0(OnFinRead, void());
-  void OnCanRead() override {
-    auto read_size = stream_->ReadableBytes();
-    LOG(INFO)<<"Stream on can read. size: "<<read_size;
-    std::vector<uint8_t> data(read_size);
-    stream_->Read(data.data(), read_size);
-    stream_->Write(data.data(), read_size);
-  }
-
- private:
-  WebTransportStreamInterface* stream_;
-};
-class SessionEchoVisitor : public WebTransportSessionInterface::Visitor {
- public:
-  MOCK_METHOD1(OnCanCreateNewOutgoingStream, void(bool));
-  MOCK_METHOD0(OnConnectionClosed, void());
-  void OnIncomingStream(WebTransportStreamInterface* stream) override {
-    LOG(INFO)<<"Session on incoming stream.";
-    std::unique_ptr<StreamEchoVisitor> visitor =
-        std::make_unique<StreamEchoVisitor>(stream);
-    stream->SetVisitor(visitor.get());
-    stream_visitors_.push_back(std::move(visitor));
-  }
-
- private:
-  std::vector<std::unique_ptr<StreamEchoVisitor>> stream_visitors_;
-};
-class ServerEchoVisitor : public WebTransportServerInterface::Visitor {
- public:
-  MOCK_METHOD0(OnEnded, void());
-  void OnSession(WebTransportSessionInterface* session) override {
-    CHECK(session);
-    LOG(INFO) << "Server on session.";
-    std::unique_ptr<SessionEchoVisitor> visitor =
-        std::make_unique<SessionEchoVisitor>();
-    session->SetVisitor(visitor.get());
-    session_visitors_.push_back(std::move(visitor));
-  }
-
- private:
-  std::vector<std::unique_ptr<SessionEchoVisitor>> session_visitors_;
 };
 
 // A clock that only mocks out WallNow(), but uses real Now() and
@@ -161,7 +112,7 @@ class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
     done.Wait();
   }
 
-  void StartServer() {
+  void StartEchoServer() {
     base::FilePath certs_dir = net::GetTestCertsDirectory();
     server_ = std::unique_ptr<WebTransportServerInterface>(
         factory_->CreateQuicTransportServer(
@@ -241,7 +192,7 @@ class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
 };
 
 TEST_F(WebTransportOwtEndToEndTest, Connect) {
-  StartServer();
+  StartEchoServer();
   client_ = CreateClient(GetServerUrl("/discard"));
   client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
@@ -250,7 +201,7 @@ TEST_F(WebTransportOwtEndToEndTest, Connect) {
 }
 
 TEST_F(WebTransportOwtEndToEndTest, InvalidCertificate) {
-  StartServer();
+  StartEchoServer();
   std::unique_ptr<WebTransportClientInterface> client =
       std::unique_ptr<WebTransportClientInterface>(
           factory_->CreateQuicTransportClient(
@@ -262,7 +213,7 @@ TEST_F(WebTransportOwtEndToEndTest, InvalidCertificate) {
 }
 
 TEST_F(WebTransportOwtEndToEndTest, EchoBidirectionalStream) {
-  StartServer();
+  StartEchoServer();
   client_ = CreateClient(GetServerUrl("/echo"));
   client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
