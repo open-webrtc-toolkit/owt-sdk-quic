@@ -12,7 +12,7 @@
 
 namespace owt {
 namespace quic {
-// A server accepts WebTransport - QuicTransport connections.
+// A server accepts WebTransport connections.
 class OWT_EXPORT WebTransportServerInterface {
  public:
   class Visitor {

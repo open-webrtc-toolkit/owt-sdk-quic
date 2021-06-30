@@ -1,6 +1,6 @@
 # Threading Model
 
-OWT QUIC SDK provides thread safe APIs, but object's creation and deletion must be called on the same thread. Objects are usually created by `QuicTransportFactory`.
+OWT QUIC SDK provides thread safe APIs, but object's creation and deletion must be called on the same thread. Objects are usually created by `WebTransportFactory`.
 
 ## Internals
 
@@ -9,7 +9,7 @@ There are two threads maintained internally:
 - `io_thread`: Calls to Chromium's QUIC implementation are delegated to this thread.
 - `event_thread`: Callbacks and events are fired on this thread. We may move to sequence later.
 
-These two threads are owned by `QuicTransportFactory`. Basically, all objects created by `QuicTransportFactory` re-use the same task queues based on the two threads above.
+These two threads are owned by `WebTransportFactory`. Basically, all objects created by `WebTransportFactory` re-use the same task queues based on the two threads above.
 
 ## Reference
 

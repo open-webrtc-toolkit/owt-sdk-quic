@@ -31,26 +31,24 @@ class AtExitManager;
 namespace owt {
 namespace quic {
 
-class OWT_EXPORT QuicTransportFactoryImpl : public WebTransportFactory {
+class OWT_EXPORT WebTransportFactoryImpl : public WebTransportFactory {
  public:
-  QuicTransportFactoryImpl();
-  ~QuicTransportFactoryImpl() override;
+  WebTransportFactoryImpl();
+  ~WebTransportFactoryImpl() override;
   void InitializeAtExitManager();
   // `accepted_origins` is removed at this time because ABI compatible issue.
-  WebTransportServerInterface* CreateQuicTransportServer(
+  WebTransportServerInterface* CreateWebTransportServer(
       int port,
       const char* cert_path,
       const char* key_path,
       const char* secret_path) override;
-  WebTransportServerInterface* CreateQuicTransportServer(
+  WebTransportServerInterface* CreateWebTransportServer(
       int port,
       const char* pfx_path,
       const char* password) override;
-  void ReleaseQuicTransportServer(
-      const WebTransportServerInterface* server) override;
-  WebTransportClientInterface* CreateQuicTransportClient(
+  WebTransportClientInterface* CreateWebTransportClient(
       const char* url) override;
-  WebTransportClientInterface* CreateQuicTransportClient(
+  WebTransportClientInterface* CreateWebTransportClient(
       const char* url,
       const WebTransportClientInterface::Parameters& parameters) override;
 

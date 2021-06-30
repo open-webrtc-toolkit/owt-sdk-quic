@@ -28,19 +28,19 @@ class OWT_EXPORT WebTransportFactory {
   // `accepted_origins` is removed at this time because ABI compatible issue.
   // Ownership of returned value is moved to caller. Returns nullptr if creation
   // is failed.
-  virtual WebTransportServerInterface* CreateQuicTransportServer(
+  virtual WebTransportServerInterface* CreateWebTransportServer(
       int port,
       const char* cert_path,
       const char* key_path,
       const char* secret_path/*,
       std::vector<std::string> accepted_origins*/) = 0;
-  virtual WebTransportServerInterface* CreateQuicTransportServer(
+  virtual WebTransportServerInterface* CreateWebTransportServer(
       int port,
       const char* pfx_path,
       const char* password) = 0;
-  virtual WebTransportClientInterface* CreateQuicTransportClient(
+  virtual WebTransportClientInterface* CreateWebTransportClient(
       const char* url) = 0;
-  virtual WebTransportClientInterface* CreateQuicTransportClient(
+  virtual WebTransportClientInterface* CreateWebTransportClient(
       const char* url,
       const WebTransportClientInterface::Parameters& parameters) = 0;
 };

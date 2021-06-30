@@ -14,10 +14,10 @@ namespace quic {
 namespace test {
 
 // Disabled because the certificate path is hard coded.
-TEST(DISABLED_QuicTransportFactoryImplTest, CreateQuicTransportServer) {
+TEST(DISABLED_WebTransportFactoryImplTest, CreateWebTransportServer) {
   auto* factory = WebTransportFactory::Create();
   EXPECT_TRUE(factory != nullptr);
-  auto* server = factory->CreateQuicTransportServer(20001, "", "", "");
+  auto* server = factory->CreateWebTransportServer(20001, "", "", "");
   EXPECT_TRUE(server != nullptr);
 }
 

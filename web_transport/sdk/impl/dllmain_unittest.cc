@@ -12,7 +12,7 @@
 namespace owt {
 namespace quic {
 namespace test {
-TEST(DllTest, CreateQuicTransportFactory) {
+TEST(DllTest, CreateWebTransportFactory) {
   auto* factory = owt::quic::WebTransportFactory::Create();
   EXPECT_TRUE(factory != nullptr);
 }

@@ -115,7 +115,7 @@ class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   void StartEchoServer() {
     base::FilePath certs_dir = net::GetTestCertsDirectory();
     server_ = std::unique_ptr<WebTransportServerInterface>(
-        factory_->CreateQuicTransportServer(
+        factory_->CreateWebTransportServer(
             port_,
             certs_dir.AppendASCII("quic-short-lived.pem").value().c_str(),
             certs_dir.AppendASCII("quic-leaf-cert.key").value().c_str(),
@@ -204,7 +204,7 @@ TEST_F(WebTransportOwtEndToEndTest, InvalidCertificate) {
   StartEchoServer();
   std::unique_ptr<WebTransportClientInterface> client =
       std::unique_ptr<WebTransportClientInterface>(
-          factory_->CreateQuicTransportClient(
+          factory_->CreateWebTransportClient(
               GetServerUrl("/discard").spec().c_str()));
   client->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnectionFailed()).WillOnce(StopRunning());

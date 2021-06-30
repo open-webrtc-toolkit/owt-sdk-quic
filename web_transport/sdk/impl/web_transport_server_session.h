@@ -33,7 +33,7 @@ class WebTransportServerSession : public WebTransportSessionInterface,
   // This method is going to replace ConnectionId();
   uint64_t SessionId() const;
 
-  // Override QuicTransportSessionInterface.
+  // Override WebTransportSessionInterface.
   const char* ConnectionId() const override;
   void SetVisitor(WebTransportSessionInterface::Visitor* visitor) override;
   bool IsSessionReady() const override;

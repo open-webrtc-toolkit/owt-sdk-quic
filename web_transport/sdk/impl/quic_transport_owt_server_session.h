@@ -31,12 +31,12 @@
 namespace owt {
 namespace quic {
 
-class QuicTransportOwtServerSession
+class WebTransportOwtServerSession
     : public WebTransportSessionInterface,
-      public ::quic::QuicTransportServerSession,
-      ::quic::QuicTransportServerSession::ServerVisitor {
+      public ::quic::WebTransportServerSession,
+      ::quic::WebTransportServerSession::ServerVisitor {
  public:
-  QuicTransportOwtServerSession(
+  WebTransportOwtServerSession(
       ::quic::QuicConnection* connection,
       bool owns_connection,
       QuicSession::Visitor* owner,
@@ -47,9 +47,9 @@ class QuicTransportOwtServerSession
       std::vector<url::Origin> accepted_origins,
       base::SingleThreadTaskRunner* runner,
       base::SingleThreadTaskRunner* event_runner);
-  ~QuicTransportOwtServerSession() override;
+  ~WebTransportOwtServerSession() override;
 
-  // Override QuicTransportSessionInterface.
+  // Override WebTransportSessionInterface.
   void SetVisitor(
       owt::quic::WebTransportSessionInterface::Visitor* visitor) override;
   // Caller needs to free the connection ID returned.
@@ -62,7 +62,7 @@ class QuicTransportOwtServerSession
                           ::quic::ConnectionCloseSource source) override;
 
  protected:
-  void OnIncomingDataStream(::quic::QuicTransportStream* stream) override;
+  void OnIncomingDataStream(::quic::WebTransportStream* stream) override;
   void OnCanCreateNewOutgoingStream(bool unidirectional) override;
   bool CheckOrigin(url::Origin origin) override;
   bool ProcessPath(const GURL& url) override;
@@ -74,11 +74,11 @@ class QuicTransportOwtServerSession
   const bool owns_connection_;
   std::vector<url::Origin> accepted_origins_;
   owt::quic::WebTransportSessionInterface::Visitor* visitor_;
-  std::vector<std::unique_ptr<QuicTransportStreamImpl>> streams_;
+  std::vector<std::unique_ptr<WebTransportStreamImpl>> streams_;
   base::SingleThreadTaskRunner* runner_;
   base::SingleThreadTaskRunner* event_runner_;
   ConnectionStats stats_;
-  base::WeakPtrFactory<QuicTransportOwtServerSession> weak_factory_{this};
+  base::WeakPtrFactory<WebTransportOwtServerSession> weak_factory_{this};
 };
 
 }  // namespace quic
