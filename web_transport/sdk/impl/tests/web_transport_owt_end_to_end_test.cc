@@ -114,12 +114,32 @@ class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
 
   void StartEchoServer() {
     base::FilePath certs_dir = net::GetTestCertsDirectory();
+    base::FilePath cert_path = certs_dir.AppendASCII("quic-short-lived.pem");
+    base::FilePath key_path = certs_dir.AppendASCII("quic-leaf-cert.key");
+    base::FilePath secret_path =
+        certs_dir.AppendASCII("quic-leaf-cert.key.sct");
+#if defined(OS_WIN)
+    // base::FilePath outputs wstring on Windows.
+    char* cert_path_char = new char[cert_path.value().size() + 1];
+    char* key_path_char = new char[key_path.value().size() + 1];
+    char* secret_path_char = new char[secret_path.value().size() + 1];
+    wcstombs(cert_path_char, cert_path.value().c_str(),
+             cert_path.value().size() + 1);
+    wcstombs(key_path_char, key_path.value().c_str(),
+             key_path.value().size() + 1);
+    wcstombs(secret_path_char, secret_path.value().c_str(),
+             secret_path.value().size() + 1);
+#endif
     server_ = std::unique_ptr<WebTransportServerInterface>(
-        factory_->CreateWebTransportServer(
-            port_,
-            certs_dir.AppendASCII("quic-short-lived.pem").value().c_str(),
-            certs_dir.AppendASCII("quic-leaf-cert.key").value().c_str(),
-            certs_dir.AppendASCII("quic-leaf-cert.key.sct").value().c_str()));
+        factory_->CreateWebTransportServer(port_,
+#if defined(OS_WIN)
+                                           cert_path_char, key_path_char,
+                                           secret_path_char));
+#else
+                                           cert_path.value().c_str(),
+                                           key_path.value().c_str(),
+                                           secret_path.value().c_str()));
+#endif
     server_visitor_ = std::make_unique<ServerEchoVisitor>();
     server_->SetVisitor(server_visitor_.get());
     server_->Start();
