@@ -86,11 +86,6 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
                                         io_thread_.get(), event_thread_.get());
 }
 
-void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
-    const WebTransportServerInterface* server) {
-  delete reinterpret_cast<const WebTransportOwtServerImpl*>(server);
-}
-
 WebTransportClientInterface*
 QuicTransportFactoryImpl::CreateQuicTransportClient(const char* url) {
   WebTransportClientInterface::Parameters param;

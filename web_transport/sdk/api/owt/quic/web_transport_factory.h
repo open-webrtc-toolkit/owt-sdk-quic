@@ -38,8 +38,6 @@ class OWT_EXPORT WebTransportFactory {
       int port,
       const char* pfx_path,
       const char* password) = 0;
-  virtual void ReleaseQuicTransportServer(
-      const WebTransportServerInterface* server) = 0;
   virtual WebTransportClientInterface* CreateQuicTransportClient(
       const char* url) = 0;
   virtual WebTransportClientInterface* CreateQuicTransportClient(
