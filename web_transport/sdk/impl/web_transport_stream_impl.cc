@@ -15,6 +15,7 @@
 #include "impl/web_transport_stream_impl.h"
 #include "base/logging.h"
 #include "base/synchronization/waitable_event.h"
+#include "net/third_party/quiche/src/quic/core/web_transport_stream_adapter.h"
 
 namespace owt {
 namespace quic {

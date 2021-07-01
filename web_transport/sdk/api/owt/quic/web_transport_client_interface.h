@@ -17,7 +17,7 @@ namespace quic {
 class OWT_EXPORT WebTransportClientInterface {
  public:
   // https://wicg.github.io/web-transport/#dom-quictransportconfiguration-server_certificate_fingerprints.
-  struct OWT_EXPORT Parameters {
+  struct Parameters {
     Parameters() : server_certificate_fingerprints_length(0) {}
     CertificateFingerprint** server_certificate_fingerprints;
     size_t server_certificate_fingerprints_length;
@@ -26,14 +26,15 @@ class OWT_EXPORT WebTransportClientInterface {
   class Visitor {
    public:
     virtual ~Visitor() = default;
-    // Called when connected to a server.
+    // Called when the connection state changed from connecting to connected.
     virtual void OnConnected() = 0;
-    // Called when a connection is failed.
+    // Called when the connection state changed from connecting to failed.
     virtual void OnConnectionFailed() = 0;
     // Called when an incoming stream is received.
     virtual void OnIncomingStream(WebTransportStreamInterface*) = 0;
   };
   virtual ~WebTransportClientInterface() = default;
+  // Set a visitor for the client.
   virtual void SetVisitor(Visitor* visitor) = 0;
   // Connect to a QUIC transport server. URL is specified during creation.
   virtual void Connect() = 0;

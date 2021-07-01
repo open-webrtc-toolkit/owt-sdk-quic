@@ -18,7 +18,7 @@ class OWT_EXPORT WebTransportServerInterface {
   class Visitor {
    public:
     virtual ~Visitor() = default;
-    // Called when server is ended.
+    // Called when server is stopped.
     virtual void OnEnded() = 0;
     // Called when a new session is created.
     virtual void OnSession(WebTransportSessionInterface*) = 0;

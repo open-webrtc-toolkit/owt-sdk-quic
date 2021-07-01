@@ -8,8 +8,8 @@
 #define OWT_WEB_TRANSPORT_WEB_TRANSPORT_SESSION_INTERFACE_H_
 
 #include "owt/quic/export.h"
-#include "owt/quic/web_transport_stream_interface.h"
 #include "owt/quic/web_transport_definitions.h"
+#include "owt/quic/web_transport_stream_interface.h"
 
 namespace owt {
 namespace quic {

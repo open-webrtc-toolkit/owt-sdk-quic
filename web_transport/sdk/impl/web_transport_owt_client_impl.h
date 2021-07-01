@@ -84,6 +84,7 @@ class WebTransportOwtClientImpl : public WebTransportClientInterface,
   net::URLRequestContext* context_;
   std::unique_ptr<net::WebTransportClient> client_;
   WebTransportClientInterface::Visitor* visitor_;
+  // TODO: Pop from the vector when a stream is closed.
   std::vector<std::unique_ptr<WebTransportStreamImpl>> streams_;
 
   base::WeakPtrFactory<WebTransportOwtClientImpl> weak_factory_{this};

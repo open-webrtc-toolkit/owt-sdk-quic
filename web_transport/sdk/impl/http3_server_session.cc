@@ -47,6 +47,7 @@ Http3ServerSession::Http3ServerSession(
 ::quic::QuicSpdyStream* Http3ServerSession::CreateIncomingStream(
     ::quic::QuicStreamId id) {
   if (!ShouldCreateIncomingStream(id)) {
+    LOG(WARNING) << "Create new incoming stream is not allowed at this time.";
     return nullptr;
   }
   std::unique_ptr<::quic::QuicSpdyStream> stream =
@@ -73,7 +74,7 @@ Http3ServerSession::Http3ServerSession(
 Http3ServerSession::CreateOutgoingBidirectionalStream() {
   if (!WillNegotiateWebTransport()) {
     LOG(ERROR)
-        << "CreateOutgoingBidirectionalStream willout WebTransport support.";
+        << "CreateOutgoingBidirectionalStream without WebTransport support.";
     return nullptr;
   }
   if (!ShouldCreateOutgoingBidirectionalStream()) {
