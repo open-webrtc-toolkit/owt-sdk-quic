@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "impl/quic_transport_factory_impl.h"
+#include "impl/web_transport_factory_impl.h"
 #include "base/at_exit.h"
 #include "base/bind.h"
 #include "base/command_line.h"
@@ -12,8 +12,8 @@
 #include "base/task/thread_pool/thread_pool_instance.h"
 #include "base/threading/thread.h"
 #include "impl/proof_source_owt.h"
-#include "impl/quic_transport_owt_client_impl.h"
-#include "impl/quic_transport_owt_server_impl.h"
+#include "impl/web_transport_owt_client_impl.h"
+#include "impl/web_transport_owt_server_impl.h"
 #include "net/quic/crypto/proof_source_chromium.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 #include "net/quic/quic_chromium_alarm_factory.h"
@@ -25,18 +25,18 @@
 namespace owt {
 namespace quic {
 
-QuicTransportFactory* QuicTransportFactory::Create() {
-  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("quic_transport_thread_pool");
-  QuicTransportFactoryImpl* factory = new QuicTransportFactoryImpl();
+WebTransportFactory* WebTransportFactory::Create() {
+  base::ThreadPoolInstance::CreateAndStartWithDefaultParams("web_transport_thread_pool");
+  WebTransportFactoryImpl* factory = new WebTransportFactoryImpl();
   factory->InitializeAtExitManager();
   return factory;
 }
 
-QuicTransportFactory* QuicTransportFactory::CreateForTesting() {
-  return new QuicTransportFactoryImpl();
+WebTransportFactory* WebTransportFactory::CreateForTesting() {
+  return new WebTransportFactoryImpl();
 }
 
-QuicTransportFactoryImpl::QuicTransportFactoryImpl()
+WebTransportFactoryImpl::WebTransportFactoryImpl()
     : at_exit_manager_(nullptr),
       io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")),
       event_thread_(
@@ -48,14 +48,14 @@ QuicTransportFactoryImpl::QuicTransportFactoryImpl()
   Init();
 }
 
-QuicTransportFactoryImpl::~QuicTransportFactoryImpl() = default;
+WebTransportFactoryImpl::~WebTransportFactoryImpl() = default;
 
-void QuicTransportFactoryImpl::InitializeAtExitManager() {
+void WebTransportFactoryImpl::InitializeAtExitManager() {
   at_exit_manager_ = std::make_unique<base::AtExitManager>();
 }
 
-QuicTransportServerInterface*
-QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
+WebTransportServerInterface*
+WebTransportFactoryImpl::CreateWebTransportServer(int port,
                                                     const char* cert_path,
                                                     const char* key_path,
                                                     const char* secret_path) {
@@ -66,13 +66,13 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
     LOG(ERROR) << "Failed to initialize proof source.";
     return nullptr;
   }
-  return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
+  return new WebTransportOwtServerImpl(port, std::vector<url::Origin>(),
                                         std::move(proof_source),
                                         io_thread_.get(), event_thread_.get());
 }
 
-QuicTransportServerInterface*
-QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
+WebTransportServerInterface*
+WebTransportFactoryImpl::CreateWebTransportServer(int port,
                                                     const char* pfx_path,
                                                     const char* password) {
   auto proof_source = std::make_unique<ProofSourceOwt>();
@@ -81,28 +81,23 @@ QuicTransportFactoryImpl::CreateQuicTransportServer(int port,
     LOG(ERROR) << "Failed to initialize proof source.";
     return nullptr;
   }
-  return new QuicTransportOwtServerImpl(port, std::vector<url::Origin>(),
+  return new WebTransportOwtServerImpl(port, std::vector<url::Origin>(),
                                         std::move(proof_source),
                                         io_thread_.get(), event_thread_.get());
 }
 
-void QuicTransportFactoryImpl::ReleaseQuicTransportServer(
-    const QuicTransportServerInterface* server) {
-  delete reinterpret_cast<const QuicTransportOwtServerImpl*>(server);
-}
-
-QuicTransportClientInterface*
-QuicTransportFactoryImpl::CreateQuicTransportClient(const char* url) {
-  QuicTransportClientInterface::Parameters param;
+WebTransportClientInterface*
+WebTransportFactoryImpl::CreateWebTransportClient(const char* url) {
+  WebTransportClientInterface::Parameters param;
   param.server_certificate_fingerprints_length = 0;
-  return CreateQuicTransportClient(url, param);
+  return CreateWebTransportClient(url, param);
 }
 
-QuicTransportClientInterface*
-QuicTransportFactoryImpl::CreateQuicTransportClient(
+WebTransportClientInterface*
+WebTransportFactoryImpl::CreateWebTransportClient(
     const char* url,
-    const QuicTransportClientInterface::Parameters& parameters) {
-  QuicTransportClientInterface* result(nullptr);
+    const WebTransportClientInterface::Parameters& parameters) {
+  WebTransportClientInterface* result(nullptr);
   net::WebTransportParameters param;
   for (size_t i = 0; i < parameters.server_certificate_fingerprints_length;
        i++) {
@@ -120,11 +115,11 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
       base::BindOnce(
           [](const char* url, const net::WebTransportParameters& param,
              base::Thread* io_thread, base::Thread* event_thread,
-             QuicTransportClientInterface** result,
+             WebTransportClientInterface** result,
              base::WaitableEvent* event) {
             url::Origin origin = url::Origin::Create(GURL(url));
-            QuicTransportClientInterface* client =
-                new QuicTransportOwtClientImpl(GURL(std::string(url)), origin,
+            WebTransportClientInterface* client =
+                new WebTransportOwtClientImpl(GURL(std::string(url)), origin,
                                                param, io_thread, event_thread);
             *result = client;
             event->Signal();
@@ -136,7 +131,7 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
   return result;
 }
 
-void QuicTransportFactoryImpl::Init() {
+void WebTransportFactoryImpl::Init() {
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line(base::CommandLine::ForCurrentProcess());
   command_line->AppendSwitch("--quic_default_to_bbr");

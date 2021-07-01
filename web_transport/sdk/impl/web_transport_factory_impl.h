@@ -4,14 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef OWT_QUIC_TRANSPORT_QUIC_TRANSPORT_FACTORY_IMPL_H_
-#define OWT_QUIC_TRANSPORT_QUIC_TRANSPORT_FACTORY_IMPL_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_FACTORY_IMPL_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_FACTORY_IMPL_H_
 
 #include <memory>
 #include <string>
 #include <vector>
 #include "owt/quic/export.h"
-#include "owt/quic/quic_transport_factory.h"
+#include "owt/quic/web_transport_factory.h"
 
 namespace quic {
 class QuicAlarmFactory;
@@ -31,28 +31,26 @@ class AtExitManager;
 namespace owt {
 namespace quic {
 
-class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
+class OWT_EXPORT WebTransportFactoryImpl : public WebTransportFactory {
  public:
-  QuicTransportFactoryImpl();
-  ~QuicTransportFactoryImpl() override;
+  WebTransportFactoryImpl();
+  ~WebTransportFactoryImpl() override;
   void InitializeAtExitManager();
   // `accepted_origins` is removed at this time because ABI compatible issue.
-  QuicTransportServerInterface* CreateQuicTransportServer(
+  WebTransportServerInterface* CreateWebTransportServer(
       int port,
       const char* cert_path,
       const char* key_path,
       const char* secret_path) override;
-  QuicTransportServerInterface* CreateQuicTransportServer(
+  WebTransportServerInterface* CreateWebTransportServer(
       int port,
       const char* pfx_path,
       const char* password) override;
-  void ReleaseQuicTransportServer(
-      const QuicTransportServerInterface* server) override;
-  QuicTransportClientInterface* CreateQuicTransportClient(
+  WebTransportClientInterface* CreateWebTransportClient(
       const char* url) override;
-  QuicTransportClientInterface* CreateQuicTransportClient(
+  WebTransportClientInterface* CreateWebTransportClient(
       const char* url,
-      const QuicTransportClientInterface::Parameters& parameters) override;
+      const WebTransportClientInterface::Parameters& parameters) override;
 
  private:
   void Init();

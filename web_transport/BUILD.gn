@@ -14,7 +14,7 @@ config("owt_web_transport_config") {
 }
 
 source_set("owt_web_transport_impl") {
-  deps = [
+  public_deps = [
     ":generate_version_info",
     "//base",
     "//net",
@@ -23,26 +23,32 @@ source_set("owt_web_transport_impl") {
     "//third_party/boringssl",
   ]
   sources = [
-    "sdk/api/owt/quic/quic_definitions.h",
-    "sdk/api/owt/quic/quic_transport_client_interface.h",
-    "sdk/api/owt/quic/quic_transport_factory.h",
-    "sdk/api/owt/quic/quic_transport_server_interface.h",
     "sdk/api/owt/quic/version.h",
+    "sdk/api/owt/quic/web_transport_client_interface.h",
+    "sdk/api/owt/quic/web_transport_definitions.h",
+    "sdk/api/owt/quic/web_transport_factory.h",
+    "sdk/api/owt/quic/web_transport_server_interface.h",
+    "sdk/impl/http3_server_session.cc",
+    "sdk/impl/http3_server_session.h",
+    "sdk/impl/http3_server_stream.cc",
+    "sdk/impl/http3_server_stream.h",
     "sdk/impl/proof_source_owt.cc",
     "sdk/impl/proof_source_owt.h",
-    "sdk/impl/quic_transport_factory_impl.cc",
-    "sdk/impl/quic_transport_factory_impl.h",
-    "sdk/impl/quic_transport_owt_client_impl.cc",
-    "sdk/impl/quic_transport_owt_client_impl.h",
-    "sdk/impl/quic_transport_owt_server_dispatcher.cc",
-    "sdk/impl/quic_transport_owt_server_dispatcher.h",
-    "sdk/impl/quic_transport_owt_server_impl.cc",
-    "sdk/impl/quic_transport_owt_server_impl.h",
-    "sdk/impl/quic_transport_owt_server_session.cc",
-    "sdk/impl/quic_transport_owt_server_session.h",
-    "sdk/impl/quic_transport_stream_impl.cc",
-    "sdk/impl/quic_transport_stream_impl.h",
     "sdk/impl/version.cc",
+    "sdk/impl/web_transport_factory_impl.cc",
+    "sdk/impl/web_transport_factory_impl.h",
+    "sdk/impl/web_transport_owt_client_impl.cc",
+    "sdk/impl/web_transport_owt_client_impl.h",
+    "sdk/impl/web_transport_owt_server_dispatcher.cc",
+    "sdk/impl/web_transport_owt_server_dispatcher.h",
+    "sdk/impl/web_transport_owt_server_impl.cc",
+    "sdk/impl/web_transport_owt_server_impl.h",
+    "sdk/impl/web_transport_server_backend.cc",
+    "sdk/impl/web_transport_server_backend.h",
+    "sdk/impl/web_transport_server_session.cc",
+    "sdk/impl/web_transport_server_session.h",
+    "sdk/impl/web_transport_stream_impl.cc",
+    "sdk/impl/web_transport_stream_impl.h",
   ]
   configs += [ ":owt_web_transport_config" ]
 }
@@ -95,10 +101,12 @@ test("owt_web_transport_tests") {
   testonly = true
   sources = [
     "sdk/impl/proof_source_owt_unittest.cc",
-    "sdk/impl/quic_transport_factory_impl_unittest.cc",
-    "sdk/impl/tests/quic_transport_owt_end_to_end_test.cc",
     "sdk/impl/tests/run_all_unittests.cc",
+    "sdk/impl/tests/web_transport_echo_visitors.cc",
+    "sdk/impl/tests/web_transport_echo_visitors.h",
+    "sdk/impl/tests/web_transport_owt_end_to_end_test.cc",
     "sdk/impl/version_unittest.cc",
+    "sdk/impl/web_transport_factory_impl_unittest.cc",
   ]
   configs += [
     "//build/config:precompiled_headers",
@@ -129,4 +137,14 @@ if (is_win) {
     ]
     configs += [ ":owt_web_transport_config" ]
   }
+}
+
+executable("owt_web_transport_test_server") {
+  sources = [
+    "sdk/impl/tests/web_transport_echo_visitors.cc",
+    "sdk/impl/tests/web_transport_echo_visitors.h",
+    "sdk/impl/tests/web_transport_test_server.cc",
+  ]
+  public_deps = [ ":owt_web_transport_impl" ]
+  configs += [ ":owt_web_transport_config" ]
 }

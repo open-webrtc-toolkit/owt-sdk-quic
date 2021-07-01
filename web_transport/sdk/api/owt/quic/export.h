@@ -8,8 +8,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef OWT_QUIC_EXPORT_H_
-#define OWT_QUIC_EXPORT_H_
+#ifndef OWT_WEB_TRANSPORT_EXPORT_H_
+#define OWT_WEB_TRANSPORT_EXPORT_H_
 
 // Defines OWT_EXPORT so that functionality implemented by the net module can
 // be exported to consumers, and OWT_EXPORT_PRIVATE that allows unit tests to

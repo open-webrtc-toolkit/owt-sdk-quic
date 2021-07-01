@@ -12,8 +12,8 @@
 // Chromium/src/third_party/blink/renderer/modules/peerconnection/adapters/*
 // with modifications.
 
-#ifndef OWT_QUIC_TRANSPORT_QUIC_DEFINITIONS_H_
-#define OWT_QUIC_TRANSPORT_QUIC_DEFINITIONS_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_DEFINITIONS_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_DEFINITIONS_H_
 
 #include "owt/quic/export.h"
 #include <cstdint>

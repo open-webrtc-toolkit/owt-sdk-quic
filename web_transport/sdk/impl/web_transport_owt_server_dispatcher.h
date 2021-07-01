@@ -12,8 +12,8 @@
 // Chromium/net/third_party/quiche/src/quic/tools/quic_transport_simple_server_dispatcher.h
 // with modifications.
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_DISPATCHER_H_
-#define OWT_QUIC_QUIC_TRANSPORT_QUIC_TRANSPORT_OWT_SERVER_DISPATCHER_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_SERVER_DISPATCHER_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_SERVER_DISPATCHER_H_
 
 #include "base/single_thread_task_runner.h"
 #include "net/third_party/quiche/src/quic/core/quic_dispatcher.h"
@@ -21,15 +21,18 @@
 
 namespace owt {
 namespace quic {
-class QuicTransportOwtServerSession;
-class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
+
+class WebTransportSessionInterface;
+class WebTransportServerBackend;
+
+class WebTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
  public:
   class Visitor {
    public:
     virtual ~Visitor() = default;
-    virtual void OnSession(QuicTransportOwtServerSession*) = 0;
+    virtual void OnSession(WebTransportSessionInterface*) = 0;
   };
-  QuicTransportOwtServerDispatcher(
+  WebTransportOwtServerDispatcher(
       const ::quic::QuicConfig* config,
       const ::quic::QuicCryptoServerConfig* crypto_config,
       ::quic::QuicVersionManager* version_manager,
@@ -39,13 +42,15 @@ class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
       std::unique_ptr<::quic::QuicAlarmFactory> alarm_factory,
       uint8_t expected_server_connection_id_length,
       std::vector<url::Origin> accepted_origins,
+      WebTransportServerBackend* backend,
       base::SingleThreadTaskRunner* task_runner,
       base::SingleThreadTaskRunner* event_runner);
   void SetVisitor(Visitor* visitor);
 
-  ~QuicTransportOwtServerDispatcher() override;
+  ~WebTransportOwtServerDispatcher() override;
 
  protected:
+  // Overrides ::quic::QuicDispatcher.
   std::unique_ptr<::quic::QuicSession> CreateQuicSession(
       ::quic::QuicConnectionId server_connection_id,
       const ::quic::QuicSocketAddress& self_address,
@@ -54,8 +59,10 @@ class QuicTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
       const ::quic::ParsedQuicVersion& version,
       absl::string_view sni) override;
 
+ private:
   std::vector<url::Origin> accepted_origins_;
   Visitor* visitor_;
+  WebTransportServerBackend* backend_;
   base::SingleThreadTaskRunner* runner_;
   base::SingleThreadTaskRunner* event_runner_;
 };

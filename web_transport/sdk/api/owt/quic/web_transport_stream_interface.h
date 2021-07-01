@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef OWT_QUIC_QUIC_TRANSPORT_STREAM_INTERFACE_H_
-#define OWT_QUIC_QUIC_TRANSPORT_STREAM_INTERFACE_H_
+#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_STREAM_INTERFACE_H_
+#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_STREAM_INTERFACE_H_
 
 #include "owt/quic/export.h"
 #include "stddef.h"
@@ -13,7 +13,7 @@
 
 namespace owt {
 namespace quic {
-class OWT_EXPORT QuicTransportStreamInterface {
+class OWT_EXPORT WebTransportStreamInterface {
  public:
   class Visitor {
    public:
@@ -22,12 +22,12 @@ class OWT_EXPORT QuicTransportStreamInterface {
     virtual void OnCanRead() = 0;
     // Called when stream is ready to write new data. It doesn't called before
     // first write. Before first write, please check IsSessionReady().
-    // TODO: Add OnSessionReady to QuicTransportSessionInterface::Visitor.
+    // TODO: Add OnSessionReady to WebTransportSessionInterface::Visitor.
     virtual void OnCanWrite() = 0;
     // Called when final incoming data is read.
     virtual void OnFinRead() = 0;
   };
-  virtual ~QuicTransportStreamInterface() = default;
+  virtual ~WebTransportStreamInterface() = default;
   // QUIC stream ID.
   virtual uint32_t Id() const = 0;
   virtual void SetVisitor(Visitor* visitor) = 0;

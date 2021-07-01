@@ -5,27 +5,26 @@
  */
 
 /*
- * End to end test for QuicTransportOwtClient and QuicTransportSimpleServer.
- * Reference: net/quic/quic_transport_end_to_end_test.cc
+ * Reference: net/third_party/quiche/src/quic/core/http/end_to_end_test.cc
  */
 
+#include "base/files/file_path.h"
 #include "base/strings/strcat.h"
 #include "base/threading/thread.h"
-#include "net/base/host_port_pair.h"
+#include "impl/web_transport_owt_client_impl.h"
 #include "net/proxy_resolution/configured_proxy_resolution_service.h"
 #include "net/quic/crypto/proof_source_chromium.h"
-#include "net/quic/quic_context.h"
-#include "net/quic/quic_transport_client.h"
+#include "net/quic/platform/impl/quic_chromium_clock.h"
+#include "net/quic/web_transport_client.h"
 #include "net/test/test_data_directory.h"
 #include "net/test/test_with_task_environment.h"
-#include "net/third_party/quiche/src/quic/test_tools/crypto_test_utils.h"
-#include "net/tools/quic/quic_transport_simple_server.h"
+#include "net/third_party/quiche/src/quic/core/quic_simple_buffer_allocator.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
-#include "owt/quic/quic_transport_client_interface.h"
-#include "owt/quic/quic_transport_factory.h"
-#include "owt/quic/quic_transport_stream_interface.h"
-#include "owt/web_transport/sdk/impl/quic_transport_owt_client_impl.h"
+#include "owt/quic/web_transport_client_interface.h"
+#include "owt/quic/web_transport_factory.h"
+#include "owt/quic/web_transport_server_interface.h"
+#include "owt/web_transport/sdk/impl/tests/web_transport_echo_visitors.h"
 #include "testing/gmock/include/gmock/gmock.h"
 #include "testing/gtest/include/gtest/gtest.h"
 
@@ -33,14 +32,14 @@ namespace owt {
 namespace quic {
 namespace test {
 
-class ClientMockVisitor : public QuicTransportClientInterface::Visitor {
+class ClientMockVisitor : public WebTransportClientInterface::Visitor {
  public:
   MOCK_METHOD0(OnConnected, void());
   MOCK_METHOD0(OnConnectionFailed, void());
-  MOCK_METHOD1(OnIncomingStream, void(QuicTransportStreamInterface*));
+  MOCK_METHOD1(OnIncomingStream, void(WebTransportStreamInterface*));
 };
 
-class StreamMockVisitor : public QuicTransportStreamInterface::Visitor {
+class StreamMockVisitor : public WebTransportStreamInterface::Visitor {
  public:
   MOCK_METHOD0(OnCanRead, void());
   MOCK_METHOD0(OnCanWrite, void());
@@ -82,24 +81,23 @@ class TestConnectionHelper : public ::quic::QuicConnectionHelperInterface {
   ::quic::SimpleBufferAllocator allocator_;
 };
 
-class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
+class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
  public:
-  QuicTransportOwtEndToEndTest()
+  WebTransportOwtEndToEndTest()
       : io_thread_(std::make_unique<base::Thread>(
-            "quic_transport_end_to_end_test_io_thread")),
+            "web_transport_end_to_end_test_io_thread")),
         event_thread_(std::make_unique<base::Thread>(
-            "quic_transport_end_to_end_event_thread")),
-        factory_(std::unique_ptr<QuicTransportFactory>(
-            QuicTransportFactory::CreateForTesting())),
-        port_(0),
-        origin_(url::Origin::Create(GURL{"https://example.org"})) {
+            "web_transport_end_to_end_event_thread")),
+        factory_(std::unique_ptr<WebTransportFactory>(
+            WebTransportFactory::CreateForTesting())),
+        port_(20001) {
     base::Thread::Options options;
     options.message_pump_type = base::MessagePumpType::IO;
     io_thread_->StartWithOptions(options);
     event_thread_->StartWithOptions(options);
   }
 
-  ~QuicTransportOwtEndToEndTest() override {
+  ~WebTransportOwtEndToEndTest() override {
     client_.reset();
     base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                              base::WaitableEvent::InitialState::NOT_SIGNALED);
@@ -112,6 +110,53 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
                        },
                        std::move(context_), &done));
     done.Wait();
+  }
+
+  void StartEchoServer() {
+    base::FilePath certs_dir = net::GetTestCertsDirectory();
+    base::FilePath cert_path = certs_dir.AppendASCII("quic-short-lived.pem");
+    base::FilePath key_path = certs_dir.AppendASCII("quic-leaf-cert.key");
+    base::FilePath secret_path =
+        certs_dir.AppendASCII("quic-leaf-cert.key.sct");
+#if defined(OS_WIN)
+    // base::FilePath outputs wstring on Windows.
+    char* cert_path_char = new char[cert_path.value().size() + 1];
+    char* key_path_char = new char[key_path.value().size() + 1];
+    char* secret_path_char = new char[secret_path.value().size() + 1];
+    wcstombs(cert_path_char, cert_path.value().c_str(),
+             cert_path.value().size() + 1);
+    wcstombs(key_path_char, key_path.value().c_str(),
+             key_path.value().size() + 1);
+    wcstombs(secret_path_char, secret_path.value().c_str(),
+             secret_path.value().size() + 1);
+#endif
+    server_ = std::unique_ptr<WebTransportServerInterface>(
+        factory_->CreateWebTransportServer(port_,
+#if defined(OS_WIN)
+                                           cert_path_char, key_path_char,
+                                           secret_path_char));
+#else
+                                           cert_path.value().c_str(),
+                                           key_path.value().c_str(),
+                                           secret_path.value().c_str()));
+#endif
+    server_visitor_ = std::make_unique<ServerEchoVisitor>();
+    server_->SetVisitor(server_visitor_.get());
+    server_->Start();
+  }
+
+  GURL GetServerUrl(const std::string& suffix) {
+    return GURL{base::StrCat(
+        {"https://test.example.com:", base::NumberToString(port_), suffix})};
+  }
+
+  void Run() {
+    run_loop_ = std::make_unique<base::RunLoop>();
+    run_loop_->Run();
+  }
+
+  auto StopRunning() {
+    return [this]() { run_loop_->Quit(); };
   }
 
   void InitContextOnIOThread(base::WaitableEvent* event) {
@@ -128,12 +173,12 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
     event->Signal();
   }
 
-  std::unique_ptr<QuicTransportClientInterface> CreateClient(const GURL& url) {
+  std::unique_ptr<WebTransportClientInterface> CreateClient(const GURL& url) {
     base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                              base::WaitableEvent::InitialState::NOT_SIGNALED);
     io_thread_->task_runner()->PostTask(
         FROM_HERE,
-        base::BindOnce(&QuicTransportOwtEndToEndTest::InitContextOnIOThread,
+        base::BindOnce(&WebTransportOwtEndToEndTest::InitContextOnIOThread,
                        base::Unretained(this), &done));
     done.Wait();
     net::WebTransportParameters parameters;
@@ -146,55 +191,28 @@ class QuicTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
     // (2020-06-05T20:35:00.000Z).
     helper_->clock().set_wall_now(
         ::quic::QuicWallTime::FromUNIXSeconds(1591389300));
-    return std::unique_ptr<QuicTransportClientInterface>(
-        new QuicTransportOwtClientImpl(url, origin_, parameters, context_.get(),
-                                       io_thread_.get(), event_thread_.get()));
-  }
-
-  void StartSimpleServer() {
-    auto proof_source = std::make_unique<net::ProofSourceChromium>();
-    base::FilePath certs_dir = net::GetTestCertsDirectory();
-    ASSERT_TRUE(proof_source->Initialize(
-        certs_dir.AppendASCII("quic-short-lived.pem"),
-        certs_dir.AppendASCII("quic-leaf-cert.key"),
-        certs_dir.AppendASCII("quic-leaf-cert.key.sct")));
-    simple_server_ = std::make_unique<net::QuicTransportSimpleServer>(
-        /* port */ 0, std::vector<url::Origin>({origin_}),
-        std::move(proof_source));
-    ASSERT_EQ(EXIT_SUCCESS, simple_server_->Start());
-    port_ = simple_server_->server_address().port();
-  }
-
-  GURL GetServerUrl(const std::string& suffix) {
-    return GURL{base::StrCat({"quic-transport://test.example.com:",
-                              base::NumberToString(port_), suffix})};
-  }
-
-  void Run() {
-    run_loop_ = std::make_unique<base::RunLoop>();
-    run_loop_->Run();
-  }
-
-  auto StopRunning() {
-    return [this]() { run_loop_->Quit(); };
+    return std::unique_ptr<WebTransportClientInterface>(
+        new WebTransportOwtClientImpl(url, origin_, parameters, context_.get(),
+                                      io_thread_.get(), event_thread_.get()));
   }
 
  protected:
   std::unique_ptr<base::Thread> io_thread_;
   std::unique_ptr<base::Thread> event_thread_;
-  std::unique_ptr<QuicTransportFactory> factory_;
-  std::unique_ptr<net::QuicTransportSimpleServer> simple_server_;
+  std::unique_ptr<WebTransportFactory> factory_;
+  std::unique_ptr<WebTransportServerInterface> server_;
   int port_;
   url::Origin origin_;
   std::unique_ptr<base::RunLoop> run_loop_;
   std::unique_ptr<net::URLRequestContext> context_;
   TestConnectionHelper* helper_;  // Owned by |context_|.
   ClientMockVisitor visitor_;
-  std::unique_ptr<QuicTransportClientInterface> client_;
+  std::unique_ptr<WebTransportClientInterface> client_;
+  std::unique_ptr<WebTransportServerInterface::Visitor> server_visitor_;
 };
 
-TEST_F(QuicTransportOwtEndToEndTest, Connect) {
-  StartSimpleServer();
+TEST_F(WebTransportOwtEndToEndTest, Connect) {
+  StartEchoServer();
   client_ = CreateClient(GetServerUrl("/discard"));
   client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
@@ -202,11 +220,11 @@ TEST_F(QuicTransportOwtEndToEndTest, Connect) {
   Run();
 }
 
-TEST_F(QuicTransportOwtEndToEndTest, InvalidCertificate) {
-  StartSimpleServer();
-  std::unique_ptr<QuicTransportClientInterface> client =
-      std::unique_ptr<QuicTransportClientInterface>(
-          factory_->CreateQuicTransportClient(
+TEST_F(WebTransportOwtEndToEndTest, InvalidCertificate) {
+  StartEchoServer();
+  std::unique_ptr<WebTransportClientInterface> client =
+      std::unique_ptr<WebTransportClientInterface>(
+          factory_->CreateWebTransportClient(
               GetServerUrl("/discard").spec().c_str()));
   client->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnectionFailed()).WillOnce(StopRunning());
@@ -214,8 +232,8 @@ TEST_F(QuicTransportOwtEndToEndTest, InvalidCertificate) {
   Run();
 }
 
-TEST_F(QuicTransportOwtEndToEndTest, EchoBidirectionalStream) {
-  StartSimpleServer();
+TEST_F(WebTransportOwtEndToEndTest, EchoBidirectionalStream) {
+  StartEchoServer();
   client_ = CreateClient(GetServerUrl("/echo"));
   client_->SetVisitor(&visitor_);
   EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
@@ -236,38 +254,6 @@ TEST_F(QuicTransportOwtEndToEndTest, EchoBidirectionalStream) {
   EXPECT_EQ(stream->ReadableBytes(), data_size);
   uint8_t* data_read = new uint8_t[data_size];
   stream->Read(data_read, data_size);
-  for (size_t i = 0; i < data_size; i++) {
-    EXPECT_EQ(data[i], data_read[i]);
-  }
-}
-
-TEST_F(QuicTransportOwtEndToEndTest, EchoUnidirectionalStream) {
-  StartSimpleServer();
-  client_ = CreateClient(GetServerUrl("/echo"));
-  client_->SetVisitor(&visitor_);
-  EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
-  client_->Connect();
-  Run();
-  auto* stream = client_->CreateOutgoingUnidirectionalStream();
-  EXPECT_TRUE(stream != nullptr);
-  size_t data_size = 10;
-  uint8_t* data = new uint8_t[data_size];
-  for (size_t i = 0; i < data_size; i++) {
-    data[i] = i;
-  }
-  EXPECT_EQ(stream->Write(data, data_size), data_size);
-  // For unidirectional streams, QuicTransportSimpleServer echos after stream is
-  // closed.
-  stream->Close();
-  QuicTransportStreamInterface* receive_stream(nullptr);
-  EXPECT_CALL(visitor_, OnIncomingStream)
-      .WillOnce(::testing::DoAll(testing::SaveArg<0>(&receive_stream),
-                                 StopRunning()));
-  Run();
-  EXPECT_TRUE(receive_stream != nullptr);
-  EXPECT_EQ(receive_stream->ReadableBytes(), data_size);
-  uint8_t* data_read = new uint8_t[data_size];
-  receive_stream->Read(data_read, data_size);
   for (size_t i = 0; i < data_size; i++) {
     EXPECT_EQ(data[i], data_read[i]);
   }
