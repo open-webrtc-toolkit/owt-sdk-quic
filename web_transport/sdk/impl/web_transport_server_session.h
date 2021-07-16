@@ -51,6 +51,9 @@ class WebTransportServerSession : public WebTransportSessionInterface,
 
   void AcceptIncomingStream(::quic::WebTransportStream* stream);
 
+ protected:
+  WebTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
+
  private:
   ::quic::WebTransportHttp3* session_;
   base::SingleThreadTaskRunner* io_runner_;

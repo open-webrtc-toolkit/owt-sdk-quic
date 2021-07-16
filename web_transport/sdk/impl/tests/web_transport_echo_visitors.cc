@@ -19,7 +19,11 @@ StreamEchoVisitor::StreamEchoVisitor(WebTransportStreamInterface* stream)
 
 void StreamEchoVisitor::OnCanRead() {
   auto read_size = stream_->ReadableBytes();
+  if (read_size == 0) {
+    return;
+  }
   std::vector<uint8_t> data(read_size);
+  DCHECK(data.data());
   stream_->Read(data.data(), read_size);
   stream_->Write(data.data(), read_size);
 }
