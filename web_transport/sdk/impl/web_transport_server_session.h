@@ -26,6 +26,7 @@ class WebTransportServerSession : public WebTransportSessionInterface,
  public:
   explicit WebTransportServerSession(
       ::quic::WebTransportHttp3* session,
+      ::quic::QuicSpdySession* http3_session,
       base::SingleThreadTaskRunner* io_runner,
       base::SingleThreadTaskRunner* event_runner);
   ~WebTransportServerSession() override;
@@ -56,6 +57,7 @@ class WebTransportServerSession : public WebTransportSessionInterface,
 
  private:
   ::quic::WebTransportHttp3* session_;
+  ::quic::QuicSpdySession* http3_session_;
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
   std::vector<std::unique_ptr<WebTransportStreamInterface>> streams_;

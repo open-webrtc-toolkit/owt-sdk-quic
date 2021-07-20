@@ -50,13 +50,16 @@ class WebTransportVisitorProxy : public ::quic::WebTransportVisitor {
 
 WebTransportServerSession::WebTransportServerSession(
     ::quic::WebTransportHttp3* session,
+    ::quic::QuicSpdySession* http3_session,
     base::SingleThreadTaskRunner* io_runner,
     base::SingleThreadTaskRunner* event_runner)
     : session_(session),
+      http3_session_(http3_session),
       io_runner_(io_runner),
       event_runner_(event_runner),
       visitor_(nullptr) {
   CHECK(session_);
+  CHECK(http3_session_);
   CHECK(io_runner_);
   CHECK(event_runner_);
   session_->SetVisitor(std::make_unique<WebTransportVisitorProxy>(this));
@@ -88,10 +91,13 @@ WebTransportServerSession::CreateBidirectionalStream() {
 
 WebTransportStreamInterface*
 WebTransportServerSession::CreateBidirectionalStreamOnCurrentThread() {
+  ::quic::WebTransportStream* wt_stream =
+      session_->OpenOutgoingBidirectionalStream();
   std::unique_ptr<WebTransportStreamInterface> stream =
       std::make_unique<WebTransportStreamImpl>(
-          session_->OpenOutgoingBidirectionalStream(), io_runner_,
-          event_runner_);
+          wt_stream,
+          http3_session_->GetOrCreateStream(wt_stream->GetStreamId()),
+          io_runner_, event_runner_);
   WebTransportStreamInterface* stream_ptr(stream.get());
   streams_.push_back(std::move(stream));
   return stream_ptr;
@@ -119,6 +125,8 @@ void WebTransportServerSession::SetVisitor(
 }
 
 const ConnectionStats& WebTransportServerSession::GetStats() {
+  const auto& stats = http3_session_->connection()->GetStats();
+  stats_.estimated_bandwidth = stats.estimated_bandwidth.ToBitsPerSecond();
   return stats_;
 }
 
@@ -136,8 +144,9 @@ void WebTransportServerSession::AcceptIncomingStream(
     ::quic::WebTransportStream* stream) {
   LOG(INFO) << "Accept incoming stream.";
   std::unique_ptr<WebTransportStreamInterface> wt_stream =
-      std::make_unique<WebTransportStreamImpl>(stream, io_runner_,
-                                               event_runner_);
+      std::make_unique<WebTransportStreamImpl>(
+          stream, http3_session_->GetOrCreateStream(stream->GetStreamId()),
+          io_runner_, event_runner_);
   WebTransportStreamInterface* stream_ptr = wt_stream.get();
   streams_.push_back(std::move(wt_stream));
   if (visitor_) {

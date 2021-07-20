@@ -77,7 +77,7 @@ void Http3ServerStream::SendResponse() {
     LOG(WARNING) << "Cannot find WebTransport session.";
     return SendErrorResponse(500);
   }
-  backend_->OnSessionReady(web_transport());
+  backend_->OnSessionReady(web_transport(), spdy_session());
   spdy::Http2HeaderBlock response_headers;
   response_headers[":status"] = "200";
   WriteHeaders(std::move(response_headers), false, nullptr);

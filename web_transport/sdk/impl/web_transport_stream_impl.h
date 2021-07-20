@@ -29,11 +29,12 @@ namespace quic {
 // WebTransportStreamImpl is a proxy for ::quic::WebTransportStream. All calls
 // to ::quic::WebTransportStream run in runner_.
 class WebTransportStreamImpl : public WebTransportStreamInterface,
-                                 public ::quic::WebTransportStreamVisitor {
+                               public ::quic::WebTransportStreamVisitor {
  public:
   explicit WebTransportStreamImpl(::quic::WebTransportStream* stream,
-                                    base::SingleThreadTaskRunner* io_runner,
-                                    base::SingleThreadTaskRunner* event_runner);
+                                  ::quic::QuicStream* quic_stream,
+                                  base::SingleThreadTaskRunner* io_runner,
+                                  base::SingleThreadTaskRunner* event_runner);
   ~WebTransportStreamImpl() override;
 
   // Overrides WebTransportStreamInterface.
@@ -57,6 +58,10 @@ class WebTransportStreamImpl : public WebTransportStreamInterface,
   void OnCanWriteOnCurrentThread();
 
   ::quic::WebTransportStream* stream_;
+  // `stream_` is supposed to be an instance of `WebTransportStreamAdapter`,
+  // which holds a pointer to `QuicStream`. However, the `QuicStream` associated
+  // is not public, so we maintain a pointer to `QuicStream` here.
+  ::quic::QuicStream* quic_stream_;
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
   owt::quic::WebTransportStreamInterface::Visitor* visitor_;
