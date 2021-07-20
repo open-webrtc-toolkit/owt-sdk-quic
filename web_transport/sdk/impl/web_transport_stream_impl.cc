@@ -90,11 +90,30 @@ void WebTransportStreamImpl::SetVisitor(
 }
 
 size_t WebTransportStreamImpl::Read(uint8_t* data, size_t length) {
-  // TODO: Post to IO runner.
   DCHECK_EQ(sizeof(uint8_t), sizeof(char));
-  auto read_result = stream_->Read(reinterpret_cast<char*>(data), length);
-  // TODO: FIN is not handled.
-  return read_result.bytes_read;
+  if (io_runner_->BelongsToCurrentThread()) {
+    auto read_result = stream_->Read(reinterpret_cast<char*>(data), length);
+    // TODO: FIN is not handled.
+    return read_result.bytes_read;
+  }
+  size_t result;
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  io_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](WebTransportStreamImpl* stream, uint8_t* data, size_t& length,
+             size_t& result, base::WaitableEvent* event) {
+            auto read_result =
+                stream->stream_->Read(reinterpret_cast<char*>(data), length);
+            // TODO: FIN is not handled.
+            result = read_result.bytes_read;
+            event->Signal();
+          },
+          base::Unretained(this), base::Unretained(data), std::ref(length),
+          std::ref(result), base::Unretained(&done)));
+  done.Wait();
+  return result;
 }
 
 size_t WebTransportStreamImpl::ReadableBytes() const {
@@ -133,7 +152,6 @@ void WebTransportStreamImpl::OnCanWrite() {
 }
 
 void WebTransportStreamImpl::OnCanReadOnCurrentThread() {
-  LOG(INFO) << "On can read.";
   if (visitor_) {
     visitor_->OnCanRead();
   }

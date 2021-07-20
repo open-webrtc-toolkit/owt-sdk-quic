@@ -66,6 +66,28 @@ WebTransportServerSession::~WebTransportServerSession() {}
 
 WebTransportStreamInterface*
 WebTransportServerSession::CreateBidirectionalStream() {
+  if (io_runner_->BelongsToCurrentThread()) {
+    return CreateBidirectionalStreamOnCurrentThread();
+  }
+  WebTransportStreamInterface* result(nullptr);
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  io_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](WebTransportServerSession* session,
+             WebTransportStreamInterface** result, base::WaitableEvent* event) {
+            *result = session->CreateBidirectionalStreamOnCurrentThread();
+            event->Signal();
+          },
+          base::Unretained(this), base::Unretained(&result),
+          base::Unretained(&done)));
+  done.Wait();
+  return result;
+}
+
+WebTransportStreamInterface*
+WebTransportServerSession::CreateBidirectionalStreamOnCurrentThread() {
   std::unique_ptr<WebTransportStreamInterface> stream =
       std::make_unique<WebTransportStreamImpl>(
           session_->OpenOutgoingBidirectionalStream(), io_runner_,
@@ -87,7 +109,7 @@ const char* WebTransportServerSession::ConnectionId() const {
 }
 
 bool WebTransportServerSession::IsSessionReady() const {
-  // A WebTransport session is created after a QUIC session is ready.
+  // A WebTransport session is created after a HTTP/3 session is ready.
   return true;
 }
 
