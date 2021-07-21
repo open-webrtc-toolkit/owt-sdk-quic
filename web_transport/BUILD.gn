@@ -148,3 +148,11 @@ executable("owt_web_transport_test_server") {
   public_deps = [ ":owt_web_transport_impl" ]
   configs += [ ":owt_web_transport_config" ]
 }
+
+executable("owt_web_transport_test_client") {
+  sources = [
+    "sdk/impl/tests/web_transport_test_client.cc",
+  ]
+  public_deps = [ ":owt_web_transport_impl" ]
+  configs += [ ":owt_web_transport_config" ]
+}
