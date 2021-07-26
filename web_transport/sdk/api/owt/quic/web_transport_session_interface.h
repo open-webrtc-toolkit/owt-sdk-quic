@@ -27,6 +27,7 @@ class OWT_EXPORT WebTransportSessionInterface {
   virtual void SetVisitor(Visitor* visitor) = 0;
   virtual bool IsSessionReady() const = 0;
   virtual WebTransportStreamInterface* CreateBidirectionalStream() = 0;
+  virtual MessageStatus SendOrQueueDatagram(uint8_t* data, size_t length) = 0;
   // Get connection stats.
   virtual const ConnectionStats& GetStats() = 0;
 };

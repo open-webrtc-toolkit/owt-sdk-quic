@@ -46,6 +46,7 @@ class WebTransportOwtClientImpl : public WebTransportClientInterface,
   void Close() override;
   WebTransportStreamInterface* CreateBidirectionalStream() override;
   WebTransportStreamInterface* CreateOutgoingUnidirectionalStream() override;
+  MessageStatus SendOrQueueDatagram(uint8_t* data, size_t length) override;
 
  protected:
   // Overrides net::WebTransportClientVisitor.
@@ -59,7 +60,7 @@ class WebTransportOwtClientImpl : public WebTransportClientInterface,
   void OnCanCreateNewOutgoingBidirectionalStream() override {}
   void OnCanCreateNewOutgoingUnidirectionalStream() override {}
   void OnDatagramProcessed(
-      absl::optional<::quic::MessageStatus> status) override {}
+      absl::optional<::quic::MessageStatus> status) override;
 
  private:
   void ConnectOnCurrentThread(base::WaitableEvent* event);
