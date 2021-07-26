@@ -9,8 +9,8 @@
 
 #include "base/memory/weak_ptr.h"
 #include "base/threading/thread.h"
-#include "net/quic/dedicated_web_transport_http3_client.h"
 #include "owt/quic/web_transport_client_interface.h"
+#include "owt/web_transport/sdk/impl/web_transport_http3_client.h"
 #include "owt/web_transport/sdk/impl/web_transport_stream_impl.h"
 #include "url/gurl.h"
 
@@ -82,7 +82,7 @@ class WebTransportOwtClientImpl : public WebTransportClientInterface,
   scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
   std::unique_ptr<net::URLRequestContext> context_owned_;
   net::URLRequestContext* context_;
-  std::unique_ptr<net::WebTransportClient> client_;
+  std::unique_ptr<WebTransportHttp3Client> client_;
   WebTransportClientInterface::Visitor* visitor_;
   // TODO: Pop from the vector when a stream is closed.
   std::vector<std::unique_ptr<WebTransportStreamImpl>> streams_;
