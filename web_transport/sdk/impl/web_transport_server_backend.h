@@ -18,7 +18,8 @@ namespace quic {
 class WebTransportSessionVisitor {
  public:
   virtual ~WebTransportSessionVisitor() {}
-  virtual void OnSessionReady(::quic::WebTransportHttp3* session) = 0;
+  virtual void OnSessionReady(::quic::WebTransportHttp3* session,
+                              ::quic::QuicSpdySession* http3_session) = 0;
   virtual void OnSessionClosed(::quic::WebTransportSessionId id) = 0;
 };
 
@@ -33,7 +34,8 @@ class WebTransportServerBackend : public WebTransportSessionVisitor {
   void SetVisitor(WebTransportServerInterface::Visitor* visitor);
 
   // Overrides WebTransportSessionVisitor.
-  void OnSessionReady(::quic::WebTransportHttp3* session) override;
+  void OnSessionReady(::quic::WebTransportHttp3* session,
+                      ::quic::QuicSpdySession* http3_session) override;
   void OnSessionClosed(::quic::WebTransportSessionId id) override {}
 
  private:

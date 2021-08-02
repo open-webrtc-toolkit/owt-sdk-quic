@@ -37,6 +37,8 @@ source_set("owt_web_transport_impl") {
     "sdk/impl/version.cc",
     "sdk/impl/web_transport_factory_impl.cc",
     "sdk/impl/web_transport_factory_impl.h",
+    "sdk/impl/web_transport_http3_client.cc",
+    "sdk/impl/web_transport_http3_client.h",
     "sdk/impl/web_transport_owt_client_impl.cc",
     "sdk/impl/web_transport_owt_client_impl.h",
     "sdk/impl/web_transport_owt_server_dispatcher.cc",

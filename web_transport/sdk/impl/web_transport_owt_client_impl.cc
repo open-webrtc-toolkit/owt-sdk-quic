@@ -107,7 +107,7 @@ void WebTransportOwtClientImpl::ConnectOnCurrentThread(
     base::WaitableEvent* event) {
   CHECK(context_);
   CHECK(context_->quic_context());
-  client_ = std::make_unique<net::DedicatedWebTransportHttp3Client>(
+  client_ = std::make_unique<WebTransportHttp3Client>(
       url_, origin_, this, net::NetworkIsolationKey(origin_, origin_), context_,
       parameters_);
   client_->Connect();
@@ -234,8 +234,10 @@ WebTransportStreamInterface*
 WebTransportOwtClientImpl::OwtStreamForNativeStream(
     ::quic::WebTransportStream* stream) {
   std::unique_ptr<WebTransportStreamImpl> stream_impl =
-      std::make_unique<WebTransportStreamImpl>(stream, task_runner_.get(),
-                                               event_runner_.get());
+      std::make_unique<WebTransportStreamImpl>(
+          stream,
+          client_->quic_session()->GetOrCreateStream(stream->GetStreamId()),
+          task_runner_.get(), event_runner_.get());
   WebTransportStreamImpl* stream_ptr(stream_impl.get());
   streams_.push_back(std::move(stream_impl));
   return stream_ptr;

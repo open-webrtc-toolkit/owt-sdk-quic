@@ -37,13 +37,16 @@ class WebTransportStreamVisitorAdapter
 
 WebTransportStreamImpl::WebTransportStreamImpl(
     ::quic::WebTransportStream* stream,
+    ::quic::QuicStream* quic_stream,
     base::SingleThreadTaskRunner* io_runner,
     base::SingleThreadTaskRunner* event_runner)
     : stream_(stream),
+      quic_stream_(quic_stream),
       io_runner_(io_runner),
       event_runner_(event_runner),
       visitor_(nullptr) {
   CHECK(stream_);
+  CHECK(quic_stream_);
   CHECK(io_runner_);
   CHECK(event_runner_);
   stream_->SetVisitor(std::make_unique<WebTransportStreamVisitorAdapter>(this));
@@ -128,9 +131,7 @@ void WebTransportStreamImpl::Close() {
 }
 
 uint64_t WebTransportStreamImpl::BufferedDataBytes() const {
-  // TODO: Not supported.
-  LOG(WARNING) << "Get buffered data bytes is not supported.";
-  return 0;
+  return quic_stream_->BufferedDataBytes();
 }
 
 bool WebTransportStreamImpl::CanWrite() const {

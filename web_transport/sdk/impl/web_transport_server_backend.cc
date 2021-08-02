@@ -26,11 +26,12 @@ void WebTransportServerBackend::SetVisitor(
 }
 
 void WebTransportServerBackend::OnSessionReady(
-    ::quic::WebTransportHttp3* session) {
+    ::quic::WebTransportHttp3* session,
+    ::quic::QuicSpdySession* http3_session) {
   LOG(INFO) << "On session ready " << session->id();
   std::unique_ptr<WebTransportServerSession> wt_session =
-      std::make_unique<WebTransportServerSession>(session, io_runner_,
-                                                  event_runner_);
+      std::make_unique<WebTransportServerSession>(session, http3_session,
+                                                  io_runner_, event_runner_);
   sessions_[session->id()] = std::move(wt_session);
   if (visitor_) {
     visitor_->OnSession(sessions_[session->id()].get());
