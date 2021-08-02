@@ -108,7 +108,8 @@ uint64_t WebTransportServerSession::SessionId() const {
 }
 
 const char* WebTransportServerSession::ConnectionId() const {
-  const std::string& session_id_str = std::to_string(SessionId());
+  const std::string& session_id_str =
+      http3_session_->connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];
   strcpy(id, session_id_str.c_str());
   return id;

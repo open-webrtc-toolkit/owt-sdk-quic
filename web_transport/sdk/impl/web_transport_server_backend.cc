@@ -14,6 +14,9 @@ WebTransportServerBackend::WebTransportServerBackend(
     base::SingleThreadTaskRunner* io_runner,
     base::SingleThreadTaskRunner* event_runner)
     : visitor_(nullptr), io_runner_(io_runner), event_runner_(event_runner) {
+  // Construction of WebTransportServerBackend is not required to be ran on IO
+  // thread.
+  io_thread_checker_.DetachFromThread();
   DCHECK(io_runner);
   DCHECK(event_runner);
 }
@@ -28,13 +31,21 @@ void WebTransportServerBackend::SetVisitor(
 void WebTransportServerBackend::OnSessionReady(
     ::quic::WebTransportHttp3* session,
     ::quic::QuicSpdySession* http3_session) {
+  // This method is expected to be called on IO thread(io_runner_).
+  DCHECK(io_thread_checker_.CalledOnValidThread());
   LOG(INFO) << "On session ready " << session->id();
   std::unique_ptr<WebTransportServerSession> wt_session =
       std::make_unique<WebTransportServerSession>(session, http3_session,
                                                   io_runner_, event_runner_);
-  sessions_[session->id()] = std::move(wt_session);
+  WebTransportServerSession* session_ptr = wt_session.get();
+  if (sessions_.count(http3_session->connection_id().ToString()) > 0) {
+    LOG(WARNING) << "Session with the same connection ID exits, the old one "
+                    "will be terminated. Only one WebTransport session for a "
+                    "QUIC connection is supported.";
+  }
+  sessions_[http3_session->connection_id().ToString()] = std::move(wt_session);
   if (visitor_) {
-    visitor_->OnSession(sessions_[session->id()].get());
+    visitor_->OnSession(session_ptr);
   } else {
     LOG(INFO) << "No visitor for backend.";
   }

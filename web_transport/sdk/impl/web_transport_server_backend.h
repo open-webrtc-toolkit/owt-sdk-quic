@@ -7,6 +7,7 @@
 #ifndef OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_SERVER_BACKEND_H_
 #define OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_SERVER_BACKEND_H_
 
+#include "base/threading/thread_checker.h"
 #include "impl/web_transport_server_session.h"
 #include "net/third_party/quiche/src/quic/core/http/web_transport_http3.h"
 #include "net/third_party/quiche/src/quic/core/web_transport_interface.h"
@@ -40,11 +41,12 @@ class WebTransportServerBackend : public WebTransportSessionVisitor {
 
  private:
   WebTransportServerInterface::Visitor* visitor_;
-  std::unordered_map<::quic::WebTransportSessionId,
-                     std::unique_ptr<WebTransportServerSession>>
+  // Key is HTTP/3 QUIC stream connection ID.
+  std::unordered_map<std::string, std::unique_ptr<WebTransportServerSession>>
       sessions_;
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
+  base::ThreadChecker io_thread_checker_;
 
   DISALLOW_COPY_AND_ASSIGN(WebTransportServerBackend);
 };
