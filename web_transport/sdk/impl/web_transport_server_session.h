@@ -39,6 +39,7 @@ class WebTransportServerSession : public WebTransportSessionInterface,
   void SetVisitor(WebTransportSessionInterface::Visitor* visitor) override;
   bool IsSessionReady() const override;
   WebTransportStreamInterface* CreateBidirectionalStream() override;
+  MessageStatus SendOrQueueDatagram(uint8_t* data, size_t length) override;
   // TODO: This method is not implemented.
   const ConnectionStats& GetStats() override;
 
