@@ -10,6 +10,7 @@
 #include "net/third_party/quiche/src/quic/core/web_transport_interface.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
+#include "owt/web_transport/sdk/impl/utilities.h"
 
 namespace owt {
 namespace quic {
@@ -230,6 +231,13 @@ void WebTransportOwtClientImpl::OnIncomingStreamAvailable(bool bidirectional) {
   }
 }
 
+void WebTransportOwtClientImpl::OnDatagramProcessed(
+    absl::optional<::quic::MessageStatus> status) {
+  if (visitor_) {
+    visitor_->OnDatagramProcessed(Utilities::ConvertMessageStatus(status));
+  }
+}
+
 WebTransportStreamInterface*
 WebTransportOwtClientImpl::OwtStreamForNativeStream(
     ::quic::WebTransportStream* stream) {
@@ -248,6 +256,42 @@ void WebTransportOwtClientImpl::FireEvent(
   if (visitor_) {
     func(*visitor_);
   }
+}
+
+MessageStatus WebTransportOwtClientImpl::SendOrQueueDatagram(uint8_t* data,
+                                                             size_t length) {
+  DCHECK(client_ && client_->quic_session() &&
+         client_->quic_session()->connection() &&
+         client_->quic_session()->connection()->helper());
+  auto* allocator = client_->quic_session()
+                        ->connection()
+                        ->helper()
+                        ->GetStreamSendBufferAllocator();
+  ::quic::QuicBuffer buffer = ::quic::QuicBuffer::Copy(
+      allocator, absl::string_view(reinterpret_cast<char*>(data), length));
+  if (task_runner_->BelongsToCurrentThread()) {
+    auto message_result = client_->session()->SendOrQueueDatagram(
+        ::quic::QuicMemSlice(std::move(buffer)));
+    return Utilities::ConvertMessageStatus(message_result);
+  }
+  MessageStatus result;
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](WebTransportOwtClientImpl* client, ::quic::QuicMemSlice slice,
+             MessageStatus& result, base::WaitableEvent* event) {
+            auto message_result =
+                client->client_->session()->SendOrQueueDatagram(
+                    std::move(slice));
+            result = Utilities::ConvertMessageStatus(message_result);
+            event->Signal();
+          },
+          base::Unretained(this), ::quic::QuicMemSlice(std::move(buffer)),
+          std::ref(result), base::Unretained(&done)));
+  done.Wait();
+  return result;
 }
 
 }  // namespace quic
