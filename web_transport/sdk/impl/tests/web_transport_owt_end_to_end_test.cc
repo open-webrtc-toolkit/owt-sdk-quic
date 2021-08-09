@@ -19,6 +19,7 @@
 #include "net/test/test_data_directory.h"
 #include "net/test/test_with_task_environment.h"
 #include "net/third_party/quiche/src/quic/core/quic_simple_buffer_allocator.h"
+#include "net/third_party/quiche/src/quic/test_tools/quic_test_utils.h"
 #include "net/url_request/url_request_context.h"
 #include "net/url_request/url_request_context_builder.h"
 #include "owt/quic/web_transport_client_interface.h"
@@ -37,6 +38,7 @@ class ClientMockVisitor : public WebTransportClientInterface::Visitor {
   MOCK_METHOD0(OnConnected, void());
   MOCK_METHOD0(OnConnectionFailed, void());
   MOCK_METHOD1(OnIncomingStream, void(WebTransportStreamInterface*));
+  MOCK_METHOD1(OnDatagramProcessed, void(MessageStatus));
 };
 
 class StreamMockVisitor : public WebTransportStreamInterface::Visitor {
@@ -257,6 +259,22 @@ TEST_F(WebTransportOwtEndToEndTest, EchoBidirectionalStream) {
   for (size_t i = 0; i < data_size; i++) {
     EXPECT_EQ(data[i], data_read[i]);
   }
+}
+
+TEST_F(WebTransportOwtEndToEndTest, ClientSendsDatagram) {
+  StartEchoServer();
+  client_ = CreateClient(GetServerUrl("/echo"));
+  client_->SetVisitor(&visitor_);
+  EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
+  client_->Connect();
+  Run();
+  size_t data_size = 10;
+  uint8_t* data = new uint8_t[data_size];
+  for (size_t i = 0; i < data_size; i++) {
+    data[i] = i;
+  }
+  EXPECT_CALL(visitor_, OnDatagramProcessed(testing::_)).Times(1);
+  client_->SendOrQueueDatagram(data, data_size);
 }
 
 }  // namespace test

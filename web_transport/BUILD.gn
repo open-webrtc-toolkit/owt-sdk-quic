@@ -34,6 +34,8 @@ source_set("owt_web_transport_impl") {
     "sdk/impl/http3_server_stream.h",
     "sdk/impl/proof_source_owt.cc",
     "sdk/impl/proof_source_owt.h",
+    "sdk/impl/utilities.cc",
+    "sdk/impl/utilities.h",
     "sdk/impl/version.cc",
     "sdk/impl/web_transport_factory_impl.cc",
     "sdk/impl/web_transport_factory_impl.h",
@@ -146,6 +148,14 @@ executable("owt_web_transport_test_server") {
     "sdk/impl/tests/web_transport_echo_visitors.cc",
     "sdk/impl/tests/web_transport_echo_visitors.h",
     "sdk/impl/tests/web_transport_test_server.cc",
+  ]
+  public_deps = [ ":owt_web_transport_impl" ]
+  configs += [ ":owt_web_transport_config" ]
+}
+
+executable("owt_web_transport_test_client") {
+  sources = [
+    "sdk/impl/tests/web_transport_test_client.cc",
   ]
   public_deps = [ ":owt_web_transport_impl" ]
   configs += [ ":owt_web_transport_config" ]

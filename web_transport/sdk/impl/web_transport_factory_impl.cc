@@ -137,7 +137,7 @@ void WebTransportFactoryImpl::Init() {
   command_line->AppendSwitch("--quic_default_to_bbr");
   // Logging settings for Chromium.
 #ifdef _DEBUG
-  logging::SetMinLogLevel(logging::LOG_INFO);
+  logging::SetMinLogLevel(logging::LOG_VERBOSE);
 #else
   logging::SetMinLogLevel(logging::LOG_WARNING);
 #endif

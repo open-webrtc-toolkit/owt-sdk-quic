@@ -17,6 +17,7 @@
 #include "impl/web_transport_stream_impl.h"
 #include "net/third_party/quiche/src/quic/core/http/quic_server_initiated_spdy_stream.h"
 #include "net/third_party/quiche/src/quic/core/http/quic_spdy_stream.h"
+#include "owt/web_transport/sdk/impl/utilities.h"
 
 namespace owt {
 namespace quic {
@@ -85,6 +86,37 @@ WebTransportServerSession::CreateBidirectionalStream() {
           },
           base::Unretained(this), base::Unretained(&result),
           base::Unretained(&done)));
+  done.Wait();
+  return result;
+}
+
+MessageStatus WebTransportServerSession::SendOrQueueDatagram(uint8_t* data,
+                                                             size_t length) {
+  DCHECK(http3_session_ && http3_session_->connection() &&
+         http3_session_->connection()->helper());
+  auto* allocator =
+      http3_session_->connection()->helper()->GetStreamSendBufferAllocator();
+  ::quic::QuicBuffer buffer = ::quic::QuicBuffer::Copy(
+      allocator, absl::string_view(reinterpret_cast<char*>(data), length));
+  if (io_runner_->BelongsToCurrentThread()) {
+    auto message_result =
+        session_->SendOrQueueDatagram(::quic::QuicMemSlice(std::move(buffer)));
+    return Utilities::ConvertMessageStatus(message_result);
+  }
+  MessageStatus result;
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  io_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](WebTransportServerSession* session, ::quic::QuicMemSlice slice,
+             MessageStatus& result, base::WaitableEvent* event) {
+            result = Utilities::ConvertMessageStatus(
+                session->session_->SendOrQueueDatagram(std::move(slice)));
+            event->Signal();
+          },
+          base::Unretained(this), ::quic::QuicMemSlice(std::move(buffer)),
+          std::ref(result), base::Unretained(&done)));
   done.Wait();
   return result;
 }
