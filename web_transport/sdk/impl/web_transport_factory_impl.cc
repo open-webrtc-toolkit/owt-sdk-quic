@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "owt/quic/logging.h"
 #include "impl/web_transport_factory_impl.h"
 #include "base/at_exit.h"
 #include "base/bind.h"
@@ -135,15 +136,7 @@ void WebTransportFactoryImpl::Init() {
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line(base::CommandLine::ForCurrentProcess());
   command_line->AppendSwitch("--quic_default_to_bbr");
-  // Logging settings for Chromium.
-#ifdef _DEBUG
-  logging::SetMinLogLevel(logging::LOG_VERBOSE);
-#else
-  logging::SetMinLogLevel(logging::LOG_WARNING);
-#endif
-  logging::LoggingSettings settings;
-  settings.logging_dest = logging::LOG_TO_STDERR;
-  InitLogging(settings);
+  Logging::InitLogging();
 }
 
 }  // namespace quic
