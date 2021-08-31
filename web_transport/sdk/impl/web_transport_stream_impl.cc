@@ -58,7 +58,7 @@ uint32_t WebTransportStreamImpl::Id() const {
   return stream_->GetStreamId();
 }
 
-size_t WebTransportStreamImpl::Write(uint8_t* data, size_t length) {
+size_t WebTransportStreamImpl::Write(const uint8_t* data, size_t length) {
   DCHECK_EQ(sizeof(uint8_t), sizeof(char));
   CHECK(io_runner_);
   if (io_runner_->BelongsToCurrentThread()) {
@@ -71,11 +71,11 @@ size_t WebTransportStreamImpl::Write(uint8_t* data, size_t length) {
   io_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](WebTransportStreamImpl* stream, uint8_t* data, size_t& length,
+          [](WebTransportStreamImpl* stream, const uint8_t* data, size_t& length,
              bool& result, base::WaitableEvent* event) {
             if (stream->stream_->CanWrite()) {
-              result = stream->stream_->Write(
-                  absl::string_view(reinterpret_cast<char*>(data), length));
+              result = stream->stream_->Write(absl::string_view(
+                  reinterpret_cast<const char*>(data), length));
             } else {
               result = false;
             }
