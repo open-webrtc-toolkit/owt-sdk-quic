@@ -4,12 +4,11 @@
 #include <list>
 #include <utility>
 
-#include "net/third_party/quic/core/quic_utils.h"
-#include "net/third_party/quic/platform/api/quic_bug_tracker.h"
-#include "net/third_party/quic/platform/api/quic_flags.h"
-#include "net/third_party/quic/platform/api/quic_logging.h"
-#include "net/third_party/quic/platform/api/quic_map_util.h"
-#include "net/third_party/quic/platform/api/quic_text_utils.h"
+#include "net/third_party/quiche/src/quic/core/quic_utils.h"
+#include "net/third_party/quiche/src/quic/platform/api/quic_bug_tracker.h"
+#include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
+#include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
+#include "net/third_party/quiche/src/quic/platform/api/quic_map_util.h"
 
 namespace quic {
 
@@ -21,6 +20,13 @@ QuicRawStream::QuicRawStream(
       visitor_(nullptr) {
 
 }
+
+QuicRawStream::QuicRawStream(
+    PendingStream* pending,
+    QuicSession* session,
+    StreamType type)
+    : QuicStream(pending, session, type, /* is_static= */ false),
+      visitor_(nullptr) {}
 
 QuicRawStream::~QuicRawStream() {}
 

@@ -6,8 +6,8 @@
 #include <memory>
 #include <string>
 
-#include "net/third_party/quic/core/quic_crypto_client_stream.h"
-#include "net/third_party/quic/core/quic_packets.h"
+#include "net/third_party/quiche/src/quic/core/quic_crypto_client_stream.h"
+#include "net/third_party/quiche/src/quic/core/quic_packets.h"
 
 #include "net/tools/quic/raw/quic_raw_stream.h"
 
@@ -38,9 +38,6 @@ class QuicRawClientSession
 
   void OnConfigNegotiated() override;
 
-  // Override base class to set FEC policy before any data is sent by client.
-  void OnCryptoHandshakeEvent(CryptoHandshakeEvent event) override;
-
   // QuicSession methods:
   QuicRawStream* CreateOutgoingBidirectionalStream();
   QuicRawStream* CreateOutgoingUnidirectionalStream();
@@ -62,6 +59,21 @@ class QuicRawClientSession
 
   int GetNumReceivedServerConfigUpdates() const;
 
+  // Returns true if early data (0-RTT data) was sent and the server accepted
+  // it.
+  bool EarlyDataAccepted() const;
+
+  // Returns true if the handshake was delayed one round trip by the server
+  // because the server wanted proof the client controls its source address
+  // before progressing further. In Google QUIC, this would be due to an
+  // inchoate REJ in the QUIC Crypto handshake; in IETF QUIC this would be due
+  // to a Retry packet.
+  // TODO(nharper): Consider a better name for this method.
+  bool ReceivedInchoateReject() const;
+
+  // Returns true if the session has active request streams.
+  bool HasActiveRequestStreams() const;
+
   void set_respect_goaway(bool respect_goaway) {
     respect_goaway_ = respect_goaway;
   }
@@ -73,8 +85,12 @@ class QuicRawClientSession
   QuicRawStream* CreateIncomingStream(QuicStreamId id) override;
   // QuicRawStream* CreateIncomingStream(PendingStream pending) override;
   // If an outgoing stream can be created, return true.
+  QuicRawStream* CreateIncomingStream(PendingStream* pending) override;
   bool ShouldCreateOutgoingBidirectionalStream();
   bool ShouldCreateOutgoingUnidirectionalStream();
+
+  // Returns true if there are open HTTP requests.
+  bool ShouldKeepConnectionAlive() const override;
 
   // // If an incoming stream can be created, return true.
   // // TODO(fayang): move this up to QuicSpdyClientSessionBase.

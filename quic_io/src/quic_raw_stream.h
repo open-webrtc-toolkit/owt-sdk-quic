@@ -6,8 +6,8 @@
 #define NET_TOOLS_QUIC_RAW_QUIC_RAW_STREAM_H_
 
 #include "base/macros.h"
-#include "net/third_party/quic/core/quic_stream.h"
-#include "net/third_party/quic/core/quic_session.h"
+#include "net/third_party/quiche/src/quic/core/quic_stream.h"
+#include "net/third_party/quiche/src/quic/core/quic_session.h"
 
 namespace quic {
 
@@ -31,6 +31,9 @@ class QUIC_EXPORT_PRIVATE QuicRawStream : public QuicStream {
   QuicRawStream(QuicStreamId id,
                 QuicSession* session,
                 StreamType type);
+  QuicRawStream(PendingStream* pending,
+                       QuicSession* session,
+                       StreamType type);
   QuicRawStream(const QuicRawStream&) = delete;
   QuicRawStream& operator=(const QuicRawStream&) = delete;
   ~QuicRawStream() override;

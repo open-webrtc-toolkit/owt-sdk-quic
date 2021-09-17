@@ -2,15 +2,15 @@
 #include "net/tools/quic/raw/wrapper/quic_raw_lib.h"
 
 #include <iostream>
-#include <thread>
 #include <string>
 
 #include "base/at_exit.h"
 #include "base/run_loop.h"
-#include "base/message_loop/message_loop.h"
 #include "base/task/post_task.h"
-#include "base/task/task_scheduler/task_scheduler.h"
+#include "base/task/thread_pool/thread_pool_instance.h"
+#include "base/threading/thread.h"
 #include "net/base/net_errors.h"
+#include "net/quic/address_utils.h"
 #include "net/base/privacy_mode.h"
 #include "net/cert/cert_verifier.h"
 #include "net/cert/ct_log_verifier.h"
@@ -18,13 +18,10 @@
 #include "net/cert/multi_log_ct_verifier.h"
 #include "net/http/transport_security_state.h"
 #include "net/quic/crypto/proof_verifier_chromium.h"
-#include "net/third_party/quic/core/quic_error_codes.h"
-#include "net/third_party/quic/core/quic_packets.h"
-#include "net/third_party/quic/core/quic_server_id.h"
-#include "net/third_party/quic/platform/api/quic_socket_address.h"
-#include "net/third_party/quic/platform/api/quic_str_cat.h"
-#include "net/third_party/quic/platform/api/quic_string_piece.h"
-#include "net/third_party/quic/platform/api/quic_text_utils.h"
+#include "net/third_party/quiche/src/quic/core/quic_error_codes.h"
+#include "net/third_party/quiche/src/quic/core/quic_packets.h"
+#include "net/third_party/quiche/src/quic/core/quic_server_id.h"
+#include "net/third_party/quiche/src/quic/platform/api/quic_socket_address.h"
 #include "net/tools/quic/synchronous_host_resolver.h"
 
 #include "base/strings/string_number_conversions.h"
@@ -54,13 +51,14 @@ class FakeProofSource : public quic::ProofSource {
   ~FakeProofSource() override {}
 
   void GetProof(const quic::QuicSocketAddress& server_address,
+                const quic::QuicSocketAddress& client_address,
                 const std::string& hostname,
                 const std::string& server_config,
                 quic::QuicTransportVersion transport_version,
-                quic::QuicStringPiece chlo_hash,
+                absl::string_view chlo_hash,
                 std::unique_ptr<Callback> callback) override {
     quic::QuicReferenceCountedPointer<ProofSource::Chain> chain =
-        GetCertChain(server_address, hostname);
+        GetCertChain(server_address, client_address, hostname);
     quic::QuicCryptoProof proof;
     proof.signature = "fake signature";
     proof.leaf_cert_scts = "fake timestamp";
@@ -69,6 +67,7 @@ class FakeProofSource : public quic::ProofSource {
 
   quic::QuicReferenceCountedPointer<Chain> GetCertChain(
       const quic::QuicSocketAddress& server_address,
+      const ::quic::QuicSocketAddress& client_address,
       const std::string& hostname) override {
     std::vector<std::string> certs;
     certs.push_back("fake cert");
@@ -78,12 +77,17 @@ class FakeProofSource : public quic::ProofSource {
 
   void ComputeTlsSignature(
       const quic::QuicSocketAddress& server_address,
+      const ::quic::QuicSocketAddress& client_address,
       const std::string& hostname,
       uint16_t signature_algorithm,
-      quic::QuicStringPiece in,
+      absl::string_view in,
       std::unique_ptr<SignatureCallback> callback) override {
-    callback->Run(true, "fake signature");
+    callback->Run(true, "fake signature", nullptr);
   }
+
+  ProofSource::TicketCrypter* GetTicketCrypter() override {
+    return nullptr;
+}
 };
 
 // FakeProofVerifier for client
@@ -94,7 +98,7 @@ class FakeProofVerifier : public quic::ProofVerifier {
       const uint16_t port,
       const string& server_config,
       quic::QuicTransportVersion quic_version,
-      quic::QuicStringPiece chlo_hash,
+      absl::string_view  chlo_hash,
       const std::vector<string>& certs,
       const string& cert_sct,
       const string& signature,
@@ -107,10 +111,14 @@ class FakeProofVerifier : public quic::ProofVerifier {
 
   quic::QuicAsyncStatus VerifyCertChain(
       const std::string& hostname,
+      const uint16_t port,
       const std::vector<std::string>& certs,
+      const std::string& ocsp_response,
+      const std::string& cert_sct,
       const quic::ProofVerifyContext* verify_context,
       std::string* error_details,
       std::unique_ptr<quic::ProofVerifyDetails>* verify_details,
+      uint8_t* out_alert,
       std::unique_ptr<quic::ProofVerifierCallback> callback) override {
     return quic::QUIC_SUCCESS;
   }
@@ -126,12 +134,17 @@ class RawClientImpl : public RQuicClientInterface,
  public:
   RawClientImpl()
       : stream_{nullptr},
-        session_{nullptr},
         mtx_{},
-        message_loop_{nullptr},
+        io_thread_(std::make_unique<base::Thread>("quic_lib_io_thread")),
         run_loop_{nullptr},
         client_thread_{nullptr},
-        listener_{nullptr} {}
+        listener_{nullptr},
+        next_session_id_{0} {
+          base::Thread::Options options;
+          options.message_pump_type = base::MessagePumpType::IO;
+          io_thread_->StartWithOptions(options);
+          client_thread_->StartWithOptions(options);
+        }
 
   ~RawClientImpl() override {
     stop();
@@ -142,8 +155,9 @@ class RawClientImpl : public RQuicClientInterface,
   bool start(const char* host, int port) override {
     if (!client_thread_) {
       std::string s_host(host);
-      client_thread_.reset(
-          new std::thread(&RawClientImpl::InitAndRun, this, s_host, port));
+      client_thread_->task_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&RawClientImpl::InitAndRun, base::Unretained(this), s_host, port));
       return true;
     }
     return false;
@@ -153,8 +167,8 @@ class RawClientImpl : public RQuicClientInterface,
   void stop() override {
     {
       std::unique_lock<std::mutex> lck(mtx_);
-      if (message_loop_) {
-        message_loop_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
+      if (io_thread_) {
+        io_thread_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
       }
     }
   }
@@ -162,26 +176,18 @@ class RawClientImpl : public RQuicClientInterface,
   // Implement RQuicClientInterface
   void waitForClose() override {
     if (client_thread_) {
-      client_thread_->join();
-      client_thread_.reset();
+      /*client_thread_.join();
+      client_thread_.reset();*/
     }
   }
 
   // Implement RQuicClientInterface
-  void send(const char* data, uint32_t len) override {
-    if (stream_) {
-      send(stream_->id(), data, len);
-    }
-  }
-
-  // Implement RQuicClientInterface
-  void send(uint32_t stream_id, const char* data, uint32_t len) override {
+  void send(uint32_t session_id, uint32_t stream_id, const std::string& data) override {
     std::unique_lock<std::mutex> lck(mtx_);
-    if (message_loop_) {
-      std::string s_data(data, len);
-      message_loop_->task_runner()->PostTask(FROM_HERE,
+    if (io_thread_) {
+      io_thread_->task_runner()->PostTask(FROM_HERE,
           base::BindOnce(&RawClientImpl::SendOnStream,
-              base::Unretained(this), stream_id, s_data, false));
+              base::Unretained(this), session_id, stream_id, data, false));
     }
   }
 
@@ -195,7 +201,7 @@ class RawClientImpl : public RQuicClientInterface,
     if (stream == stream_) {
       stream_ = nullptr;
     }
-  };
+  }
   void OnData(quic::QuicRawStream* stream, char* data, size_t len) override {
     if (listener_) {
       // Use 0 for client session
@@ -208,7 +214,7 @@ class RawClientImpl : public RQuicClientInterface,
     bool disable_cert = true;
     if (disable_cert) {
       proof_verifier.reset(new FakeProofVerifier());
-    } else {
+    } /*else {
       // For secure QUIC we need to verify the cert chain.
       std::unique_ptr<net::CertVerifier> cert_verifier(net::CertVerifier::CreateDefault());
       std::unique_ptr<net::TransportSecurityState> transport_security_state(
@@ -219,12 +225,11 @@ class RawClientImpl : public RQuicClientInterface,
       proof_verifier.reset(new net::ProofVerifierChromium(
           cert_verifier.get(), ct_policy_enforcer.get(),
           transport_security_state.get(), ct_verifier.get()));
-    }
+    }*/
     return proof_verifier;
   }
 
   void InitAndRun(std::string host, int port) {
-    base::MessageLoopForIO message_loop;
     base::RunLoop run_loop;
 
     // Determine IP address to connect to from supplied hostname.
@@ -241,7 +246,7 @@ class RawClientImpl : public RQuicClientInterface,
         return;
       }
       ip_addr =
-          quic::QuicIpAddress(quic::QuicIpAddressImpl(addresses[0].address()));
+          net::ToQuicIpAddress(addresses[0].address());
     }
 
     quic::QuicServerId server_id(url.host(), url.EffectiveIntPort(),
@@ -261,42 +266,46 @@ class RawClientImpl : public RQuicClientInterface,
       return;
     }
 
-    session_ = client.client_session();
+    quic::QuicRawClientSession* session_ = client.client_session();
     stream_ = session_->CreateOutgoingBidirectionalStream();
     stream_->set_visitor(this);
+    session_ptrs_[next_session_id_] = session_;
+    if (listener_) {
+      listener_->onReady(next_session_id_, stream_->id());
+    }
+    next_session_id_++;
 
     {
       std::unique_lock<std::mutex> lck(mtx_);
-      message_loop_ = &message_loop;
       run_loop_ = &run_loop;
-    }
-    if (listener_) {
-      listener_->onReady();
     }
     // cout << "get port:" << client.SocketPort() << endl;
     run_loop_->Run();
     {
       std::unique_lock<std::mutex> lck(mtx_);
-      message_loop_ = nullptr;
       run_loop_ = nullptr;
     }
   }
 
-  void SendOnStream(uint32_t stream_id, const std::string& data, bool fin) {
-    quic::QuicStream* stream = session_->GetOrCreateStream(stream_id);
-    if (stream) {
-      stream->WriteOrBufferData(data, fin, nullptr);
-    } else {
-      cerr << "Failed to get stream: " << stream_id << endl;
+  void SendOnStream(uint32_t session_id, uint32_t stream_id, const std::string& data, bool fin) {
+    if (session_ptrs_.count(session_id) > 0) {
+      quic::QuicStream* stream =
+          session_ptrs_[session_id]->GetOrCreateStream(stream_id);
+      if (stream) {
+        stream->WriteOrBufferData(data, fin, nullptr);
+      } else {
+        cerr << "Failed to get stream: " << stream_id << endl;
+      }
     }
   }
   quic::QuicRawStream* stream_;
-  quic::QuicRawClientSession* session_;
   std::mutex mtx_;
-  base::MessageLoopForIO* message_loop_;
+  std::unique_ptr<base::Thread> io_thread_;
   base::RunLoop* run_loop_;
-  std::unique_ptr<std::thread> client_thread_;
+  std::unique_ptr<base::Thread> client_thread_;
   RQuicListener* listener_;
+  uint32_t next_session_id_;
+  std::unordered_map<uint32_t, quic::QuicRawClientSession*> session_ptrs_;
 };
 
 
@@ -310,13 +319,18 @@ class RawServerImpl : public RQuicServerInterface,
       : cert_file_{cert_file},
         key_file_{key_file},
         mtx_{},
-        message_loop_{nullptr},
         run_loop_{nullptr},
+        io_thread_(std::make_unique<base::Thread>("quic_lib_io_thread")),
         server_thread_{nullptr},
         listener_{nullptr},
         server_port_{0},
         stream_{nullptr},
-        next_session_id_{0} {}
+        next_session_id_{0} {
+          base::Thread::Options options;
+          options.message_pump_type = base::MessagePumpType::IO;
+          io_thread_->StartWithOptions(options);
+          server_thread_->StartWithOptions(options);
+        }
 
   ~RawServerImpl() override {
     stop();
@@ -326,8 +340,9 @@ class RawServerImpl : public RQuicServerInterface,
   // Implement RQuicServerInterface
   bool listen(int port) override {
     if (!server_thread_) {
-      server_thread_.reset(
-          new std::thread(&RawServerImpl::InitAndRun, this, port));
+      server_thread_->task_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(&RawServerImpl::InitAndRun, base::Unretained(this), port));
       return true;
     }
     return false;
@@ -337,8 +352,8 @@ class RawServerImpl : public RQuicServerInterface,
   void stop() override {
     {
       std::unique_lock<std::mutex> lck(mtx_);
-      if (message_loop_) {
-        message_loop_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
+      if (io_thread_) {
+        io_thread_->task_runner()->PostTask(FROM_HERE, run_loop_->QuitClosure());
       }
     }
   }
@@ -346,8 +361,8 @@ class RawServerImpl : public RQuicServerInterface,
   // Implement RQuicServerInterface
   void waitForClose() override {
     if (server_thread_) {
-      server_thread_->join();
-      server_thread_.reset();
+      /*server_thread_.join();
+      server_thread_.reset();*/
     }
   }
 
@@ -356,24 +371,16 @@ class RawServerImpl : public RQuicServerInterface,
     return server_port_;
   }
 
-  // Implement RQuicServerInterface
-  void send(const char* data, uint32_t len) override {
-    // Send on first session, stream
-    if (stream_) {
-      send(0, stream_->id(), data, len);
-    }
-  }
 
   // Implement RQuicServerInterface
   void send(uint32_t session_id,
             uint32_t stream_id,
-            const char* data, uint32_t len) override {
+            const std::string& data) override {
     std::unique_lock<std::mutex> lck(mtx_);
-    if (message_loop_) {
-      std::string s_data(data);
-      message_loop_->task_runner()->PostTask(FROM_HERE,
+    if (io_thread_) {
+      io_thread_->task_runner()->PostTask(FROM_HERE,
           base::BindOnce(&RawServerImpl::SendOnSession,
-              base::Unretained(this), session_id, stream_id, s_data, false));
+              base::Unretained(this), session_id, stream_id, data, false));
     }
   }
 
@@ -448,7 +455,6 @@ class RawServerImpl : public RQuicServerInterface,
   }
 
   void InitAndRun(int port) {
-    base::MessageLoopForIO message_loop;
     base::RunLoop run_loop;
 
     // Determine IP address to connect to from supplied hostname.
@@ -470,16 +476,12 @@ class RawServerImpl : public RQuicServerInterface,
 
     {
       std::unique_lock<std::mutex> lck(mtx_);
-      message_loop_ = &message_loop;
       run_loop_ = &run_loop;
     }
-    if (listener_) {
-      listener_->onReady();
-    }
+
     run_loop_->Run();
     {
       std::unique_lock<std::mutex> lck(mtx_);
-      message_loop_ = nullptr;
       run_loop_ = nullptr;
     }
   }
@@ -500,9 +502,10 @@ class RawServerImpl : public RQuicServerInterface,
   std::string cert_file_;
   std::string key_file_;
   std::mutex mtx_;
-  base::MessageLoopForIO* message_loop_;
   base::RunLoop* run_loop_;
-  std::unique_ptr<std::thread> server_thread_;
+  std::unique_ptr<base::Thread> io_thread_;
+  std::unique_ptr<base::Thread> event_thread_;
+  std::unique_ptr<base::Thread> server_thread_;
   RQuicListener* listener_;
   int server_port_;
   quic::QuicRawStream* stream_;
@@ -517,7 +520,7 @@ std::shared_ptr<base::AtExitManager> exit_manager;
 
 void initialize() {
   if (!raw_factory_intialized) {
-    base::TaskScheduler::CreateAndStartWithDefaultParams("raw_quic_factory");
+    base::ThreadPoolInstance::CreateAndStartWithDefaultParams("raw_quic_factory");
     exit_manager.reset(new base::AtExitManager());
     raw_factory_intialized = true;
   }

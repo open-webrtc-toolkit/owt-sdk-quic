@@ -5,7 +5,8 @@
 #ifndef NET_TOOLS_QUIC_RAW_QUIC_RAW_DISPATCHER_H_
 #define NET_TOOLS_QUIC_RAW_QUIC_RAW_DISPATCHER_H_
 
-#include "net/third_party/quic/core/quic_dispatcher.h"
+#include "absl/strings/string_view.h"
+#include "net/third_party/quiche/src/quic/core/quic_dispatcher.h"
 
 #include "net/tools/quic/raw/quic_raw_server_session.h"
 
@@ -29,38 +30,29 @@ class QuicRawDispatcher : public QuicDispatcher {
   };
 
   QuicRawDispatcher(
-      const QuicConfig& config,
+      const QuicConfig* config,
       const QuicCryptoServerConfig* crypto_config,
       QuicVersionManager* version_manager,
       std::unique_ptr<QuicConnectionHelperInterface> helper,
       std::unique_ptr<QuicCryptoServerStream::Helper> session_helper,
-      std::unique_ptr<QuicAlarmFactory> alarm_factory);
+      std::unique_ptr<QuicAlarmFactory> alarm_factory,
+      uint8_t expected_server_connection_id_length);
 
   ~QuicRawDispatcher() override;
-
-  int GetRstErrorCount(QuicRstStreamErrorCode rst_error_code) const;
-
-  void OnRstStreamReceived(const QuicRstStreamFrame& frame) override;
-
-  // QuicSession::Visitor interface implementation (via inheritance of
-  // QuicDispatcher)
-  void OnConnectionClosed(QuicConnectionId connection_id,
-                          QuicErrorCode error,
-                          const QuicString& error_details) override;
 
   void set_visitor(Visitor* visitor) { visitor_ = visitor; }
 
  protected:
-  QuicRawServerSession* CreateQuicSession(
+  std::unique_ptr<QuicSession> CreateQuicSession(
       QuicConnectionId connection_id,
-      const QuicSocketAddress& client_address,
-      QuicStringPiece alpn,
-      const ParsedQuicVersion& version) override;
+      const QuicSocketAddress& self_address,
+      const QuicSocketAddress& peer_address,
+      absl::string_view alpn,
+      const ParsedQuicVersion& version,
+      absl::string_view sni) override;
 
  private:
   // The map of the reset error code with its counter.
-  std::map<QuicRstStreamErrorCode, int> rst_error_map_;
-  std::unordered_map<QuicConnectionId, QuicRawServerSession*> sessions_;
   Visitor* visitor_;
 };
 
