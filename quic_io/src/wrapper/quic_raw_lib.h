@@ -9,9 +9,7 @@ class RQuicListener {
  public:
   RQuicListener() {}
   virtual ~RQuicListener() {}
-  virtual void onReady() = 0;
   virtual void onReady(uint32_t session_id, uint32_t stream_id) = 0;
-  // The session_id will not be used for client
   virtual void onData(uint32_t session_id,
                       uint32_t stream_id,
                       char* data, uint32_t len) = 0;
