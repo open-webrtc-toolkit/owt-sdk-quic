@@ -33,7 +33,7 @@ class OWT_EXPORT WebTransportStreamInterface {
   virtual void SetVisitor(Visitor* visitor) = 0;
   // Write or buffer data. Returns the length of data written or buffered.
   // Current implementation always returns 0 or `length`.
-  virtual size_t Write(uint8_t* data, size_t length) = 0;
+  virtual size_t Write(const uint8_t* data, size_t length) = 0;
   // Reads at most `length` bytes into `data` and returns the number of bytes
   // actually read.
   virtual size_t Read(uint8_t* data, size_t length) = 0;

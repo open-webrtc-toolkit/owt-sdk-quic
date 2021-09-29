@@ -41,7 +41,7 @@ class WebTransportStreamImpl : public WebTransportStreamInterface,
   void SetVisitor(
       owt::quic::WebTransportStreamInterface::Visitor* visitor) override;
   uint32_t Id() const override;
-  size_t Write(uint8_t* data, size_t length) override;
+  size_t Write(const uint8_t* data, size_t length) override;
   size_t Read(uint8_t* data, size_t length) override;
   size_t ReadableBytes() const override;
   void Close() override;
