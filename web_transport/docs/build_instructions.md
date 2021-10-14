@@ -37,6 +37,8 @@ Some manually changes to Chromium code are needed before building SDK.
 
 1. Add `"//owt/web_transport:owt_web_transport",` to `BUILD.gn`, after line 91. You need to revert this change before rolling Chromium revision, and redo this change after rolling.
 
+1. Apply patch `src/owt/web_transport/patches/0002-Allow-connections-from-HTTP-3-datagram-draft-04-endp.patch` to `src/net/third_party/quiche/src`.
+
 1. Create a file `gclient_args.gni` in `build/config` with following code.
 
 ```
