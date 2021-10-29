@@ -36,6 +36,7 @@ bool ProofSourceOwt::Initialize(const base::FilePath& pfx_path,
     DLOG(FATAL) << "Unable to read pfx file.";
     return false;
   }
+
   EVP_PKEY* key = nullptr;
   bssl::UniquePtr<STACK_OF(X509)> certs(sk_X509_new_null());
   CBS pkcs12;
@@ -54,14 +55,31 @@ bool ProofSourceOwt::Initialize(const base::FilePath& pfx_path,
       LOG(ERROR) << "Failed to get X509 certificate.";
       return false;
     }
+    auto cert_list = net::X509Certificate::CreateCertificateListFromBytes(
+        base::as_bytes(base::span<unsigned char>(buffer, len)),
+        net::X509Certificate::FORMAT_AUTO);
+    certs_in_file_.insert(certs_in_file_.end(), cert_list.begin(),
+                          cert_list.end());
     bssl::UniquePtr<CRYPTO_BUFFER> crypto_buffer =
         net::x509_util::CreateCryptoBuffer(buffer, len);
     certs_string.emplace_back(
         net::x509_util::CryptoBufferAsStringPiece(crypto_buffer.get()));
   }
+
+  if (certs_in_file_.empty()) {
+    DLOG(FATAL) << "No certificates.";
+    return false;
+  }
+
   chain_ = new ::quic::ProofSource::Chain(certs_string);
   private_key_ = crypto::RSAPrivateKey::CreateFromKey(key);
   return true;
+}
+
+absl::InlinedVector<uint16_t, 8>
+ProofSourceOwt::SupportedTlsSignatureAlgorithms() const {
+  // Allow all signature algorithms that BoringSSL allows.
+  return {};
 }
 
 ::quic::ProofSource::TicketCrypter* ProofSourceOwt::GetTicketCrypter() {
@@ -152,7 +170,17 @@ void ProofSourceOwt::GetProof(const ::quic::QuicSocketAddress& server_address,
 ::quic::QuicReferenceCountedPointer<::quic::ProofSource::Chain>
 ProofSourceOwt::GetCertChain(const ::quic::QuicSocketAddress& server_address,
                              const ::quic::QuicSocketAddress& client_address,
-                             const std::string& hostname) {
+                             const std::string& hostname,
+                             bool* cert_matched_sni) {
+  *cert_matched_sni = false;
+  if (!hostname.empty()) {
+    for (const scoped_refptr<net::X509Certificate>& cert : certs_in_file_) {
+      if (cert->VerifyNameMatch(hostname)) {
+        *cert_matched_sni = true;
+        break;
+      }
+    }
+  }
   return chain_;
 }
 

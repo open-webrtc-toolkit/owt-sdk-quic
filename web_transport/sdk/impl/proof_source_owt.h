@@ -16,6 +16,7 @@
 
 #include "base/files/file_path.h"
 #include "crypto/rsa_private_key.h"
+#include "net/cert/x509_certificate.h"
 #include "net/third_party/quiche/src/quic/core/crypto/proof_source.h"
 
 namespace owt {
@@ -42,7 +43,8 @@ class ProofSourceOwt : public ::quic::ProofSource {
   ::quic::QuicReferenceCountedPointer<::quic::ProofSource::Chain> GetCertChain(
       const ::quic::QuicSocketAddress& server_address,
       const ::quic::QuicSocketAddress& client_address,
-      const std::string& hostname) override;
+      const std::string& hostname,
+      bool* cert_matched_sni) override;
 
   void ComputeTlsSignature(
       const ::quic::QuicSocketAddress& server_address,
@@ -51,6 +53,9 @@ class ProofSourceOwt : public ::quic::ProofSource {
       uint16_t signature_algorithm,
       absl::string_view in,
       std::unique_ptr<SignatureCallback> callback) override;
+
+  absl::InlinedVector<uint16_t, 8> SupportedTlsSignatureAlgorithms()
+      const override;
 
   TicketCrypter* GetTicketCrypter() override;
   void SetTicketCrypter(std::unique_ptr<TicketCrypter> ticket_crypter);
@@ -67,6 +72,7 @@ class ProofSourceOwt : public ::quic::ProofSource {
       ::quic::QuicCryptoProof* proof);
 
   std::unique_ptr<crypto::RSAPrivateKey> private_key_;
+  std::vector<scoped_refptr<net::X509Certificate>> certs_in_file_;
   ::quic::QuicReferenceCountedPointer<::quic::ProofSource::Chain> chain_;
   std::unique_ptr<::quic::ProofSource::TicketCrypter> ticket_crypter_;
 

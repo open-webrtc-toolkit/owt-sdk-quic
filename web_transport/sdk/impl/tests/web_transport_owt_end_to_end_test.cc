@@ -93,25 +93,29 @@ class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
         factory_(std::unique_ptr<WebTransportFactory>(
             WebTransportFactory::CreateForTesting())),
         port_(20001) {
-    base::Thread::Options options;
-    options.message_pump_type = base::MessagePumpType::IO;
-    io_thread_->StartWithOptions(options);
-    event_thread_->StartWithOptions(options);
+    io_thread_->StartWithOptions(
+        base::Thread::Options(base::MessagePumpType::IO, 0));
+    event_thread_->StartWithOptions(
+        base::Thread::Options(base::MessagePumpType::IO, 0));
   }
 
   ~WebTransportOwtEndToEndTest() override {
     client_.reset();
+    //server_.reset();
     base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                              base::WaitableEvent::InitialState::NOT_SIGNALED);
     io_thread_->task_runner()->PostTask(
         FROM_HERE, base::BindOnce(
                        [](std::unique_ptr<net::URLRequestContext> context,
+                          std::unique_ptr<WebTransportServerInterface> server,
                           base::WaitableEvent* event) {
                          context.reset();
+                         server.reset();
                          event->Signal();
                        },
-                       std::move(context_), &done));
+                       std::move(context_), std::move(server_), &done));
     done.Wait();
+    factory_.reset();
   }
 
   void StartEchoServer() {

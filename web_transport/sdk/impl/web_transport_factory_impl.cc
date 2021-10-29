@@ -42,10 +42,10 @@ WebTransportFactoryImpl::WebTransportFactoryImpl()
       io_thread_(std::make_unique<base::Thread>("quic_transport_io_thread")),
       event_thread_(
           std::make_unique<base::Thread>("quic_transport_event_thread")) {
-  base::Thread::Options options;
-  options.message_pump_type = base::MessagePumpType::IO;
-  io_thread_->StartWithOptions(options);
-  event_thread_->StartWithOptions(options);
+  io_thread_->StartWithOptions(
+      base::Thread::Options(base::MessagePumpType::IO, 0));
+  event_thread_->StartWithOptions(
+      base::Thread::Options(base::MessagePumpType::IO, 0));
   Init();
 }
 
@@ -55,11 +55,11 @@ void WebTransportFactoryImpl::InitializeAtExitManager() {
   at_exit_manager_ = std::make_unique<base::AtExitManager>();
 }
 
-WebTransportServerInterface*
-WebTransportFactoryImpl::CreateWebTransportServer(int port,
-                                                    const char* cert_path,
-                                                    const char* key_path,
-                                                    const char* secret_path) {
+WebTransportServerInterface* WebTransportFactoryImpl::CreateWebTransportServer(
+    int port,
+    const char* cert_path,
+    const char* key_path,
+    const char* secret_path) {
   auto proof_source = std::make_unique<net::ProofSourceChromium>();
   if (!proof_source->Initialize(base::FilePath::FromUTF8Unsafe(cert_path),
                                 base::FilePath::FromUTF8Unsafe(key_path),
@@ -67,24 +67,20 @@ WebTransportFactoryImpl::CreateWebTransportServer(int port,
     LOG(ERROR) << "Failed to initialize proof source.";
     return nullptr;
   }
-  return new WebTransportOwtServerImpl(port, std::vector<url::Origin>(),
-                                        std::move(proof_source),
-                                        io_thread_.get(), event_thread_.get());
+  return CreateWebTransportServerOnIOThread(port, std::move(proof_source));
 }
 
-WebTransportServerInterface*
-WebTransportFactoryImpl::CreateWebTransportServer(int port,
-                                                    const char* pfx_path,
-                                                    const char* password) {
+WebTransportServerInterface* WebTransportFactoryImpl::CreateWebTransportServer(
+    int port,
+    const char* pfx_path,
+    const char* password) {
   auto proof_source = std::make_unique<ProofSourceOwt>();
   if (!proof_source->Initialize(base::FilePath::FromUTF8Unsafe(pfx_path),
                                 std::string(password))) {
     LOG(ERROR) << "Failed to initialize proof source.";
     return nullptr;
   }
-  return new WebTransportOwtServerImpl(port, std::vector<url::Origin>(),
-                                        std::move(proof_source),
-                                        io_thread_.get(), event_thread_.get());
+  return CreateWebTransportServerOnIOThread(port, std::move(proof_source));
 }
 
 WebTransportClientInterface*
@@ -137,6 +133,31 @@ void WebTransportFactoryImpl::Init() {
   base::CommandLine* command_line(base::CommandLine::ForCurrentProcess());
   command_line->AppendSwitch("--quic_default_to_bbr");
   Logging::InitLogging();
+}
+
+WebTransportServerInterface*
+WebTransportFactoryImpl::CreateWebTransportServerOnIOThread(
+    int port,
+    std::unique_ptr<::quic::ProofSource> proof_source) {
+  WebTransportServerInterface* result(nullptr);
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  io_thread_->task_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](int port, std::unique_ptr<::quic::ProofSource> proof_source,
+             base::Thread* io_thread, base::Thread* event_thread,
+             WebTransportServerInterface** result, base::WaitableEvent* event) {
+            *result = new WebTransportOwtServerImpl(
+                port, std::vector<url::Origin>(), std::move(proof_source),
+                io_thread, event_thread);
+            event->Signal();
+          },
+          port, std::move(proof_source), base::Unretained(io_thread_.get()),
+          base::Unretained(event_thread_.get()), base::Unretained(&result),
+          base::Unretained(&done)));
+  done.Wait();
+  return result;
 }
 
 }  // namespace quic

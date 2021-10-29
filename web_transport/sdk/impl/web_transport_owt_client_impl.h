@@ -50,10 +50,12 @@ class WebTransportOwtClientImpl : public WebTransportClientInterface,
 
  protected:
   // Overrides net::WebTransportClientVisitor.
-  void OnConnected() override;
-  void OnConnectionFailed() override;
-  void OnClosed() override;
-  void OnError() override;
+  void OnConnected(
+      scoped_refptr<net::HttpResponseHeaders> response_headers) override;
+  void OnConnectionFailed(const net::WebTransportError& error) override;
+  void OnClosed(
+      const absl::optional<net::WebTransportCloseInfo>& close_info) override;
+  void OnError(const net::WebTransportError& error) override;
   void OnIncomingBidirectionalStreamAvailable() override;
   void OnIncomingUnidirectionalStreamAvailable() override;
   void OnDatagramReceived(base::StringPiece datagram) override {}

@@ -18,7 +18,7 @@
 #include <string>
 #include <vector>
 #include "base/memory/scoped_refptr.h"
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 #include "net/base/io_buffer.h"
 #include "net/base/ip_endpoint.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
@@ -69,7 +69,7 @@ class WebTransportOwtServerImpl
   void StartOnCurrentThread(base::WaitableEvent* done);
 
  private:
-  const int port_;
+  const uint16_t port_;
   ::quic::QuicVersionManager version_manager_;
   ::quic::QuicChromiumClock* clock_;  // Not owned.
   ::quic::QuicConfig config_;

@@ -54,9 +54,8 @@ WebTransportOwtClientImpl::WebTransportOwtClientImpl(
     LOG(INFO) << "Create a new IO stream.";
     io_thread_owned_ =
         std::make_unique<base::Thread>("quic_transport_client_io_thread");
-    base::Thread::Options options;
-    options.message_pump_type = base::MessagePumpType::IO;
-    io_thread_owned_->StartWithOptions(options);
+    io_thread_owned_->StartWithOptions(
+        base::Thread::Options(base::MessagePumpType::IO, 0));
     task_runner_ = io_thread_owned_->task_runner();
   } else {
     task_runner_ = io_thread->task_runner();
@@ -126,7 +125,8 @@ void WebTransportOwtClientImpl::SetVisitor(
   visitor_ = visitor;
 }
 
-void WebTransportOwtClientImpl::OnConnected() {
+void WebTransportOwtClientImpl::OnConnected(
+    scoped_refptr<net::HttpResponseHeaders> response_headers) {
   LOG(INFO) << "OnConnected.";
   event_runner_->PostTask(
       FROM_HERE,
@@ -135,7 +135,8 @@ void WebTransportOwtClientImpl::OnConnected() {
                      &WebTransportClientInterface::Visitor::OnConnected));
 }
 
-void WebTransportOwtClientImpl::OnConnectionFailed() {
+void WebTransportOwtClientImpl::OnConnectionFailed(
+    const net::WebTransportError& error) {
   LOG(INFO) << "OnConnectionFailed.";
   event_runner_->PostTask(
       FROM_HERE,
@@ -144,11 +145,12 @@ void WebTransportOwtClientImpl::OnConnectionFailed() {
           &WebTransportClientInterface::Visitor::OnConnectionFailed));
 }
 
-void WebTransportOwtClientImpl::OnError() {
+void WebTransportOwtClientImpl::OnError(const net::WebTransportError& error) {
   LOG(INFO) << "OnError.";
 }
 
-void WebTransportOwtClientImpl::OnClosed() {
+void WebTransportOwtClientImpl::OnClosed(
+      const absl::optional<net::WebTransportCloseInfo>& close_info) {
   LOG(INFO) << "OnClosed.";
 }
 

@@ -11,7 +11,7 @@
 #ifndef OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_SERVER_SESSION_H_
 #define OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_SERVER_SESSION_H_
 
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 #include "impl/http3_server_session.h"
 #include "net/third_party/quiche/src/quic/core/http/web_transport_http3.h"
 #include "owt/quic/web_transport_session_interface.h"
@@ -44,7 +44,9 @@ class WebTransportServerSession : public WebTransportSessionInterface,
   const ConnectionStats& GetStats() override;
 
   // Overrides ::quic::WebTransportVisitor.
-  void OnSessionReady() override {}
+  void OnSessionReady(const spdy::SpdyHeaderBlock& headers) override {}
+  void OnSessionClosed(::quic::WebTransportSessionError error_code,
+                       const std::string& error_message) override {}
   void OnIncomingBidirectionalStreamAvailable() override;
   void OnIncomingUnidirectionalStreamAvailable() override;
   void OnDatagramReceived(absl::string_view datagram) override {}

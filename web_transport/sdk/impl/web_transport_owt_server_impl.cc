@@ -99,6 +99,7 @@ WebTransportOwtServerImpl::~WebTransportOwtServerImpl() {
           [](WebTransportOwtServerImpl* server, base::WaitableEvent* done) {
             server->weak_factory_.InvalidateWeakPtrs();
             server->socket_.reset();
+            server->dispatcher_.reset();
             done->Signal();
           },
           base::Unretained(this), &done));
