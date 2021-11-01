@@ -169,6 +169,10 @@ const ConnectionStats& WebTransportServerSession::GetStats() {
   return stats_;
 }
 
+void WebTransportServerSession::Close(uint32_t code, char* reason) {
+  session_->CloseSession(code, reason);
+}
+
 void WebTransportServerSession::OnIncomingBidirectionalStreamAvailable() {
   auto* stream = session_->AcceptIncomingBidirectionalStream();
   AcceptIncomingStream(stream);
