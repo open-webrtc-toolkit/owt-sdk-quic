@@ -7,7 +7,7 @@
 #ifndef OWT_QUIC_WEB_TRANSPORT_HTTP3_SERVER_SESSION_H_
 #define OWT_QUIC_WEB_TRANSPORT_HTTP3_SERVER_SESSION_H_
 
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 #include "net/third_party/quiche/src/quic/core/http/quic_server_session_base.h"
 
 namespace owt {
@@ -28,6 +28,7 @@ class Http3ServerSession : public ::quic::QuicServerSessionBase {
       WebTransportServerBackend* backend,
       base::SingleThreadTaskRunner* io_runner,
       base::SingleThreadTaskRunner* event_runner);
+  ~Http3ServerSession() override;
 
  protected:
   // Override ::quic::QuicServerSessionBase.
@@ -44,7 +45,7 @@ class Http3ServerSession : public ::quic::QuicServerSessionBase {
 
   // Overrides QuicSpdySession.
   bool ShouldNegotiateWebTransport() override;
-  bool ShouldNegotiateHttp3Datagram() override;
+  ::quic::HttpDatagramSupport LocalHttpDatagramSupport() override;
 
  private:
   WebTransportServerBackend* backend_;

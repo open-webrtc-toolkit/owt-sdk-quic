@@ -29,11 +29,10 @@ Http3ServerStream::Http3ServerStream(::quic::QuicStreamId id,
 
 Http3ServerStream::Http3ServerStream(::quic::PendingStream* pending,
                                      ::quic::QuicSpdySession* session,
-                                     ::quic::StreamType type,
                                      WebTransportServerBackend* backend,
                                      base::SingleThreadTaskRunner* io_runner,
                                      base::SingleThreadTaskRunner* event_runner)
-    : QuicSpdyServerStreamBase(pending, session, type),
+    : QuicSpdyServerStreamBase(pending, session),
       backend_(backend),
       io_runner_(io_runner),
       event_runner_(event_runner),

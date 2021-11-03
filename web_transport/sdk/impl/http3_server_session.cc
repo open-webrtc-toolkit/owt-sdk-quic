@@ -44,6 +44,10 @@ Http3ServerSession::Http3ServerSession(
   CHECK(event_runner_);
 }
 
+Http3ServerSession::~Http3ServerSession() {
+  DeleteConnection();
+}
+
 ::quic::QuicSpdyStream* Http3ServerSession::CreateIncomingStream(
     ::quic::QuicStreamId id) {
   if (!ShouldCreateIncomingStream(id)) {
@@ -62,9 +66,8 @@ Http3ServerSession::Http3ServerSession(
 ::quic::QuicSpdyStream* Http3ServerSession::CreateIncomingStream(
     ::quic::PendingStream* pending) {
   std::unique_ptr<::quic::QuicSpdyStream> stream =
-      std::make_unique<Http3ServerStream>(pending, this,
-                                          ::quic::StreamType::BIDIRECTIONAL,
-                                          backend_, io_runner_, event_runner_);
+      std::make_unique<Http3ServerStream>(pending, this, backend_, io_runner_,
+                                          event_runner_);
   ::quic::QuicSpdyStream* stream_ptr = stream.get();
   ActivateStream(std::move(stream));
   return stream_ptr;
@@ -116,8 +119,8 @@ bool Http3ServerSession::ShouldNegotiateWebTransport() {
   return true;
 }
 
-bool Http3ServerSession::ShouldNegotiateHttp3Datagram() {
-  return true;
+::quic::HttpDatagramSupport Http3ServerSession::LocalHttpDatagramSupport() {
+  return ::quic::HttpDatagramSupport::kDraft00And04;
 }
 
 }  // namespace quic

@@ -62,11 +62,12 @@ class WebTransportHttp3Client : public net::WebTransportClient,
   ~WebTransportHttp3Client() override;
 
   net::WebTransportState state() const { return state_; }
-  const net::WebTransportError& error() const override;
 
   // Connect() is an asynchronous operation.  Once the operation is finished,
   // OnConnected() or OnConnectionFailed() is called on the Visitor.
   void Connect() override;
+  void Close(
+      const absl::optional<net::WebTransportCloseInfo>& close_info) override;
 
   ::quic::WebTransportSession* session() override;
 
@@ -75,11 +76,15 @@ class WebTransportHttp3Client : public net::WebTransportClient,
 
   void OnSettingsReceived();
   void OnHeadersComplete();
-  void OnConnectStreamClosed();
+  void OnConnectStreamWriteSideInDataRecvdState();
+  void OnConnectStreamAborted();
+  void OnCloseTimeout();
   void OnDatagramProcessed(absl::optional<::quic::MessageStatus> status);
 
   // QuicTransportClientSession::ClientVisitor methods.
-  void OnSessionReady() override;
+  void OnSessionReady(const spdy::SpdyHeaderBlock&) override;
+  void OnSessionClosed(::quic::WebTransportSessionError error_code,
+                       const std::string& error_message) override;
   void OnIncomingBidirectionalStreamAvailable() override;
   void OnIncomingUnidirectionalStreamAvailable() override;
   void OnDatagramReceived(absl::string_view datagram) override;
@@ -143,6 +148,11 @@ class WebTransportHttp3Client : public net::WebTransportClient,
 
   void TransitionToState(net::WebTransportState next_state);
 
+  void SetErrorIfNecessary(int error);
+  void SetErrorIfNecessary(int error,
+                           ::quic::QuicErrorCode quic_error,
+                           base::StringPiece details);
+
   const GURL url_;
   const url::Origin origin_;
   const net::NetworkIsolationKey isolation_key_;
@@ -159,11 +169,13 @@ class WebTransportHttp3Client : public net::WebTransportClient,
   std::unique_ptr<net::QuicChromiumAlarmFactory> alarm_factory_;
   ::quic::QuicCryptoClientConfig crypto_config_;
 
-  net::WebTransportState state_ = net::NEW;
+  net::WebTransportState state_ = net::WebTransportState::NEW;
   ConnectState next_connect_state_ = CONNECT_STATE_NONE;
-  net::WebTransportError error_;
+  absl::optional<net::WebTransportError> error_;
   bool retried_with_new_version_ = false;
   bool session_ready_ = false;
+  bool safe_to_report_error_details_ = false;
+  std::unique_ptr<net::HttpResponseInfo> http_response_info_;
 
   net::ProxyInfo proxy_info_;
   std::unique_ptr<net::ProxyResolutionRequest> proxy_resolution_request_;
@@ -178,6 +190,9 @@ class WebTransportHttp3Client : public net::WebTransportClient,
   std::unique_ptr<net::QuicEventLogger> event_logger_;
   ::quic::QuicClientPushPromiseIndex push_promise_index_;
 
+  absl::optional<net::WebTransportCloseInfo> close_info_;
+
+  base::OneShotTimer close_timeout_timer_;
   base::WeakPtrFactory<WebTransportHttp3Client> weak_factory_{this};
 };
 }  // namespace quic

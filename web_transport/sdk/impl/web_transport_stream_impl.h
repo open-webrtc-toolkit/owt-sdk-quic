@@ -16,7 +16,7 @@
 #define OWT_QUIC_WEB_TRANSPORT_WEB_TRANSPORT_STREAM_IMPL_H_
 
 #include "base/memory/weak_ptr.h"
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread_checker.h"
 #include "impl/http3_server_stream.h"
 #include "net/third_party/quiche/src/quic/core/http/quic_spdy_stream.h"
@@ -51,6 +51,9 @@ class WebTransportStreamImpl : public WebTransportStreamInterface,
   // Overrides ::quic::WebTransportStreamVisitor.
   void OnCanRead() override;
   void OnCanWrite() override;
+  void OnResetStreamReceived(::quic::WebTransportStreamError error) override {}
+  void OnStopSendingReceived(::quic::WebTransportStreamError error) override {}
+  void OnWriteSideInDataRecvdState() override {}
 
  private:
   void OnCanReadOnCurrentThread();

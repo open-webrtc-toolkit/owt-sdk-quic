@@ -15,7 +15,7 @@
 #include "impl/web_transport_stream_impl.h"
 #include "base/logging.h"
 #include "base/synchronization/waitable_event.h"
-#include "net/third_party/quiche/src/quic/core/web_transport_stream_adapter.h"
+#include "net/third_party/quiche/src/quic/core/http/web_transport_stream_adapter.h"
 
 namespace owt {
 namespace quic {
@@ -26,10 +26,11 @@ class WebTransportStreamVisitorAdapter
   explicit WebTransportStreamVisitorAdapter(
       ::quic::WebTransportStreamVisitor* visitor)
       : visitor_(visitor) {}
-
   void OnCanRead() override { visitor_->OnCanRead(); }
-
   void OnCanWrite() override { visitor_->OnCanWrite(); }
+  void OnResetStreamReceived(::quic::WebTransportStreamError error) override {}
+  void OnStopSendingReceived(::quic::WebTransportStreamError error) override {}
+  void OnWriteSideInDataRecvdState() override {}
 
  private:
   ::quic::WebTransportStreamVisitor* visitor_;

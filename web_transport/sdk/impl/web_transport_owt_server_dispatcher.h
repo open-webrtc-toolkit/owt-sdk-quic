@@ -15,7 +15,7 @@
 #ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_SERVER_DISPATCHER_H_
 #define OWT_WEB_TRANSPORT_WEB_TRANSPORT_WEB_TRANSPORT_OWT_SERVER_DISPATCHER_H_
 
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 #include "net/third_party/quiche/src/quic/core/quic_dispatcher.h"
 #include "url/origin.h"
 

@@ -26,9 +26,7 @@ SDK_TARGETS = ['owt_web_transport']
 TEST_TARGETS = ['owt_web_transport_tests']
 TEST_TARGETS_WIN = ['owt_web_transport_dll_tests']
 PATCH_LIST = [
-    ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH),
-    ('0002-Allow-connections-from-HTTP-3-datagram-draft-04-endp.patch',
-     SRC_PATH/'net'/'third_party'/'quiche'/'src')
+    ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH)
 ]
 GIT_BIN = 'git.bat' if sys.platform == 'win32' else 'git'
 

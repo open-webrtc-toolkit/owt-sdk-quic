@@ -8,3 +8,4 @@ checkout_oculus_sdk = false
 checkout_openxr = false
 checkout_aemu = false
 checkout_google_benchmark = false
+generate_location_tags = false

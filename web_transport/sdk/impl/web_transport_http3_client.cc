@@ -18,12 +18,14 @@
 #include "base/metrics/histogram_functions.h"
 #include "base/strings/abseil_string_conversions.h"
 #include "base/threading/thread_task_runner_handle.h"
+#include "net/base/port_util.h"
 #include "net/base/url_util.h"
 #include "net/proxy_resolution/configured_proxy_resolution_service.h"
 #include "net/proxy_resolution/proxy_resolution_request.h"
 #include "net/quic/address_utils.h"
 #include "net/quic/crypto/proof_verifier_chromium.h"
 #include "net/quic/quic_chromium_alarm_factory.h"
+#include "net/spdy/spdy_http_utils.h"
 #include "net/third_party/quiche/src/quic/core/http/web_transport_http3.h"
 #include "net/third_party/quiche/src/quic/core/quic_connection.h"
 #include "net/third_party/quiche/src/quic/core/quic_utils.h"
@@ -38,6 +40,10 @@ using namespace net;
 // From
 // https://wicg.github.io/web-transport/#dom-quictransportconfiguration-server_certificate_fingerprints
 constexpr int kCustomCertificateMaxValidityDays = 14;
+
+// The time the client would wait for the server to acknowledge the session
+// being closed.
+constexpr base::TimeDelta kMaxCloseTimeout = base::Seconds(2);
 
 std::set<std::string> HostsFromOrigins(std::set<HostPortPair> origins) {
   std::set<std::string> hosts;
@@ -95,7 +101,16 @@ class ConnectStream : public ::quic::QuicSpdyClientStream {
 
   void OnClose() override {
     ::quic::QuicSpdyClientStream::OnClose();
-    client_->OnConnectStreamClosed();
+    if (fin_received() && fin_sent()) {
+      // Clean close.
+      return;
+    }
+    if (stream_error() == ::quic::QUIC_STREAM_CONNECTION_ERROR) {
+      // If stream is closed due to the connection error, OnConnectionClosed()
+      // will populate the correct error details.
+      return;
+    }
+    client_->OnConnectStreamAborted();
   }
 
  private:
@@ -129,7 +144,10 @@ class WebTransportHttp3ClientSession : public ::quic::QuicSpdyClientSession {
   }
 
   bool ShouldNegotiateWebTransport() override { return true; }
-  bool ShouldNegotiateHttp3Datagram() override { return true; }
+
+  ::quic::HttpDatagramSupport LocalHttpDatagramSupport() override {
+    return ::quic::HttpDatagramSupport::kDraft00And04;
+  }
 
   void OnConnectionClosed(const ::quic::QuicConnectionCloseFrame& frame,
                           ::quic::ConnectionCloseSource source) override {
@@ -166,7 +184,13 @@ class WebTransportVisitorProxy : public ::quic::WebTransportVisitor {
   explicit WebTransportVisitorProxy(::quic::WebTransportVisitor* visitor)
       : visitor_(visitor) {}
 
-  void OnSessionReady() override { visitor_->OnSessionReady(); }
+  void OnSessionReady(const spdy::SpdyHeaderBlock& spdy_headers) override {
+    visitor_->OnSessionReady(spdy_headers);
+  }
+  void OnSessionClosed(::quic::WebTransportSessionError error_code,
+                       const std::string& error_message) override {
+    visitor_->OnSessionClosed(error_code, error_message);
+  }
   void OnIncomingBidirectionalStreamAvailable() override {
     visitor_->OnIncomingBidirectionalStreamAvailable();
   }
@@ -203,7 +227,7 @@ WebTransportHttp3Client::WebTransportHttp3Client(
       client_socket_factory_(ClientSocketFactory::GetDefaultFactory()),
       quic_context_(context->quic_context()),
       net_log_(NetLogWithSource::Make(context->net_log(),
-                                      NetLogSourceType::QUIC_TRANSPORT_CLIENT)),
+                                      NetLogSourceType::WEB_TRANSPORT_CLIENT)),
       task_runner_(base::ThreadTaskRunnerHandle::Get().get()),
       alarm_factory_(
           std::make_unique<QuicChromiumAlarmFactory>(task_runner_,
@@ -218,18 +242,33 @@ WebTransportHttp3Client::WebTransportHttp3Client(
 WebTransportHttp3Client::~WebTransportHttp3Client() = default;
 
 void WebTransportHttp3Client::Connect() {
-  if (state_ != NEW || next_connect_state_ != CONNECT_STATE_NONE) {
+  if (state_ != net::WebTransportState::NEW ||
+      next_connect_state_ != CONNECT_STATE_NONE) {
     NOTREACHED();
     return;
   }
 
-  TransitionToState(CONNECTING);
+  TransitionToState(net::WebTransportState::CONNECTING);
   next_connect_state_ = CONNECT_STATE_INIT;
   DoLoop(OK);
 }
 
-const WebTransportError& WebTransportHttp3Client::error() const {
-  return error_;
+void WebTransportHttp3Client::Close(
+    const absl::optional<net::WebTransportCloseInfo>& close_info) {
+  base::TimeDelta probe_timeout = base::Microseconds(
+      connection_->sent_packet_manager().GetPtoDelay().ToMicroseconds());
+  // Wait for at least three PTOs similar to what's used in
+  // https://www.rfc-editor.org/rfc/rfc9000.html#name-immediate-close
+  base::TimeDelta close_timeout = std::min(3 * probe_timeout, kMaxCloseTimeout);
+  close_timeout_timer_.Start(
+      FROM_HERE, close_timeout,
+      base::BindOnce(&WebTransportHttp3Client::OnCloseTimeout,
+                     weak_factory_.GetWeakPtr()));
+  if (close_info.has_value()) {
+    session()->CloseSession(close_info->code, close_info->reason);
+  } else {
+    session()->CloseSession(0, "");
+  }
 }
 
 ::quic::WebTransportSession* WebTransportHttp3Client::session() {
@@ -290,9 +329,8 @@ void WebTransportHttp3Client::DoLoop(int rv) {
 
   if (rv == OK || rv == ERR_IO_PENDING)
     return;
-  if (error_.net_error == OK)
-    error_.net_error = rv;
-  TransitionToState(FAILED);
+  SetErrorIfNecessary(rv);
+  TransitionToState(net::WebTransportState::FAILED);
 }
 
 int WebTransportHttp3Client::DoInit() {
@@ -456,8 +494,7 @@ int WebTransportHttp3Client::DoConnectComplete() {
   if (!session_->SupportsWebTransport()) {
     return ERR_METHOD_NOT_SUPPORTED;
   }
-  error_.safe_to_report_details = true;
-
+  safe_to_report_error_details_ = true;
   next_connect_state_ = CONNECT_STATE_SEND_REQUEST;
   return OK;
 }
@@ -475,9 +512,21 @@ void WebTransportHttp3Client::OnHeadersComplete() {
   DoLoop(OK);
 }
 
-void WebTransportHttp3Client::OnConnectStreamClosed() {
-  error_.net_error = FAILED;
-  TransitionToState(FAILED);
+void WebTransportHttp3Client::OnConnectStreamWriteSideInDataRecvdState() {
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&WebTransportHttp3Client::TransitionToState,
+                     weak_factory_.GetWeakPtr(), WebTransportState::CLOSED));
+}
+
+void WebTransportHttp3Client::OnConnectStreamAborted() {
+  SetErrorIfNecessary(session_ready_ ? ERR_FAILED : ERR_METHOD_NOT_SUPPORTED);
+  TransitionToState(WebTransportState::FAILED);
+}
+
+void WebTransportHttp3Client::OnCloseTimeout() {
+  SetErrorIfNecessary(ERR_TIMED_OUT);
+  TransitionToState(WebTransportState::FAILED);
 }
 
 int WebTransportHttp3Client::DoSendRequest() {
@@ -517,7 +566,7 @@ int WebTransportHttp3Client::DoConfirmConnection() {
     return ERR_METHOD_NOT_SUPPORTED;
   }
 
-  TransitionToState(CONNECTED);
+  TransitionToState(net::WebTransportState::CONNECTED);
   return OK;
 }
 
@@ -525,32 +574,36 @@ void WebTransportHttp3Client::TransitionToState(WebTransportState next_state) {
   const WebTransportState last_state = state_;
   state_ = next_state;
   switch (next_state) {
-    case CONNECTING:
-      DCHECK_EQ(last_state, NEW);
+    case net::WebTransportState::CONNECTING:
+      DCHECK_EQ(last_state, net::WebTransportState::NEW);
       break;
 
-    case CONNECTED:
-      DCHECK_EQ(last_state, CONNECTING);
-      visitor_->OnConnected();
+    case net::WebTransportState::CONNECTED:
+      DCHECK_EQ(last_state, WebTransportState::CONNECTING);
+      visitor_->OnConnected(http_response_info_->headers);
       break;
 
-    case CLOSED:
-      DCHECK_EQ(last_state, CONNECTED);
-      visitor_->OnClosed();
+    case net::WebTransportState::CLOSED:
+      DCHECK_EQ(last_state, WebTransportState::CONNECTED);
+      connection_->CloseConnection(
+          ::quic::QUIC_NO_ERROR, "WebTransport client terminated",
+          ::quic::ConnectionCloseBehavior::SILENT_CLOSE);
+      visitor_->OnClosed(close_info_);
       break;
 
-    case FAILED:
-      DCHECK_NE(error_.net_error, OK);
-      if (error_.details.empty()) {
-        error_.details = ErrorToString(error_.net_error);
-      }
-
-      if (last_state == CONNECTING) {
-        visitor_->OnConnectionFailed();
+    case net::WebTransportState::FAILED:
+      DCHECK(error_.has_value());
+      if (last_state == WebTransportState::CONNECTING) {
+        visitor_->OnConnectionFailed(*error_);
         break;
       }
-      DCHECK_EQ(last_state, CONNECTED);
-      visitor_->OnError();
+      DCHECK_EQ(last_state, WebTransportState::CONNECTED);
+      // Ensure the connection is properly closed before deleting it.
+      connection_->CloseConnection(
+          ::quic::QUIC_INTERNAL_ERROR,
+          "WebTransportState::ERROR reached but the connection still open",
+          ::quic::ConnectionCloseBehavior::SILENT_CLOSE);
+      visitor_->OnError(*error_);
       break;
 
     default:
@@ -559,8 +612,36 @@ void WebTransportHttp3Client::TransitionToState(WebTransportState next_state) {
   }
 }
 
-void WebTransportHttp3Client::OnSessionReady() {
+void WebTransportHttp3Client::SetErrorIfNecessary(int error) {
+  SetErrorIfNecessary(error, ::quic::QUIC_NO_ERROR, ErrorToString(error));
+}
+
+void WebTransportHttp3Client::SetErrorIfNecessary(
+    int error,
+    ::quic::QuicErrorCode quic_error,
+    base::StringPiece details) {
+  if (!error_) {
+    error_ = WebTransportError(error, quic_error, details,
+                               safe_to_report_error_details_);
+  }
+}
+
+void WebTransportHttp3Client::OnSessionReady(
+    const spdy::SpdyHeaderBlock& spdy_headers) {
   session_ready_ = true;
+  http_response_info_ = std::make_unique<net::HttpResponseInfo>();
+  SpdyHeadersToHttpResponse(spdy_headers, http_response_info_.get());
+  DCHECK(http_response_info_->headers);
+}
+
+void WebTransportHttp3Client::OnSessionClosed(
+    ::quic::WebTransportSessionError error_code,
+    const std::string& error_message) {
+  close_info_ = WebTransportCloseInfo(error_code, error_message);
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&WebTransportHttp3Client::TransitionToState,
+                     weak_factory_.GetWeakPtr(), WebTransportState::CLOSED));
 }
 
 void WebTransportHttp3Client::OnIncomingBidirectionalStreamAvailable() {
@@ -585,7 +666,7 @@ void WebTransportHttp3Client::OnCanCreateNewOutgoingUnidirectionalStream() {
 
 bool WebTransportHttp3Client::OnReadError(int result,
                                           const DatagramClientSocket* socket) {
-  error_.net_error = result;
+  SetErrorIfNecessary(result);
   connection_->CloseConnection(::quic::QUIC_PACKET_READ_ERROR,
                                ErrorToString(result),
                                ::quic::ConnectionCloseBehavior::SILENT_CLOSE);
@@ -607,7 +688,7 @@ int WebTransportHttp3Client::HandleWriteError(
 }
 
 void WebTransportHttp3Client::OnWriteError(int error_code) {
-  error_.net_error = error_code;
+  SetErrorIfNecessary(error_code);
   connection_->OnWriteError(error_code);
 }
 
@@ -640,21 +721,18 @@ void WebTransportHttp3Client::OnConnectionClosed(
   }
 
   if (error == ::quic::QUIC_NO_ERROR) {
-    TransitionToState(CLOSED);
+    TransitionToState(net::WebTransportState::CLOSED);
     return;
   }
 
-  if (error_.net_error == OK)
-    error_.net_error = ERR_QUIC_PROTOCOL_ERROR;
-  error_.quic_error = error;
-  error_.details = error_details;
+  SetErrorIfNecessary(ERR_QUIC_PROTOCOL_ERROR, error, error_details);
 
-  if (state_ == CONNECTING) {
+  if (state_ == net::WebTransportState::CONNECTING) {
     DoLoop(OK);
     return;
   }
 
-  TransitionToState(FAILED);
+  TransitionToState(net::WebTransportState::FAILED);
 }
 
 void WebTransportHttp3Client::OnDatagramProcessed(
