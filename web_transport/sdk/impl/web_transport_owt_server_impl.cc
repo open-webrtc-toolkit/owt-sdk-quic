@@ -58,9 +58,8 @@ WebTransportOwtServerImpl::WebTransportOwtServerImpl(
     base::Thread* io_thread,
     base::Thread* event_thread)
     : port_(port),
-      version_manager_(
-          {::quic::ParsedQuicVersion(::quic::PROTOCOL_TLS1_3,
-                                     ::quic::QUIC_VERSION_IETF_DRAFT_29)}),
+      version_manager_({::quic::ParsedQuicVersion::RFCv1(),
+                        ::quic::ParsedQuicVersion::Draft29()}),
       clock_(::quic::QuicChromiumClock::GetInstance()),
       crypto_config_(kSourceAddressTokenSecret,
                      ::quic::QuicRandom::GetInstance(),
