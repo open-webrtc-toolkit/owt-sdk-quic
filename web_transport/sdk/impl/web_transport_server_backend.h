@@ -19,6 +19,7 @@ namespace quic {
 class WebTransportSessionVisitor {
  public:
   virtual ~WebTransportSessionVisitor() {}
+  WebTransportServerBackend& operator=(WebTransportServerBackend&) = delete;
   virtual void OnSessionReady(::quic::WebTransportHttp3* session,
                               ::quic::QuicSpdySession* http3_session) = 0;
   virtual void OnSessionClosed(::quic::WebTransportSessionId id) = 0;
@@ -47,8 +48,6 @@ class WebTransportServerBackend : public WebTransportSessionVisitor {
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
   base::ThreadChecker io_thread_checker_;
-
-  DISALLOW_COPY_AND_ASSIGN(WebTransportServerBackend);
 };
 }  // namespace quic
 }  // namespace owt

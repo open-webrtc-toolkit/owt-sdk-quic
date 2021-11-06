@@ -57,7 +57,7 @@ class WebTransportOwtServerDispatcher : public ::quic::QuicDispatcher {
       const ::quic::QuicSocketAddress& peer_address,
       absl::string_view alpn,
       const ::quic::ParsedQuicVersion& version,
-      absl::string_view sni) override;
+      const ::quic::ParsedClientHello& parsed_chlo) override;
 
  private:
   std::vector<url::Origin> accepted_origins_;

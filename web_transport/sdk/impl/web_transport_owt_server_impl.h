@@ -48,6 +48,7 @@ class WebTransportOwtServerImpl
       base::Thread* io_thread,
       base::Thread* event_thread);
   ~WebTransportOwtServerImpl() override;
+  WebTransportOwtServerImpl& operator=(WebTransportOwtServerImpl&) = delete;
   int Start() override;
   void Stop() override;
   void SetVisitor(WebTransportServerInterface::Visitor* visitor) override;
@@ -87,8 +88,6 @@ class WebTransportOwtServerImpl
   net::IPEndPoint client_address_;
 
   base::WeakPtrFactory<WebTransportOwtServerImpl> weak_factory_{this};
-
-  DISALLOW_COPY_AND_ASSIGN(WebTransportOwtServerImpl);
 };
 }  // namespace quic
 }  // namespace owt

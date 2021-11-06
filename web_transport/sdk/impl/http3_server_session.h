@@ -29,6 +29,7 @@ class Http3ServerSession : public ::quic::QuicServerSessionBase {
       base::SingleThreadTaskRunner* io_runner,
       base::SingleThreadTaskRunner* event_runner);
   ~Http3ServerSession() override;
+  Http3ServerSession& operator=(Http3ServerSession&) = delete;
 
  protected:
   // Override ::quic::QuicServerSessionBase.
@@ -51,7 +52,6 @@ class Http3ServerSession : public ::quic::QuicServerSessionBase {
   WebTransportServerBackend* backend_;
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
-  DISALLOW_COPY_AND_ASSIGN(Http3ServerSession);
 };
 
 }  // namespace quic
