@@ -3,13 +3,14 @@
 
 #include <string>
 
-#include "net/third_party/quiche/src/quic/core/crypto/crypto_protocol.h"
-#include "net/third_party/quiche/src/quic/core/quic_server_id.h"
-#include "net/third_party/quiche/src/quic/core/quic_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_bug_tracker.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flag_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
+#include "net/third_party/quic/core/crypto/crypto_protocol.h"
+#include "net/third_party/quic/core/quic_server_id.h"
+#include "net/third_party/quic/core/quic_utils.h"
+#include "net/third_party/quic/platform/api/quic_bug_tracker.h"
+#include "net/third_party/quic/platform/api/quic_flag_utils.h"
+#include "net/third_party/quic/platform/api/quic_flags.h"
+#include "net/third_party/quic/platform/api/quic_logging.h"
+#include "net/third_party/quic/platform/api/quic_ptr_util.h"
 
 namespace quic {
 
@@ -20,7 +21,7 @@ QuicRawClientSession::QuicRawClientSession(
     const ParsedQuicVersionVector& supported_versions,
     const QuicServerId& server_id,
     QuicCryptoClientConfig* crypto_config)
-    : QuicSession(connection, visitor, config, supported_versions, 0u),
+    : QuicSession(connection, visitor, config, supported_versions),
       server_id_(server_id),
       crypto_config_(crypto_config),
       respect_goaway_(false) {}
@@ -69,7 +70,7 @@ bool QuicRawClientSession::ShouldCreateOutgoingBidirectionalStream() {
 }
 
 bool QuicRawClientSession::ShouldCreateOutgoingUnidirectionalStream() {
-  QUIC_BUG(quic_bug_10396_1) << "Try to create outgoing unidirectional client data streams";
+  QUIC_BUG << "Try to create outgoing unidirectional client data streams";
   return false;
 }
 
@@ -86,15 +87,15 @@ QuicRawClientSession::CreateOutgoingBidirectionalStream() {
 
 QuicRawStream*
 QuicRawClientSession::CreateOutgoingUnidirectionalStream() {
-  QUIC_BUG(quic_bug_10396_2) << "Try to create outgoing unidirectional client data streams";
+  QUIC_BUG << "Try to create outgoing unidirectional client data streams";
   return nullptr;
 }
 
 std::unique_ptr<QuicRawStream>
 QuicRawClientSession::CreateClientStream() {
     //GetNextOutgoingBidirectionalStreamId
-  return std::make_unique<QuicRawStream>(
-      GetNextOutgoingBidirectionalStreamId(), this, BIDIRECTIONAL);
+  return QuicMakeUnique<QuicRawStream>(
+      GetNextOutgoingStreamId(), this, BIDIRECTIONAL);
 }
 
 QuicCryptoClientStreamBase* QuicRawClientSession::GetMutableCryptoStream() {
@@ -119,20 +120,12 @@ int QuicRawClientSession::GetNumReceivedServerConfigUpdates() const {
   return crypto_stream_->num_scup_messages_received();
 }
 
-bool QuicRawClientSession::EarlyDataAccepted() const {
-  return crypto_stream_->EarlyDataAccepted();
-}
-
-bool QuicRawClientSession::ReceivedInchoateReject() const {
-  return crypto_stream_->ReceivedInchoateReject();
-}
-
 bool QuicRawClientSession::ShouldCreateIncomingStream(QuicStreamId id) {
   if (!connection()->connected()) {
-    QUIC_BUG(quic_bug_10396_3) << "ShouldCreateIncomingStream called when disconnected";
+    QUIC_BUG << "ShouldCreateIncomingStream called when disconnected";
     return false;
   }
-  if (transport_goaway_received() && respect_goaway_) {
+  if (goaway_received() && respect_goaway_) {
     QUIC_DLOG(INFO) << "Failed to create a new outgoing stream. "
                     << "Already received goaway.";
     return false;
@@ -151,14 +144,6 @@ bool QuicRawClientSession::ShouldCreateIncomingStream(QuicStreamId id) {
   return true;
 }
 
-QuicRawStream* QuicRawClientSession::CreateIncomingStream(
-    PendingStream* pending) {
-  QuicRawStream* stream =
-      new QuicRawStream(pending, this, READ_UNIDIRECTIONAL);
-  ActivateStream(absl::WrapUnique(stream));
-  return stream;
-}
-
 // QuicRawStream* QuicRawClientSession::CreateIncomingStream(
 //     PendingStream pending) {
 //   QuicRawStream* stream =
@@ -173,30 +158,25 @@ QuicRawStream* QuicRawClientSession::CreateIncomingStream(QuicStreamId id) {
   }
   QuicRawStream* stream =
       new QuicRawStream(id, this, READ_UNIDIRECTIONAL);
-  ActivateStream(absl::WrapUnique(stream));
+  ActivateStream(QuicWrapUnique(stream));
   return stream;
 }
 
 std::unique_ptr<QuicCryptoClientStreamBase>
 QuicRawClientSession::CreateQuicCryptoStream() {
-  return std::make_unique<QuicCryptoClientStream>(
+  return QuicMakeUnique<QuicCryptoClientStream>(
       server_id_, this,
       crypto_config_->proof_verifier()->CreateDefaultContext(), crypto_config_,
-      this, /*has_application_state = */ false);
+      this);
 }
 
 void QuicRawClientSession::OnConfigNegotiated() {
   QuicSession::OnConfigNegotiated();
 }
 
-bool QuicRawClientSession::HasActiveRequestStreams() const {
-  return GetNumActiveStreams() + num_draining_streams() > 0;
-}
-
-bool QuicRawClientSession::ShouldKeepConnectionAlive() const {
-  QUICHE_DCHECK(VersionUsesHttp3(transport_version()) ||
-                0u == pending_streams_size());
-  return GetNumActiveStreams() + pending_streams_size() > 0;
+void QuicRawClientSession::OnCryptoHandshakeEvent(
+    CryptoHandshakeEvent event) {
+  QuicSession::OnCryptoHandshakeEvent(event);
 }
 
 }  // namespace quic

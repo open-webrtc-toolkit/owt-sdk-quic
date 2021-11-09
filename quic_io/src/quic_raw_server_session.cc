@@ -9,11 +9,15 @@
 #include <string>
 #include <utility>
 
-#include "net/third_party/quiche/src/quic/core/quic_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_bug_tracker.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flag_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
+#include "net/third_party/quic/core/quic_utils.h"
+#include "net/third_party/quic/platform/api/quic_bug_tracker.h"
+#include "net/third_party/quic/platform/api/quic_fallthrough.h"
+#include "net/third_party/quic/platform/api/quic_flag_utils.h"
+#include "net/third_party/quic/platform/api/quic_flags.h"
+#include "net/third_party/quic/platform/api/quic_logging.h"
+#include "net/third_party/quic/platform/api/quic_ptr_util.h"
+#include "net/third_party/quic/platform/api/quic_str_cat.h"
+#include "net/third_party/quic/platform/api/quic_text_utils.h"
 
 namespace quic {
 
@@ -25,7 +29,7 @@ QuicRawServerSession::QuicRawServerSession(
     QuicCryptoServerStream::Helper* helper,
     const QuicCryptoServerConfig* crypto_config,
     QuicCompressedCertsCache* compressed_certs_cache)
-    : QuicSession(connection, visitor, config, supported_versions,  0u),
+    : QuicSession(connection, visitor, config, supported_versions),
       crypto_config_(crypto_config),
       compressed_certs_cache_(compressed_certs_cache),
       helper_(helper),
@@ -48,8 +52,8 @@ QuicRawServerSession::~QuicRawServerSession() {
 }
 
 void QuicRawServerSession::Initialize() {
-  crypto_stream_ =
-      CreateQuicCryptoServerStream(crypto_config_, compressed_certs_cache_);
+  crypto_stream_.reset(
+      CreateQuicCryptoServerStream(crypto_config_, compressed_certs_cache_));
   QuicSession::Initialize();
 }
 
@@ -62,10 +66,17 @@ const QuicCryptoServerStreamBase* QuicRawServerSession::GetCryptoStream()
   return crypto_stream_.get();
 }
 
-void QuicRawServerSession::OnConnectionClosed(
-    const QuicConnectionCloseFrame& frame,
-    ConnectionCloseSource source) {
-  QuicSession::OnConnectionClosed(frame, source);
+void QuicRawServerSession::OnCryptoHandshakeEvent(CryptoHandshakeEvent event) {
+  QuicSession::OnCryptoHandshakeEvent(event);
+  if (event == HANDSHAKE_CONFIRMED) {
+    //SendMaxHeaderListSize(max_inbound_header_list_size_);
+  }
+}
+
+void QuicRawServerSession::OnConnectionClosed(QuicErrorCode error,
+                                               const std::string& error_details,
+                                               ConnectionCloseSource source) {
+  QuicSession::OnConnectionClosed(error, error_details, source);
   // In the unlikely event we get a connection close while doing an asynchronous
   // crypto event, make sure we cancel the callback.
   if (crypto_stream_ != nullptr) {
@@ -82,7 +93,7 @@ void QuicRawServerSession::CloseConnectionWithDetails(QuicErrorCode error,
 
 bool QuicRawServerSession::ShouldCreateIncomingStream(QuicStreamId id) {
   if (!connection()->connected()) {
-    QUIC_BUG(quic_bug_10393_1) << "ShouldCreateIncomingStream called when disconnected";
+    QUIC_BUG << "ShouldCreateIncomingStream called when disconnected";
     return false;
   }
 
@@ -99,40 +110,62 @@ bool QuicRawServerSession::ShouldCreateIncomingStream(QuicStreamId id) {
 
 bool QuicRawServerSession::ShouldCreateOutgoingBidirectionalStream() {
   if (!connection()->connected()) {
-    QUIC_BUG(quic_bug_12513_2)
+    QUIC_BUG
         << "ShouldCreateOutgoingBidirectionalStream called when disconnected";
     return false;
   }
   if (!crypto_stream_->encryption_established()) {
-    QUIC_BUG(quic_bug_10393_4)
-        << "Encryption not established so no outgoing stream created.";
+    QUIC_BUG << "Encryption not established so no outgoing stream created.";
     return false;
   }
 
-  return CanOpenNextOutgoingBidirectionalStream();
+  if (!GetQuicReloadableFlag(quic_use_common_stream_check) &&
+      connection()->transport_version() != QUIC_VERSION_99) {
+    // if (GetNumOpenOutgoingStreams() >=
+    //     stream_id_manager().max_open_outgoing_streams()) {
+    //   VLOG(1) << "No more streams should be created. "
+    //           << "Already " << GetNumOpenOutgoingStreams() << " open.";
+    //   return false;
+    // }
+  }
+  //QUIC_RELOADABLE_FLAG_COUNT_N(quic_use_common_stream_check, 2, 2);
+  //return CanOpenNextOutgoingBidirectionalStream();
+  return true;
 }
 
 bool QuicRawServerSession::ShouldCreateOutgoingUnidirectionalStream() {
   if (!connection()->connected()) {
-    QUIC_BUG(quic_bug_12513_3)
+    QUIC_BUG
         << "ShouldCreateOutgoingUnidirectionalStream called when disconnected";
     return false;
   }
   if (!crypto_stream_->encryption_established()) {
-    QUIC_BUG(quic_bug_10393_5)
-        << "Encryption not established so no outgoing stream created.";
+    QUIC_BUG << "Encryption not established so no outgoing stream created.";
     return false;
   }
 
-  return CanOpenNextOutgoingUnidirectionalStream();
+  // if (!GetQuicReloadableFlag(quic_use_common_stream_check) &&
+  //     connection()->transport_version() != QUIC_VERSION_99) {
+  //   if (GetNumOpenOutgoingStreams() >=
+  //       stream_id_manager().max_open_outgoing_streams()) {
+  //     VLOG(1) << "No more streams should be created. "
+  //             << "Already " << GetNumOpenOutgoingStreams() << " open.";
+  //     return false;
+  //   }
+  // }
+
+  // return CanOpenNextOutgoingUnidirectionalStream();
+  return true;
 }
 
-std::unique_ptr<QuicCryptoServerStreamBase>
+QuicCryptoServerStreamBase*
 QuicRawServerSession::CreateQuicCryptoServerStream(
     const QuicCryptoServerConfig* crypto_config,
     QuicCompressedCertsCache* compressed_certs_cache) {
-  return CreateCryptoServerStream(crypto_config, compressed_certs_cache, this,
-                                  stream_helper());
+  return new QuicCryptoServerStream(
+      crypto_config, compressed_certs_cache,
+      GetQuicReloadableFlag(enable_quic_stateless_reject_support), this,
+      stream_helper());
 }
 
 QuicRawStream* QuicRawServerSession::CreateIncomingStream(QuicStreamId id) {
@@ -142,18 +175,7 @@ QuicRawStream* QuicRawServerSession::CreateIncomingStream(QuicStreamId id) {
 
   QuicRawStream* stream = new QuicRawStream(
       id, this, BIDIRECTIONAL);
-  ActivateStream(absl::WrapUnique(stream));
-  if (visitor_) {
-    visitor_->OnIncomingStream(this, stream);
-  }
-  return stream;
-}
-
-QuicRawStream* QuicRawServerSession::CreateIncomingStream(
-    PendingStream* pending) {
-  QuicRawStream* stream = new QuicRawStream(
-      pending, this, BIDIRECTIONAL);
-  ActivateStream(absl::WrapUnique(stream));
+  ActivateStream(QuicWrapUnique(stream));
   if (visitor_) {
     visitor_->OnIncomingStream(this, stream);
   }
@@ -181,8 +203,8 @@ QuicRawServerSession::CreateOutgoingUnidirectionalStream() {
   }
 
   QuicRawStream* stream = new QuicRawStream(
-      GetNextOutgoingUnidirectionalStreamId(), this, WRITE_UNIDIRECTIONAL);
-  ActivateStream(absl::WrapUnique(stream));
+      GetNextOutgoingStreamId(), this, WRITE_UNIDIRECTIONAL);
+  ActivateStream(QuicWrapUnique(stream));
   return stream;
 }
 
@@ -190,6 +212,12 @@ QuicRawServerSession::CreateOutgoingUnidirectionalStream() {
 bool QuicRawServerSession::ShouldKeepConnectionAlive() const {
   //return GetNumOpenDynamicStreams() > 0;
   return true;
+}
+
+bool QuicRawServerSession::ShouldBufferIncomingStream(QuicStreamId id) const {
+  DCHECK_EQ(QUIC_VERSION_99, connection()->transport_version());
+  // return !QuicUtils::IsBidirectionalStreamId(id);
+  return false;
 }
 
 }  // namespace quic

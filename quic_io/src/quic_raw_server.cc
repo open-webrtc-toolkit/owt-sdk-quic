@@ -12,14 +12,14 @@
 #include "net/base/ip_endpoint.h"
 #include "net/base/net_errors.h"
 #include "net/log/net_log_source.h"
-#include "net/quic/address_utils.h"
 #include "net/socket/udp_server_socket.h"
-#include "net/third_party/quiche/src/quic/core/crypto/crypto_handshake.h"
-#include "net/third_party/quiche/src/quic/core/crypto/quic_random.h"
-#include "net/third_party/quiche/src/quic/core/quic_crypto_stream.h"
-#include "net/third_party/quiche/src/quic/core/quic_data_reader.h"
-#include "net/third_party/quiche/src/quic/core/quic_packets.h"
-#include "net/third_party/quiche/src/quic/core/tls_server_handshaker.h"
+#include "net/third_party/quic/core/crypto/crypto_handshake.h"
+#include "net/third_party/quic/core/crypto/quic_random.h"
+#include "net/third_party/quic/core/quic_crypto_stream.h"
+#include "net/third_party/quic/core/quic_data_reader.h"
+#include "net/third_party/quic/core/quic_packets.h"
+#include "net/third_party/quic/core/tls_server_handshaker.h"
+#include "net/tools/quic/quic_simple_per_connection_packet_writer.h"
 #include "net/tools/quic/quic_simple_server_packet_writer.h"
 #include "net/tools/quic/quic_simple_server_session_helper.h"
 
@@ -32,7 +32,7 @@ const size_t kNumSessionsToCreatePerSocketEvent = 16;
 
 // Allocate some extra space so we can send an error if the client goes over
 // the limit.
-const int kReadBufferSize = 16 * quic::kMaxIncomingPacketSize;
+const int kReadBufferSize = 16 * quic::kMaxPacketSize;
 
 }  // namespace
 
@@ -53,7 +53,8 @@ QuicRawServer::QuicRawServer(
       crypto_config_(kSourceAddressTokenSecret,
                      quic::QuicRandom::GetInstance(),
                      std::move(proof_source),
-                     quic::KeyExchangeSource::Default()),
+                     quic::KeyExchangeSource::Default(),
+                     quic::TlsServerHandshaker::CreateSslCtx()),
       read_pending_(false),
       synchronous_read_count_(0),
       read_buffer_(base::MakeRefCounted<IOBufferWithSize>(kReadBufferSize)),
@@ -91,7 +92,7 @@ QuicRawServer::~QuicRawServer() = default;
 
 int QuicRawServer::Listen(const IPEndPoint& address) {
   std::unique_ptr<UDPServerSocket> socket(
-      new UDPServerSocket(/*net_log=*/nullptr, NetLogSource()));
+      new UDPServerSocket(&net_log_, NetLogSource()));
 
   socket->AllowAddressReuse();
 
@@ -111,7 +112,7 @@ int QuicRawServer::Listen(const IPEndPoint& address) {
     return rc;
   }
 
-  rc = socket->SetSendBufferSize(320 * quic::kMaxIncomingPacketSize);
+  rc = socket->SetSendBufferSize(320 * quic::kMaxPacketSize);
   if (rc < 0) {
     LOG(ERROR) << "SetSendBufferSize() failed: " << ErrorToString(rc);
     return rc;
@@ -128,11 +129,11 @@ int QuicRawServer::Listen(const IPEndPoint& address) {
   socket_.swap(socket);
 
   dispatcher_.reset(new quic::QuicRawDispatcher(
-      &config_, &crypto_config_, &version_manager_,
+      config_, &crypto_config_, &version_manager_,
       std::unique_ptr<quic::QuicConnectionHelperInterface>(helper_),
       std::unique_ptr<quic::QuicCryptoServerStream::Helper>(
           new QuicSimpleServerSessionHelper(quic::QuicRandom::GetInstance())),
-      std::unique_ptr<quic::QuicAlarmFactory>(alarm_factory_), quic::kQuicDefaultConnectionIdLength));
+      std::unique_ptr<quic::QuicAlarmFactory>(alarm_factory_)));
   QuicSimpleServerPacketWriter* writer =
       new QuicSimpleServerPacketWriter(socket_.get(), dispatcher_.get());
   dispatcher_->InitializeWithWriter(writer);
@@ -167,14 +168,14 @@ void QuicRawServer::StartReading() {
 
   int result = socket_->RecvFrom(
       read_buffer_.get(), read_buffer_->size(), &client_address_,
-      base::BindOnce(&QuicRawServer::OnReadComplete, base::Unretained(this)));
+      base::Bind(&QuicRawServer::OnReadComplete, base::Unretained(this)));
 
   if (result == ERR_IO_PENDING) {
     synchronous_read_count_ = 0;
     if (dispatcher_->HasChlosBuffered()) {
       // No more packets to read, so yield before processing buffered packets.
       base::ThreadTaskRunnerHandle::Get()->PostTask(
-          FROM_HERE, base::BindOnce(&QuicRawServer::StartReading,
+          FROM_HERE, base::Bind(&QuicRawServer::StartReading,
                                 weak_factory_.GetWeakPtr()));
     }
     return;
@@ -185,7 +186,7 @@ void QuicRawServer::StartReading() {
     // Schedule the processing through the message loop to 1) prevent infinite
     // recursion and 2) avoid blocking the thread for too long.
     base::ThreadTaskRunnerHandle::Get()->PostTask(
-        FROM_HERE, base::BindOnce(&QuicRawServer::OnReadComplete,
+        FROM_HERE, base::Bind(&QuicRawServer::OnReadComplete,
                               weak_factory_.GetWeakPtr(), result));
   } else {
     OnReadComplete(result);
@@ -206,8 +207,8 @@ void QuicRawServer::OnReadComplete(int result) {
   quic::QuicReceivedPacket packet(read_buffer_->data(), result,
                                   helper_->GetClock()->Now(), false);
   dispatcher_->ProcessPacket(
-      ToQuicSocketAddress(server_address_),
-      ToQuicSocketAddress(client_address_),
+      quic::QuicSocketAddress(quic::QuicSocketAddressImpl(server_address_)),
+      quic::QuicSocketAddress(quic::QuicSocketAddressImpl(client_address_)),
       packet);
 
   StartReading();
