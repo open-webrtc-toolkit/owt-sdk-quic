@@ -33,7 +33,7 @@ class OWT_EXPORT WebTransportSessionInterface {
   // Close a WebTransport session. `code` is the error code communicated with
   // peer, `reason` is a pointer to a UTF-8 encoded null terminated string, its
   // length should not exceed 1024.
-  virtual void Close(uint32_t code, char* reason) = 0;
+  virtual void Close(uint32_t code, const char* reason) = 0;
 };
 }  // namespace quic
 }  // namespace owt
