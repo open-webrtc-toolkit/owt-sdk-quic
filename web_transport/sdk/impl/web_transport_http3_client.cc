@@ -347,7 +347,7 @@ int WebTransportHttp3Client::DoInit() {
   // Ensure that for the duration of the origin trial, a fixed QUIC transport
   // version is available.
   supported_versions_ = ::quic::ParsedQuicVersionVector{
-      ::quic::ParsedQuicVersion::Draft29(),
+      ::quic::ParsedQuicVersion::RFCv1(),
   };
   // Add other supported versions if available.
   for (::quic::ParsedQuicVersion& version :
