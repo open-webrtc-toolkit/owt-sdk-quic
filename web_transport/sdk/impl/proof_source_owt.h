@@ -28,6 +28,7 @@ class ProofSourceOwt : public ::quic::ProofSource {
  public:
   ProofSourceOwt();
   ~ProofSourceOwt() override;
+  ProofSourceOwt& operator=(ProofSourceOwt&) = delete;
   // Initializes this object based on a pfx file.
   bool Initialize(const base::FilePath& pfx_path, const std::string& password);
 
@@ -75,8 +76,6 @@ class ProofSourceOwt : public ::quic::ProofSource {
   std::vector<scoped_refptr<net::X509Certificate>> certs_in_file_;
   ::quic::QuicReferenceCountedPointer<::quic::ProofSource::Chain> chain_;
   std::unique_ptr<::quic::ProofSource::TicketCrypter> ticket_crypter_;
-
-  DISALLOW_COPY_AND_ASSIGN(ProofSourceOwt);
 };
 
 }  // namespace quic

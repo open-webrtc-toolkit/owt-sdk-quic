@@ -9,7 +9,7 @@ jobs:
       - id: build-and-test
         name: Build SDK and run tests
         run: |
-          docker run -id quic-sdk-ubuntu:97.0.4684.0 >> container_id.out
+          docker run -id quic-sdk-ubuntu:98.0.4693.0 >> container_id.out
           container_id="$(cat container_id.out)"
           docker exec $container_id git config --global user.name "github-actions"
           docker exec $container_id git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
