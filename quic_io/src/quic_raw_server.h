@@ -15,10 +15,10 @@
 #include "net/log/net_log.h"
 #include "net/quic/quic_chromium_alarm_factory.h"
 #include "net/quic/quic_chromium_connection_helper.h"
-#include "net/third_party/quic/core/crypto/quic_crypto_server_config.h"
-#include "net/third_party/quic/core/quic_config.h"
-#include "net/third_party/quic/core/quic_version_manager.h"
-#include "net/third_party/quic/platform/impl/quic_chromium_clock.h"
+#include "net/third_party/quiche/src/quic/core/crypto/quic_crypto_server_config.h"
+#include "net/third_party/quiche/src/quic/core/quic_config.h"
+#include "net/third_party/quiche/src/quic/core/quic_version_manager.h"
+#include "net/quic/platform/impl/quic_chromium_clock.h"
 #include "net/tools/quic/raw/quic_raw_dispatcher.h"
 
 namespace net {
@@ -106,9 +106,6 @@ class QuicRawServer {
 
   // The source address of the current read.
   IPEndPoint client_address_;
-
-  // The log to use for the socket.
-  NetLog net_log_;
 
 
   base::WeakPtrFactory<QuicRawServer> weak_factory_;

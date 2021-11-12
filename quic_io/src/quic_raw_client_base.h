@@ -11,14 +11,13 @@
 #include <string>
 
 #include "base/macros.h"
-#include "net/third_party/quic/core/crypto/crypto_handshake.h"
-#include "net/third_party/quic/core/quic_config.h"
-#include "net/third_party/quic/platform/api/quic_socket_address.h"
-#include "net/third_party/quic/platform/api/quic_string_piece.h"
-#include "net/third_party/quic/tools/quic_client_base.h"
+#include "net/third_party/quiche/src/quic/core/crypto/crypto_handshake.h"
+#include "net/third_party/quiche/src/quic/core/quic_config.h"
+#include "net/third_party/quiche/src/quic/platform/api/quic_socket_address.h"
+#include "net/third_party/quiche/src/quic/tools/quic_client_base.h"
 
-#include "net/tools/quic/raw/quic_raw_stream.h"
 #include "net/tools/quic/raw/quic_raw_client_session.h"
+#include "net/tools/quic/raw/quic_raw_stream.h"
 
 
 namespace quic {
@@ -35,7 +34,8 @@ class QuicRawClientBase : public QuicClientBase,
                      QuicConnectionHelperInterface* helper,
                      QuicAlarmFactory* alarm_factory,
                      std::unique_ptr<NetworkHelper> network_helper,
-                     std::unique_ptr<ProofVerifier> proof_verifier);
+                     std::unique_ptr<ProofVerifier> proof_verifier,
+                     std::unique_ptr<SessionCache> session_cache);
   QuicRawClientBase(const QuicRawClientBase&) = delete;
   QuicRawClientBase& operator=(const QuicRawClientBase&) = delete;
 
@@ -64,6 +64,9 @@ class QuicRawClientBase : public QuicClientBase,
  protected:
   int GetNumSentClientHellosFromSession() override;
   int GetNumReceivedServerConfigUpdatesFromSession() override;
+  bool EarlyDataAccepted() override;
+  bool ReceivedInchoateReject() override;
+  bool HasActiveRequests() override;
 
   // Takes ownership of |connection|.
   std::unique_ptr<QuicSession> CreateQuicClientSession(
