@@ -25,6 +25,16 @@ pipeline {
             steps {
                 echo "$GIT_COMMIT"
                 bat "${windows_quic_script}/build.bat ${windows_quic_build} $GIT_COMMIT"
+		script{
+                    if ("${GIT_BRANCH}" == 'main') {
+                        bat 'copy %windows_quic_script%\\packages\\%GIT_COMMIT%.zip %windows_quic_build%\\quic-sdk-windows-x64-ci-%GIT_COMMIT:~0,8%.zip'
+                        rtUpload (
+                            serverId: 'default-artifactory',
+                            specPath: "${windows_quic_script}/upload_artifacts.json"
+                        )
+                    }
+                }
+                cleanWs()
             }
           }
          }
