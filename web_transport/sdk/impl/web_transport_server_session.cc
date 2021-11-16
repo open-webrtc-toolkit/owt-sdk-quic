@@ -192,6 +192,14 @@ void WebTransportServerSession::OnIncomingUnidirectionalStreamAvailable() {
   AcceptIncomingStream(stream);
 }
 
+void WebTransportServerSession::OnSessionClosed(
+    ::quic::WebTransportSessionError error_code,
+    const std::string& error_message) {
+  if (visitor_) {
+    visitor_->OnConnectionClosed();
+  }
+}
+
 void WebTransportServerSession::AcceptIncomingStream(
     ::quic::WebTransportStream* stream) {
   LOG(INFO) << "Accept incoming stream.";
