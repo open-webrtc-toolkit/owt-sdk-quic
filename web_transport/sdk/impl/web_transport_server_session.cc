@@ -14,6 +14,7 @@
 
 #include "impl/web_transport_server_session.h"
 #include <vector>
+#include "base/strings/string_util.h"
 #include "impl/web_transport_stream_impl.h"
 #include "net/third_party/quiche/src/quic/core/http/quic_server_initiated_spdy_stream.h"
 #include "net/third_party/quiche/src/quic/core/http/quic_spdy_stream.h"
@@ -169,6 +170,18 @@ const ConnectionStats& WebTransportServerSession::GetStats() {
   return stats_;
 }
 
+void WebTransportServerSession::Close(uint32_t code, const char* reason) {
+  if (reason == nullptr) {
+    return session_->CloseSession(code, reason);
+  }
+  constexpr size_t kMaxSize = 1024;
+  std::string reason_str(reason);
+  if (reason_str.size() <= kMaxSize) {
+    base::TruncateUTF8ToByteSize(reason_str, kMaxSize, &reason_str);
+  }
+  return session_->CloseSession(code, reason_str);
+}
+
 void WebTransportServerSession::OnIncomingBidirectionalStreamAvailable() {
   auto* stream = session_->AcceptIncomingBidirectionalStream();
   AcceptIncomingStream(stream);
@@ -177,6 +190,14 @@ void WebTransportServerSession::OnIncomingBidirectionalStreamAvailable() {
 void WebTransportServerSession::OnIncomingUnidirectionalStreamAvailable() {
   auto* stream = session_->AcceptIncomingUnidirectionalStream();
   AcceptIncomingStream(stream);
+}
+
+void WebTransportServerSession::OnSessionClosed(
+    ::quic::WebTransportSessionError error_code,
+    const std::string& error_message) {
+  if (visitor_) {
+    visitor_->OnConnectionClosed();
+  }
 }
 
 void WebTransportServerSession::AcceptIncomingStream(

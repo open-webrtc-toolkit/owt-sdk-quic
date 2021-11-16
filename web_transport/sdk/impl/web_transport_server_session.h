@@ -42,11 +42,12 @@ class WebTransportServerSession : public WebTransportSessionInterface,
   MessageStatus SendOrQueueDatagram(uint8_t* data, size_t length) override;
   // TODO: This method is not implemented.
   const ConnectionStats& GetStats() override;
+  void Close(uint32_t code, const char* reason) override;
 
   // Overrides ::quic::WebTransportVisitor.
   void OnSessionReady(const spdy::SpdyHeaderBlock& headers) override {}
   void OnSessionClosed(::quic::WebTransportSessionError error_code,
-                       const std::string& error_message) override {}
+                       const std::string& error_message) override;
   void OnIncomingBidirectionalStreamAvailable() override;
   void OnIncomingUnidirectionalStreamAvailable() override;
   void OnDatagramReceived(absl::string_view datagram) override {}
