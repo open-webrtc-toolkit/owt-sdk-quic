@@ -171,6 +171,16 @@ const ConnectionStats& WebTransportServerSession::GetStats() {
 }
 
 void WebTransportServerSession::Close(uint32_t code, const char* reason) {
+  if (io_runner_->BelongsToCurrentThread()) {
+    return CloseOnCurrentThread(code, reason);
+  }
+  io_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&WebTransportServerSession::CloseOnCurrentThread,
+                     base::Unretained(this), code, reason));
+}
+
+void WebTransportServerSession::CloseOnCurrentThread(uint32_t code, const char* reason){
   if (reason == nullptr) {
     return session_->CloseSession(code, reason);
   }
