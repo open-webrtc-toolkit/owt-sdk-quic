@@ -60,6 +60,8 @@ class WebTransportServerSession : public WebTransportSessionInterface,
   WebTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
 
  private:
+  void CloseOnCurrentThread(uint32_t code, const char* reason);
+
   ::quic::WebTransportHttp3* session_;
   ::quic::QuicSpdySession* http3_session_;
   base::SingleThreadTaskRunner* io_runner_;
