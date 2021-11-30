@@ -1,0 +1,85 @@
+# Copyright (C) <2020> Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+import("//chrome/process_version_rc_template.gni")
+import("//testing/test.gni")
+
+config("owt_quic_transport_config") {
+  include_dirs = [
+    "sdk",
+    "sdk/api",
+  ]
+  defines = [ "OWT_QUIC_LIBRARY_IMPL" ]
+}
+
+source_set("owt_quic_transport_impl") {
+  public_deps = [
+    ":generate_version_info",
+    "//base",
+    "//net",
+    "//net:simple_quic_tools",
+    "//net/third_party/quiche:simple_quic_tools_core",
+    "//third_party/boringssl",
+  ]
+  sources = [
+    "sdk/api/owt/quic/logging.h",
+    "sdk/api/owt/quic/version.h",
+    "sdk/api/owt/quic/quic_transport_client_interface.h",
+    "sdk/api/owt/quic/quic_transport_factory.h",
+    "sdk/api/owt/quic/quic_transport_server_interface.h",
+    "sdk/api/owt/quic/quic_transport_server_session_interface.h",
+    "sdk/api/owt/quic/quic_transport_stream_interface.h",
+    "sdk/impl/logging.cc",
+    "sdk/impl/proof_source_owt.cc",
+    "sdk/impl/proof_source_owt.h",
+    "sdk/impl/proof_verifier_owt.cc",
+    "sdk/impl/proof_verifier_owt.h",
+    "sdk/impl/quic_transport_factory_impl.cc",
+    "sdk/impl/quic_transport_factory_impl.h",
+    "sdk/impl/quic_transport_owt_client_base.cc",
+    "sdk/impl/quic_transport_owt_client_base.h",
+    "sdk/impl/quic_transport_owt_client_impl.cc",
+    "sdk/impl/quic_transport_owt_client_impl.h",
+    "sdk/impl/quic_transport_owt_client_session.cc",
+    "sdk/impl/quic_transport_owt_client_session.h",
+    "sdk/impl/quic_transport_owt_dispatcher.cc",
+    "sdk/impl/quic_transport_owt_dispatcher.h",
+    "sdk/impl/quic_transport_owt_server_impl.cc",
+    "sdk/impl/quic_transport_owt_server_impl.h",
+    "sdk/impl/quic_transport_owt_server_session.cc",
+    "sdk/impl/quic_transport_owt_server_session.h",
+    "sdk/impl/quic_transport_owt_stream_impl.cc",
+    "sdk/impl/quic_transport_owt_stream_impl.h",
+  ]
+  configs += [ ":owt_quic_transport_config" ]
+}
+
+action("update_last_change") {
+  script = "//build/util/lastchange.py"
+  args = [
+    "-s",
+    rebase_path("//owt"),
+    "--filter",
+    ".*",
+    "-o",
+    rebase_path("$target_gen_dir/lastchange"),
+  ]
+  outputs = [ "$target_gen_dir/lastchange" ]
+}
+
+process_version("generate_version_info") {
+  deps = [ ":update_last_change" ]
+  template_file = "sdk/impl/version_info_values.h.template"
+  sources = [
+    "$target_gen_dir/lastchange",
+    "sdk/VER",
+  ]
+  output = "$target_gen_dir/version_info_values.h"
+}
+
+shared_library("owt_quic_transport") {
+  deps = [ ":owt_quic_transport_impl" ]
+  configs += [ ":owt_quic_transport_config" ]
+}
+
