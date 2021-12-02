@@ -77,20 +77,20 @@ void QuicTransportOWTServerSession::OnConnectionClosed(
   }
 }
 
-void QuicTransportOWTServerSession::SetVisitor(QuicTransportSessionInterface::Visitor* visitor) { 
+void QuicTransportOWTServerSession::SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) { 
   visitor_ = visitor;
 }
 
-std::string id() {
+std::string QuicTransportOWTServerSession::Id() {
   return connection()->connection_id().ToString();
 }
 
-quic::QuicTransportStreamInterface* QuicTransportOWTServerSession::CreateBidirectionalStream() {
+owt::quic::QuicTransportStreamInterface* QuicTransportOWTServerSession::CreateBidirectionalStream() {
   if (!connection()->connected()) {
     return nullptr;
   }
 
-  auto* stream = static_cast<quic::QuicTransportStreamInterface*>(
+  auto* stream = static_cast<owt::quic::QuicTransportStreamInterface*>(
       CreateOutgoingBidirectionalStream());
  
   return stream;
@@ -191,7 +191,7 @@ QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(
 //   return stream;
 // }
 
-QuicTransportStreamInterface*
+owt::quic::QuicTransportStreamInterface*
 QuicTransportOWTServerSession::CreateOutgoingBidirectionalStream() {
   if (!ShouldCreateOutgoingBidirectionalStream()) {
     return nullptr;
@@ -200,13 +200,13 @@ QuicTransportOWTServerSession::CreateOutgoingBidirectionalStream() {
   std::unique_ptr<QuicTransportOWTStreamImpl> stream =
         std::make_unique<QuicTransportOWTStreamImpl>(GetNextOutgoingBidirectionalStreamId(),
                                         this, BIDIRECTIONAL, task_runner_, event_runner_);
-    QuicTransportStreamInterface* stream_ptr = stream.get();
+    owt::quic::QuicTransportStreamInterface* stream_ptr = stream.get();
     ActivateStream(std::move(stream));
 
   return stream_ptr;
 }
 
-QuicTransportStreamInterface*
+owt::quic::QuicTransportStreamInterface*
 QuicTransportOWTServerSession::CreateOutgoingUnidirectionalStream() {
   if (!ShouldCreateOutgoingUnidirectionalStream()) {
     return nullptr;
@@ -215,7 +215,7 @@ QuicTransportOWTServerSession::CreateOutgoingUnidirectionalStream() {
   std::unique_ptr<QuicTransportOWTStreamImpl> stream =
         std::make_unique<QuicTransportOWTStreamImpl>(GetNextOutgoingUnidirectionalStreamId(),
                                         this, WRITE_UNIDIRECTIONAL, task_runner_, event_runner_);
-    QuicTransportStreamInterface* stream_ptr = stream.get();
+    owt::quic::QuicTransportStreamInterface* stream_ptr = stream.get();
     ActivateStream(std::move(stream));
 
   return stream_ptr;

@@ -55,8 +55,8 @@ class QuicTransportOWTClientSession
   void OnConfigNegotiated() override;
 
   // QuicSession methods:
-  QuicTransportStreamInterface* CreateOutgoingBidirectionalStream();
-  QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream();
+  owt::quic::QuicTransportStreamInterface* CreateOutgoingBidirectionalStream();
+  owt::quic::QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream();
   QuicCryptoClientStreamBase* GetMutableCryptoStream() override;
   const QuicCryptoClientStreamBase* GetCryptoStream() const override;
 

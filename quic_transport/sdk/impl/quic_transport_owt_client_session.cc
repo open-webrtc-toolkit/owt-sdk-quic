@@ -77,7 +77,7 @@ bool QuicTransportOWTClientSession::ShouldCreateOutgoingUnidirectionalStream() {
   return false;
 }
 
-QuicTransportStreamInterface*
+owt::quic::QuicTransportStreamInterface*
 QuicTransportOWTClientSession::CreateOutgoingBidirectionalStream() {
   if (!ShouldCreateOutgoingBidirectionalStream()) {
     return nullptr;
@@ -85,12 +85,12 @@ QuicTransportOWTClientSession::CreateOutgoingBidirectionalStream() {
   std::unique_ptr<QuicTransportOWTStreamImpl> stream =
         std::make_unique<QuicTransportOWTStreamImpl>(GetNextOutgoingBidirectionalStreamId(),
                                         this, BIDIRECTIONAL, task_runner_, event_runner_);
-  QuicTransportStreamInterface* stream_ptr = stream.get();
+  owt::quic::QuicTransportStreamInterface* stream_ptr = stream.get();
   ActivateStream(std::move(stream));
   return stream_ptr;
 }
 
-QuicTransportStreamInterface*
+owt::quic::QuicTransportStreamInterface*
 QuicTransportOWTClientSession::CreateOutgoingUnidirectionalStream() {
   QUIC_BUG(quic_bug_10396_2) << "Try to create outgoing unidirectional client data streams";
   return nullptr;

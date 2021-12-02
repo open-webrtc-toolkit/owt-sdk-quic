@@ -167,7 +167,7 @@ void QuicTransportOWTServerImpl::Stop() {
   socket_.reset();
 }
 
-void QuicTransportOWTServerImpl::SetVisitor(QuicTransportServerInterface::Visitor* visitor) { 
+void QuicTransportOWTServerImpl::SetVisitor(owt::quic::QuicTransportServerInterface::Visitor* visitor) { 
   visitor_ = visitor; 
 }
 

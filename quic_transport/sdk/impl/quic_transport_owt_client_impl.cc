@@ -90,16 +90,25 @@ QuicClientMessageLooplNetworkHelper* QuicTransportOWTClientImpl::CreateNetworkHe
 void QuicTransportOWTClientImpl::Start() {
   if (!Initialize()) {
       std::cerr << "Failed to initialize client." << std::endl;
+      if(visitor_) {
+        visitor_->OnConnectionFailed();
+      }
       return;
     }
     if (!Connect()) {
       std::cerr << "Failed to connect." << std::endl;
+      if(visitor_) {
+        visitor_->OnConnectionFailed();
+      }
       return;
     }
 
     std::cerr << "client connect to quic server succeed" << std::endl;
     session_ = client_session();
     session_->set_visitor(this);
+    if(visitor_) {
+      visitor_->OnConnected();
+    }
 }
 
 void QuicTransportOWTClientImpl::Stop() {
@@ -110,7 +119,7 @@ int QuicTransportOWTClientImpl::SocketPort() {
   return created_helper_->GetLatestClientAddress().port();
 }
 
-void QuicTransportOWTClientImpl::SetVisitor(QuicTransportClientInterface::Visitor* visitor) {
+void QuicTransportOWTClientImpl::SetVisitor(owt::quic::QuicTransportClientInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 
@@ -120,12 +129,12 @@ void QuicTransportOWTClientImpl::OnIncomingNewStream(quic::QuicTransportOWTStrea
   }
 }
 
-quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidirectionalStream() {
+owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidirectionalStream() {
   if (!connected()) {
     return nullptr;
   }
 
-  auto* stream = static_cast<quic::QuicTransportStreamInterface*>(
+  auto* stream = static_cast<owt::quic::QuicTransportStreamInterface*>(
       client_session()->CreateOutgoingBidirectionalStream());
  
   return stream;

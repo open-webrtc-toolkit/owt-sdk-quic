@@ -10,6 +10,7 @@
 #include "owt/quic/export.h"
 #include "owt/quic/quic_transport_stream_interface.h"
 
+namespace owt {
 namespace quic {
 class OWT_EXPORT QuicTransportSessionInterface {
  public:
@@ -21,8 +22,9 @@ class OWT_EXPORT QuicTransportSessionInterface {
   virtual ~QuicTransportSessionInterface() = default;
   virtual void SetVisitor(Visitor* visitor) = 0;
   virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
-  virtual std::string id();
+  virtual std::string Id() = 0;
 };
 }  // namespace quic
+}
 
 #endif

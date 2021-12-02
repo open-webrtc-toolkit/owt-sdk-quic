@@ -8,7 +8,9 @@
 #define OWT_QUIC_TRANSPORT_CLIENT_INTERFACE_H_
 
 #include "owt/quic/export.h"
+#include "owt/quic/quic_transport_stream_interface.h"
 
+namespace owt {
 namespace quic {
 // A client manages a QuicTransport session with a QuicTransport server.
 class OWT_EXPORT QuicTransportClientInterface {
@@ -35,5 +37,6 @@ class OWT_EXPORT QuicTransportClientInterface {
   virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
 };
 }  // namespace quic
+}
 
 #endif

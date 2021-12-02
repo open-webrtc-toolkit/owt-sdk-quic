@@ -4,12 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef OWT_WEB_TRANSPORT_WEB_TRANSPORT_SERVER_INTERFACE_H_
-#define OWT_WEB_TRANSPORT_WEB_TRANSPORT_SERVER_INTERFACE_H_
+#ifndef OWT_QUIC_TRANSPORT_SERVER_INTERFACE_H_
+#define OWT_QUIC_TRANSPORT_SERVER_INTERFACE_H_
 
 #include "owt/quic/export.h"
-#include "owt/quic/quic_transport_stream_interface.h"
+#include "owt/quic/quic_transport_session_interface.h"
 
+namespace owt {
 namespace quic {
 // A server accepts WebTransport connections.
 class OWT_EXPORT QuicTransportServerInterface {
@@ -28,5 +29,6 @@ class OWT_EXPORT QuicTransportServerInterface {
   virtual void SetVisitor(Visitor* visitor) = 0;
 };
 }  // namespace quic
+}
 
 #endif

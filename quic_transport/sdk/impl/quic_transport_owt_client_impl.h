@@ -33,7 +33,7 @@ class QuicChromiumConnectionHelper;
 
 class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
                                    public quic::QuicTransportOWTClientSession::Visitor,
-                                   public quic::QuicTransportClientInterface {
+                                   public owt::quic::QuicTransportClientInterface {
  public:
 
   // Create a quic client, which will have events managed by the message loop.
@@ -49,8 +49,8 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
   int SocketPort();
   void Start() override;
   void Stop() override;
-  void SetVisitor(QuicTransportClientInterface::Visitor* visitor) override;
-  quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
+  void SetVisitor(owt::quic::QuicTransportClientInterface::Visitor* visitor) override;
+  owt::quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
   void OnIncomingNewStream(quic::QuicTransportOWTStreamImpl* stream) override;
 
  private:

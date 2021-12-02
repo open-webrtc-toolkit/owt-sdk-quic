@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef NET_TOOLS_QUIC_RAW_QUIC_RAW_SERVER_SESSION_H_
-#define NET_TOOLS_QUIC_RAW_QUIC_RAW_SERVER_SESSION_H_
+#ifndef QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
+#define QUIC_TRANSPORT_OWT_SERVER_SESSION_H_
 
 #include <cstddef>
 #include <memory>
@@ -23,7 +23,7 @@ namespace quic {
 // A QUIC session with raw stream.
 class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
     : public QuicSession,
-      public QuicTransportSessionInterface {
+      public owt::quic::QuicTransportSessionInterface {
  public:
   // Does not take ownership of |connection| or |visitor|.
   QuicTransportOWTServerSession(QuicConnection* connection,
@@ -50,9 +50,9 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
                                   const std::string& details);
 
   //Implement QuicTransportSessionInterface
-  quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
-  void SetVisitor(QuicTransportSessionInterface::Visitor* visitor) override;
-  std::string id() override;
+  owt::quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
+  void SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
+  std::string Id() override;
 
  protected:
   // QuicSession methods(override them with return type of QuicSpdyStream*):
@@ -69,8 +69,8 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
   QuicTransportOWTStreamImpl* CreateIncomingStream(QuicStreamId id) override;
   QuicTransportOWTStreamImpl* CreateIncomingStream(PendingStream* pending) override;
 
-  virtual QuicTransportStreamInterface* CreateOutgoingBidirectionalStream();
-  virtual QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream();
+  virtual owt::quic::QuicTransportStreamInterface* CreateOutgoingBidirectionalStream();
+  virtual owt::quic::QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream();
 
   // If an incoming stream can be created, return true.
   virtual bool ShouldCreateIncomingStream(QuicStreamId id);
@@ -119,7 +119,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
 
   base::SingleThreadTaskRunner* task_runner_;
   base::SingleThreadTaskRunner* event_runner_;
-  QuicTransportSessionInterface::Visitor* visitor_;
+  owt::quic::QuicTransportSessionInterface::Visitor* visitor_;
 };
 
 }  // namespace quic

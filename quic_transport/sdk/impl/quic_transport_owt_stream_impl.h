@@ -14,7 +14,7 @@
 namespace quic {
 
 class QUIC_EXPORT_PRIVATE QuicTransportOWTStreamImpl : public QuicStream,
-                                                       public QuicTransportStreamInterface {
+                                                       public owt::quic::QuicTransportStreamInterface {
  public:
 
   QuicTransportOWTStreamImpl(QuicStreamId id,
@@ -37,7 +37,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTStreamImpl : public QuicStream,
 
   uint32_t Id() const override;
 
-  void SetVisitor(QuicTransportStreamInterface::Visitor* visitor) override;
+  void SetVisitor(owt::quic::QuicTransportStreamInterface::Visitor* visitor) override;
   void SendData(char* data, size_t len) override;
 
   // Returns true if the sequencer has delivered the FIN, and no more body bytes
@@ -45,13 +45,13 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTStreamImpl : public QuicStream,
   bool IsClosed() { return sequencer()->IsClosed(); }
 
  protected:
-  QuicTransportStreamInterface::Visitor* visitor() { return visitor_; }
+  owt::quic::QuicTransportStreamInterface::Visitor* visitor() { return visitor_; }
 
  private:
   void SendDataOnCurrentThread(const std::string& data);
   base::SingleThreadTaskRunner* task_runner_;
   //base::SingleThreadTaskRunner* event_runner_;
-  QuicTransportStreamInterface::Visitor* visitor_;
+  owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
 };
 
 }  // namespace quic

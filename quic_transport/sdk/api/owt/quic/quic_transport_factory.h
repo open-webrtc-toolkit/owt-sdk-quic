@@ -9,6 +9,7 @@
 
 #include "owt/quic/export.h"
 
+namespace owt {
 namespace quic {
 
 class QuicTransportServerInterface;
@@ -37,5 +38,6 @@ class OWT_EXPORT QuicTransportFactory {
       int port) = 0;
 };
 }  // namespace quic
+}
 
 #endif

@@ -36,7 +36,7 @@ class QuicDispatcher;
 namespace net {
 
 class QuicTransportOWTServerImpl 
-      : public quic::QuicTransportServerInterface,
+      : public owt::quic::QuicTransportServerInterface,
         public quic::QuicTransportOWTDispatcher::Visitor {
  public:
   QuicTransportOWTServerImpl(
@@ -60,7 +60,7 @@ class QuicTransportOWTServerImpl
   int Start() override;
   // Server deletion is imminent. Start cleaning up.
   void Stop() override;
-  void SetVisitor(QuicTransportServerInterface::Visitor* visitor) override;
+  void SetVisitor(owt::quic::QuicTransportServerInterface::Visitor* visitor) override;
 
   //Implement quic::QuicTransportOWTDispatcher::Visitor
   void OnSessionCreated(quic::QuicTransportOWTServerSession* session) override;
@@ -133,7 +133,7 @@ class QuicTransportOWTServerImpl
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
 
-  QuicTransportServerInterface::Visitor* visitor_;
+  owt::quic::QuicTransportServerInterface::Visitor* visitor_;
 
   base::WeakPtrFactory<QuicTransportOWTServerImpl> weak_factory_;
 

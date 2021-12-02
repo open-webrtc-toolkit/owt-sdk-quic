@@ -30,19 +30,20 @@ class Thread;
 class AtExitManager;
 }  // namespace base
 
+namespace owt {
 namespace quic {
 
-class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
+class OWT_EXPORT QuicTransportFactoryImpl : public owt::quic::QuicTransportFactory {
  public:
   QuicTransportFactoryImpl();
   ~QuicTransportFactoryImpl() override;
   void InitializeAtExitManager();
   // `accepted_origins` is removed at this time because ABI compatible issue.
-  QuicTransportServerInterface* CreateQuicTransportServer(
+  owt::quic::QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_path,
       const char* key_path) override;
-  QuicTransportClientInterface* CreateQuicTransportClient(
+  owt::quic::QuicTransportClientInterface* CreateQuicTransportClient(
       const char* host,
       int port) override;
 
@@ -55,5 +56,6 @@ class OWT_EXPORT QuicTransportFactoryImpl : public QuicTransportFactory {
 };
 
 }  // namespace quic
+}
 
 #endif

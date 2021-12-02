@@ -27,41 +27,42 @@
 #include "net/tools/quic/synchronous_host_resolver.h"
 #include "net/base/privacy_mode.h"
 
+namespace owt {
 namespace quic {
 
 // FakeProofSource for server
-class FakeProofSource : public quic::ProofSource {
+class FakeProofSource : public ::quic::ProofSource {
  public:
   FakeProofSource() {}
   ~FakeProofSource() override {}
 
-  void GetProof(const quic::QuicSocketAddress& server_address,
-                const quic::QuicSocketAddress& client_address,
+  void GetProof(const ::quic::QuicSocketAddress& server_address,
+                const ::quic::QuicSocketAddress& client_address,
                 const std::string& hostname,
                 const std::string& server_config,
-                quic::QuicTransportVersion transport_version,
+                ::quic::QuicTransportVersion transport_version,
                 absl::string_view chlo_hash,
                 std::unique_ptr<Callback> callback) override {
-    quic::QuicReferenceCountedPointer<ProofSource::Chain> chain =
+    ::quic::QuicReferenceCountedPointer<ProofSource::Chain> chain =
         GetCertChain(server_address, client_address, hostname);
-    quic::QuicCryptoProof proof;
+    ::quic::QuicCryptoProof proof;
     proof.signature = "fake signature";
     proof.leaf_cert_scts = "fake timestamp";
     callback->Run(true, chain, proof, nullptr);
   }
 
-  quic::QuicReferenceCountedPointer<Chain> GetCertChain(
-      const quic::QuicSocketAddress& server_address,
+  ::quic::QuicReferenceCountedPointer<Chain> GetCertChain(
+      const ::quic::QuicSocketAddress& server_address,
       const ::quic::QuicSocketAddress& client_address,
       const std::string& hostname) override {
     std::vector<std::string> certs;
     certs.push_back("fake cert");
-    return quic::QuicReferenceCountedPointer<ProofSource::Chain>(
+    return ::quic::QuicReferenceCountedPointer<ProofSource::Chain>(
         new ProofSource::Chain(certs));
   }
 
   void ComputeTlsSignature(
-      const quic::QuicSocketAddress& server_address,
+      const ::quic::QuicSocketAddress& server_address,
       const ::quic::QuicSocketAddress& client_address,
       const std::string& hostname,
       uint16_t signature_algorithm,
@@ -76,44 +77,44 @@ class FakeProofSource : public quic::ProofSource {
 };
 
 // FakeProofVerifier for client
-class FakeProofVerifier : public quic::ProofVerifier {
+class FakeProofVerifier : public ::quic::ProofVerifier {
  public:
-  quic::QuicAsyncStatus VerifyProof(
-      const string& hostname,
+  ::quic::QuicAsyncStatus VerifyProof(
+      const std::string& hostname,
       const uint16_t port,
-      const string& server_config,
-      quic::QuicTransportVersion quic_version,
+      const std::string& server_config,
+      ::quic::QuicTransportVersion quic_version,
       absl::string_view  chlo_hash,
-      const std::vector<string>& certs,
-      const string& cert_sct,
-      const string& signature,
-      const quic::ProofVerifyContext* context,
-      string* error_details,
-      std::unique_ptr<quic::ProofVerifyDetails>* details,
-      std::unique_ptr<quic::ProofVerifierCallback> callback) override {
-    return quic::QUIC_SUCCESS;
+      const std::vector<std::string>& certs,
+      const std::string& cert_sct,
+      const std::string& signature,
+      const ::quic::ProofVerifyContext* context,
+      std::string* error_details,
+      std::unique_ptr<::quic::ProofVerifyDetails>* details,
+      std::unique_ptr<::quic::ProofVerifierCallback> callback) override {
+    return ::quic::QUIC_SUCCESS;
   }
 
-  quic::QuicAsyncStatus VerifyCertChain(
+  ::quic::QuicAsyncStatus VerifyCertChain(
       const std::string& hostname,
       const uint16_t port,
       const std::vector<std::string>& certs,
       const std::string& ocsp_response,
       const std::string& cert_sct,
-      const quic::ProofVerifyContext* verify_context,
+      const ::quic::ProofVerifyContext* verify_context,
       std::string* error_details,
-      std::unique_ptr<quic::ProofVerifyDetails>* verify_details,
+      std::unique_ptr<::quic::ProofVerifyDetails>* verify_details,
       uint8_t* out_alert,
-      std::unique_ptr<quic::ProofVerifierCallback> callback) override {
-    return quic::QUIC_SUCCESS;
+      std::unique_ptr<::quic::ProofVerifierCallback> callback) override {
+    return ::quic::QUIC_SUCCESS;
   }
 
-  std::unique_ptr<quic::ProofVerifyContext> CreateDefaultContext() override {
+  std::unique_ptr<::quic::ProofVerifyContext> CreateDefaultContext() override {
     return nullptr;
   }
 };
 
-QuicTransportFactory* QuicTransportFactory::Create() {
+owt::quic::QuicTransportFactory* QuicTransportFactory::Create() {
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("quic_transport_thread_pool");
   QuicTransportFactoryImpl* factory = new QuicTransportFactoryImpl();
   factory->InitializeAtExitManager();
@@ -138,7 +139,7 @@ void QuicTransportFactoryImpl::InitializeAtExitManager() {
   at_exit_manager_ = std::make_unique<base::AtExitManager>();
 }
 
-QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServer(
+owt::quic::QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServer(
     int port,
     const char* cert_file,
     const char* key_file) {
@@ -149,13 +150,13 @@ QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServe
       base::FilePath(key_file), base::FilePath()));
 
   net::IPAddress ip = net::IPAddress::IPv6AllZeros();
-            quic::QuicConfig config;
+            ::quic::QuicConfig config;
 
   return new net::QuicTransportOWTServerImpl(
                 port,
                 std::move(proof_source), config, 
-                quic::QuicCryptoServerConfig::ConfigOptions(),
-                quic::AllSupportedVersions(), 
+                ::quic::QuicCryptoServerConfig::ConfigOptions(),
+                ::quic::AllSupportedVersions(), 
                 io_thread_.get(), event_thread_.get());
 }
 
@@ -166,11 +167,11 @@ void QuicTransportFactoryImpl::Init() {
   owt::quic::Logging::InitLogging();
 }
 
-QuicTransportClientInterface*
+owt::quic::QuicTransportClientInterface*
 QuicTransportFactoryImpl::CreateQuicTransportClient(
     const char* host, 
     int port) {
-  QuicTransportClientInterface* result(nullptr);
+  owt::quic::QuicTransportClientInterface* result(nullptr);
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   io_thread_->task_runner()->PostTask(
@@ -178,10 +179,10 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
       base::BindOnce(
           [](const char* host, int port,
              base::Thread* io_thread, base::Thread* event_thread,
-             QuicTransportClientInterface** result, base::WaitableEvent* event) {
-            std::unique_ptr<quic::ProofVerifier> proof_verifier;
-            proof_verifier.reset(new ProofVerifierOwt());
-            quic::QuicIpAddress ip_addr;
+             owt::quic::QuicTransportClientInterface** result, base::WaitableEvent* event) {
+            std::unique_ptr<::quic::ProofVerifier> proof_verifier;
+            proof_verifier.reset(new FakeProofVerifier());
+            ::quic::QuicIpAddress ip_addr;
 
             GURL url("https://www.example.org");
             
@@ -199,12 +200,12 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
                   net::ToQuicIpAddress(addresses[0].address());
             }
 
-            quic::QuicServerId server_id(url.host(), url.EffectiveIntPort(),
+            ::quic::QuicServerId server_id(url.host(), url.EffectiveIntPort(),
                                          net::PRIVACY_MODE_DISABLED);
-            quic::ParsedQuicVersionVector versions = quic::CurrentSupportedVersions();
+            ::quic::ParsedQuicVersionVector versions = ::quic::CurrentSupportedVersions();
 
             *result = new net::QuicTransportOWTClientImpl(
-                quic::QuicSocketAddress(ip_addr, port), server_id, versions, std::move(proof_verifier),
+                ::quic::QuicSocketAddress(ip_addr, port), server_id, versions, std::move(proof_verifier),
                 io_thread, event_thread);
             event->Signal();
           },
@@ -216,3 +217,4 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
 }
 
 }  // namespace quic
+}

@@ -11,6 +11,7 @@
 #include "stddef.h"
 #include "stdint.h"
 
+namespace owt {
 namespace quic {
 class OWT_EXPORT QuicTransportStreamInterface {
  public:
@@ -27,5 +28,6 @@ class OWT_EXPORT QuicTransportStreamInterface {
   virtual void SendData(char* data, size_t len) = 0;
 };
 }  // namespace quic
+}
 
 #endif

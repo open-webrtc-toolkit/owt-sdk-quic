@@ -42,7 +42,7 @@ uint32_t QuicTransportOWTStreamImpl::Id() const {
   return id();
 }
 
-void QuicTransportOWTStreamImpl::SetVisitor(QuicTransportStreamInterface::Visitor* visitor) { 
+void QuicTransportOWTStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterface::Visitor* visitor) { 
   visitor_ = visitor; 
 }
 
