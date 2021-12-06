@@ -35,6 +35,7 @@ class SessionEchoVisitor : public WebTransportSessionInterface::Visitor {
   void OnCanCreateNewOutgoingStream(bool) override {}
   void OnConnectionClosed() override {}
   void OnIncomingStream(WebTransportStreamInterface* stream) override;
+  void OnDatagramReceived(const uint8_t* data, size_t length) override {}
 
  private:
   std::vector<std::unique_ptr<StreamEchoVisitor>> stream_visitors_;
