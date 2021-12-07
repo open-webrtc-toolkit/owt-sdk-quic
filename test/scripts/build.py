@@ -93,7 +93,8 @@ def pack():
         file_names = []
         for sdk_target in SDK_TARGETS:
             if sys.platform == 'win32':
-                file_names.extend([sdk_target+'.dll', sdk_target+'.dll.lib'])
+                file_names.extend(
+                    [sdk_target+'.dll', sdk_target+'.dll.lib', sdk_target+'.dll.pdb'])
             elif sys.platform == 'linux':
                 file_names.extend(['lib'+sdk_target+'.so'])
         for scheme in ['debug', 'release']:
