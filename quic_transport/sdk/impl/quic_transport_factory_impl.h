@@ -49,6 +49,9 @@ class OWT_EXPORT QuicTransportFactoryImpl : public owt::quic::QuicTransportFacto
 
  private:
   void Init();
+  QuicTransportServerInterface* CreateQuicTransportServerOnIOThread(
+      int port,
+      std::unique_ptr<::quic::ProofSource> proof_source);
 
   std::unique_ptr<base::AtExitManager> at_exit_manager_;
   std::unique_ptr<base::Thread> io_thread_;

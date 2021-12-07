@@ -52,7 +52,8 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
   //Implement QuicTransportSessionInterface
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
   void SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
-  std::string Id() override;
+  const char* Id() override;
+  uint8_t length() override;
 
  protected:
   // QuicSession methods(override them with return type of QuicSpdyStream*):
@@ -104,6 +105,8 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
 
   // Called when the size of the compressed frame payload is available.
   void OnCompressedFrameSize(size_t frame_len);
+
+  owt::quic::QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
 
   const QuicCryptoServerConfig* crypto_config_;
 

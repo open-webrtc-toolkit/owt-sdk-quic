@@ -81,8 +81,13 @@ void QuicTransportOWTServerSession::SetVisitor(owt::quic::QuicTransportSessionIn
   visitor_ = visitor;
 }
 
-std::string QuicTransportOWTServerSession::Id() {
-  return connection()->connection_id().ToString();
+const char* QuicTransportOWTServerSession::Id() {
+  QUIC_DLOG(INFO) << "QuicTransportOWTServerSession Get session id:" << connection()->connection_id().ToString();
+  return connection()->connection_id().data();
+}
+
+uint8_t QuicTransportOWTServerSession::length() {
+  return connection()->connection_id().length();
 }
 
 owt::quic::QuicTransportStreamInterface* QuicTransportOWTServerSession::CreateBidirectionalStream() {
@@ -167,7 +172,7 @@ QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(
       id, this, BIDIRECTIONAL, task_runner_, event_runner_);
   ActivateStream(absl::WrapUnique(stream));
   if (visitor_) {
-    visitor_->OnIncomingStream(this, stream);
+    visitor_->OnIncomingStream(stream);
   }
   return stream;
 }
@@ -178,7 +183,7 @@ QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(
       pending, this, BIDIRECTIONAL, task_runner_, event_runner_);
   ActivateStream(absl::WrapUnique(stream));
   if (visitor_) {
-    visitor_->OnIncomingStream(this, stream);
+    visitor_->OnIncomingStream(stream);
   }
   return stream;
 }
@@ -193,6 +198,27 @@ QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(
 
 owt::quic::QuicTransportStreamInterface*
 QuicTransportOWTServerSession::CreateOutgoingBidirectionalStream() {
+  
+  owt::quic::QuicTransportStreamInterface* result(nullptr);
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](QuicTransportOWTServerSession* session,
+             owt::quic::QuicTransportStreamInterface** result, base::WaitableEvent* event) {
+            *result = session->CreateBidirectionalStreamOnCurrentThread();
+            event->Signal();
+          },
+          base::Unretained(this), base::Unretained(&result),
+          base::Unretained(&done)));
+  done.Wait();
+  return result;
+
+}
+
+owt::quic::QuicTransportStreamInterface*
+QuicTransportOWTServerSession::CreateBidirectionalStreamOnCurrentThread() {
   if (!ShouldCreateOutgoingBidirectionalStream()) {
     return nullptr;
   }

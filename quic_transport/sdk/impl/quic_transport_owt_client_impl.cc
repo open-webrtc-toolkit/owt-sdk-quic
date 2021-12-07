@@ -88,6 +88,13 @@ QuicClientMessageLooplNetworkHelper* QuicTransportOWTClientImpl::CreateNetworkHe
 }
 
 void QuicTransportOWTClientImpl::Start() {
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOWTClientImpl::StartOnCurrentThread, weak_factory_.GetWeakPtr()));
+      return ;
+}
+
+void QuicTransportOWTClientImpl::StartOnCurrentThread() {
   if (!Initialize()) {
       std::cerr << "Failed to initialize client." << std::endl;
       if(visitor_) {
@@ -130,6 +137,26 @@ void QuicTransportOWTClientImpl::OnIncomingNewStream(quic::QuicTransportOWTStrea
 }
 
 owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidirectionalStream() {
+  std::cerr << "QuicTransportOWTClientImpl::CreateBidirectionalStream" << std::endl;
+  owt::quic::QuicTransportStreamInterface* result(nullptr);
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](QuicTransportOWTClientImpl* client,
+             owt::quic::QuicTransportStreamInterface** result, base::WaitableEvent* event) {
+            *result = client->CreateBidirectionalStreamOnCurrentThread();
+            event->Signal();
+          },
+          base::Unretained(this), base::Unretained(&result),
+          base::Unretained(&done)));
+  done.Wait();
+  return result;
+}
+
+owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidirectionalStreamOnCurrentThread() {
+  std::cerr << "QuicTransportOWTClientImpl::CreateBidirectionalStreamOnCurrentThread" << std::endl;
   if (!connected()) {
     return nullptr;
   }
@@ -137,6 +164,7 @@ owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidir
   auto* stream = static_cast<owt::quic::QuicTransportStreamInterface*>(
       client_session()->CreateOutgoingBidirectionalStream());
  
+  std::cerr << "QuicTransportOWTClientImpl::CreateBidirectionalStreamOnCurrentThread succeed" << std::endl;
   return stream;
 }
 

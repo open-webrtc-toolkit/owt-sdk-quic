@@ -42,7 +42,8 @@ uint32_t QuicTransportOWTStreamImpl::Id() const {
   return id();
 }
 
-void QuicTransportOWTStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterface::Visitor* visitor) { 
+void QuicTransportOWTStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterface::Visitor* visitor) {
+  printf("QuicTransportOWTStreamImpl::SetVisitor\n");
   visitor_ = visitor; 
 }
 
@@ -57,7 +58,7 @@ void QuicTransportOWTStreamImpl::SendDataOnCurrentThread(const std::string& data
   WriteOrBufferData(data, false, nullptr);
 }
 
-void QuicTransportOWTStreamImpl::OnDataAvailable() {
+void QuicTransportOWTStreamImpl::processData() {
   printf("QuicTransportOWTStreamImpl::OnDataAvailable\n");
   while (sequencer()->HasBytesToRead()) {
     struct iovec iov;
@@ -68,6 +69,7 @@ void QuicTransportOWTStreamImpl::OnDataAvailable() {
     }
     printf("Stream: %d processd:%zu, bytes in thread:%d\n",id(), iov.iov_len, base::PlatformThread::CurrentId());
     if (visitor()) {
+      printf("Call visitor onData\n");
       visitor()->OnData(this, static_cast<char*>(iov.iov_base), iov.iov_len);
     }
     sequencer()->MarkConsumed(iov.iov_len);
@@ -87,6 +89,12 @@ void QuicTransportOWTStreamImpl::OnDataAvailable() {
     printf("write side closed or fin buffered\n");
     return;
   }
+}
+
+void QuicTransportOWTStreamImpl::OnDataAvailable() {
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOWTStreamImpl::processData, base::Unretained(this)));
 }
 
 }  // namespace quic

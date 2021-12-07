@@ -38,6 +38,7 @@ std::unique_ptr<QuicSession> QuicTransportOWTDispatcher::CreateQuicSession(
     const ParsedQuicVersion& version,
     absl::string_view /*sni*/) {
   // The QuicServerSessionBase takes ownership of |connection| below.
+    printf("QuicTransportOWTDispatcher::CreateQuicSession\n");
   QuicConnection* connection = 
       new QuicConnection(connection_id, self_address, peer_address, helper(),
                          alarm_factory(), writer(),
@@ -49,6 +50,7 @@ std::unique_ptr<QuicSession> QuicTransportOWTDispatcher::CreateQuicSession(
       crypto_config(), compressed_certs_cache(), task_runner_, event_runner_);
   session->Initialize();
   if (visitor_) {
+    printf("QuicTransportOWTDispatcher call visitor OnSessionCreated\n");
     visitor_->OnSessionCreated(session.get());
   }
   return session;

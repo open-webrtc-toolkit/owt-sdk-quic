@@ -58,7 +58,9 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
   QuicChromiumAlarmFactory* CreateQuicAlarmFactory();
   QuicChromiumConnectionHelper* CreateQuicConnectionHelper();
   QuicClientMessageLooplNetworkHelper* CreateNetworkHelper();
+  void StartOnCurrentThread();
 
+  owt::quic::QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
   //  Used by |helper_| to time alarms.
   quic::QuicChromiumClock clock_;
 

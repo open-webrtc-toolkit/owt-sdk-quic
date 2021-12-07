@@ -49,6 +49,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTStreamImpl : public QuicStream,
 
  private:
   void SendDataOnCurrentThread(const std::string& data);
+  void processData();
   base::SingleThreadTaskRunner* task_runner_;
   //base::SingleThreadTaskRunner* event_runner_;
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;

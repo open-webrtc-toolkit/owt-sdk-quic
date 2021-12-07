@@ -150,6 +150,7 @@ void QuicTransportOWTServerImpl::StartOnCurrentThread() {
   QuicSimpleServerPacketWriter* writer =
       new QuicSimpleServerPacketWriter(socket_.get(), dispatcher_.get());
   dispatcher_->InitializeWithWriter(writer);
+  dispatcher_->set_visitor(this);
 
   StartReading();
 
@@ -172,6 +173,7 @@ void QuicTransportOWTServerImpl::SetVisitor(owt::quic::QuicTransportServerInterf
 }
 
 void QuicTransportOWTServerImpl::OnSessionCreated(quic::QuicTransportOWTServerSession* session) {
+  printf("QuicTransportOWTServerImpl call visitor OnSession\n");
   visitor_->OnSession(session);
 }
 

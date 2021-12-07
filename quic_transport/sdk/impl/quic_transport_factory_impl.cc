@@ -114,7 +114,7 @@ class FakeProofVerifier : public ::quic::ProofVerifier {
   }
 };
 
-owt::quic::QuicTransportFactory* QuicTransportFactory::Create() {
+QuicTransportFactory* QuicTransportFactory::Create() {
   base::ThreadPoolInstance::CreateAndStartWithDefaultParams("quic_transport_thread_pool");
   QuicTransportFactoryImpl* factory = new QuicTransportFactoryImpl();
   factory->InitializeAtExitManager();
@@ -143,28 +143,55 @@ owt::quic::QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTra
     int port,
     const char* cert_file,
     const char* key_file) {
-  std::unique_ptr<net::ProofSourceChromium> proof_source(
-          new net::ProofSourceChromium());
-  CHECK(proof_source->Initialize(
+  auto proof_source = std::make_unique<net::ProofSourceChromium>();
+  if (!proof_source->Initialize(
       base::FilePath(cert_file),
-      base::FilePath(key_file), base::FilePath()));
+      base::FilePath(key_file), base::FilePath())) {
+    LOG(ERROR) << "Failed to initialize proof source.";
+    return nullptr;
+  }
+  return CreateQuicTransportServerOnIOThread(port, std::move(proof_source));
+}
 
-  net::IPAddress ip = net::IPAddress::IPv6AllZeros();
+owt::quic::QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServerOnIOThread(
+    int port,
+    std::unique_ptr<::quic::ProofSource> proof_source) {
+  QuicTransportServerInterface* result(nullptr);
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  io_thread_->task_runner()->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](int port, std::unique_ptr<::quic::ProofSource> proof_source,
+             base::Thread* io_thread, base::Thread* event_thread,
+             QuicTransportServerInterface** result, base::WaitableEvent* event) {
+
+            net::IPAddress ip = net::IPAddress::IPv6AllZeros();
             ::quic::QuicConfig config;
 
-  return new net::QuicTransportOWTServerImpl(
-                port,
-                std::move(proof_source), config, 
+            *result = new net::QuicTransportOWTServerImpl(
+                port, std::move(proof_source), config, 
                 ::quic::QuicCryptoServerConfig::ConfigOptions(),
-                ::quic::AllSupportedVersions(), 
-                io_thread_.get(), event_thread_.get());
+                ::quic::AllSupportedVersions(),
+                io_thread, event_thread);
+            event->Signal();
+          },
+          port, std::move(proof_source), base::Unretained(io_thread_.get()),
+          base::Unretained(event_thread_.get()), base::Unretained(&result),
+          base::Unretained(&done)));
+  done.Wait();
+  return result;
 }
 
 void QuicTransportFactoryImpl::Init() {
   base::CommandLine::Init(0, nullptr);
   base::CommandLine* command_line(base::CommandLine::ForCurrentProcess());
   command_line->AppendSwitch("--quic_default_to_bbr");
-  owt::quic::Logging::InitLogging();
+  logging::LoggingSettings settings;
+  settings.logging_dest = logging::LOG_TO_STDERR;
+  logging::InitLogging(settings);
+  logging::SetMinLogLevel(1);
+
 }
 
 owt::quic::QuicTransportClientInterface*
