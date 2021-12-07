@@ -17,17 +17,18 @@ import sys
 from pathlib import Path
 import shutil
 import zipfile
+import argparse
 
 SRC_PATH = Path(__file__).resolve().parents[3]
-PATCH_PATH = SRC_PATH/'owt'/'quic_transport'/'patches'
+PATCH_PATH = SRC_PATH/'owt'/'web_transport'/'patches'
 PACKAGE_PATH = SRC_PATH.parent/'packages'
-SDK_TARGETS = ['owt_quic_transport']
-TEST_TARGETS = ['owt_quic_transport_tests']
-TEST_TARGETS_WIN = ['owt_quic_transport_dll_tests']
+SDK_TARGETS = ['owt_web_transport']
+TEST_TARGETS = ['owt_web_transport_tests']
+TEST_TARGETS_WIN = ['owt_web_transport_dll_tests']
 PATCH_LIST = [
-    ('0001-Add-owt_quic_transport-to-BUILD.gn.patch', SRC_PATH)
+    ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH)
 ]
-
+GIT_BIN = 'git.bat' if sys.platform == 'win32' else 'git'
 
 def sync():
     gclient_bin = 'gclient.bat' if sys.platform == 'win32' else 'gclient'
@@ -38,8 +39,8 @@ def sync():
 
 def patch():
     for file_name, path in PATCH_LIST:
-        if(subprocess.call(['git', 'am', str(PATCH_PATH/file_name)], cwd=path)) != 0:
-            subprocess.call(['git', 'am', '--skip'], cwd=path)
+        if(subprocess.call([GIT_BIN, 'am', str(PATCH_PATH/file_name)], cwd=path)) != 0:
+            subprocess.call([GIT_BIN, 'am', '--skip'], cwd=path)
 
 
 def create_gclient_args():
@@ -79,14 +80,14 @@ def build():
 
 def pack():
     hash = subprocess.check_output(
-        ['git', 'rev-parse', 'HEAD'], cwd=SRC_PATH/'owt').strip().decode('utf-8')
+        [GIT_BIN, 'rev-parse', 'HEAD'], cwd=SRC_PATH/'owt').strip().decode('utf-8')
     path = PACKAGE_PATH/hash
     if Path.exists(path):
         shutil.rmtree(path)
     Path.mkdir(path, parents=True)
 
     def pack_headers(package_root):
-        shutil.copytree(SRC_PATH/'owt'/'quic_transport' /
+        shutil.copytree(SRC_PATH/'owt'/'web_transport' / 'sdk' /
                         'api', package_root/'include')
 
     def pack_binaries(package_root):
@@ -105,7 +106,7 @@ def pack():
 
     def pack_third_party_licenses(package_root):
         Path.mkdir(package_root/'docs')
-        shutil.copyfile(SRC_PATH/'owt'/'quic_transport'/'docs' /
+        shutil.copyfile(SRC_PATH/'owt'/'web_transport'/'docs' /
                         'third_party_licenses.txt', package_root/'docs'/'third_party_licenses.txt')
 
     def zip_sdk(package_root, hash):
@@ -127,7 +128,17 @@ def pack():
     delete_dir(path)
 
 
+def checkout(ref):
+    subprocess.call(
+        [GIT_BIN, 'fetch', 'origin', ref, '&&', GIT_BIN, 'checkout', 'FETCH_HEAD'], cwd=SRC_PATH/'owt')
+
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ref', help='Refs to be tested against.')
+    opts=parser.parse_args()
+    if opts.ref:
+        checkout(opts.ref)
     if not sync():
         return 1
     patch()

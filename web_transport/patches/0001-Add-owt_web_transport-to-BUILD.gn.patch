@@ -1,0 +1,24 @@
+From 1d409ac32a4381e43d0b67d08bedfabac91da371 Mon Sep 17 00:00:00 2001
+From: Jianjun Zhu <jianjun.zhu@intel.com>
+Date: Sat, 30 Oct 2021 00:20:39 +0800
+Subject: [PATCH] Add owt_web_transport to BUILD.gn.
+
+---
+ BUILD.gn | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/BUILD.gn b/BUILD.gn
+index fe0ed6dd1b584..963d0df64a453 100644
+--- a/BUILD.gn
++++ b/BUILD.gn
+@@ -101,6 +101,7 @@ group("gn_all") {
+     "//ui/color:color_unittests",
+     "//ui/gfx:gfx_unittests",
+     "//url:url_unittests",
++    "//owt/web_transport:owt_web_transport",
+   ]
+ 
+   if (!is_component_build) {
+-- 
+2.33.1
+
