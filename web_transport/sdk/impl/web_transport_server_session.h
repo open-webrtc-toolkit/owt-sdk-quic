@@ -50,7 +50,7 @@ class WebTransportServerSession : public WebTransportSessionInterface,
                        const std::string& error_message) override;
   void OnIncomingBidirectionalStreamAvailable() override;
   void OnIncomingUnidirectionalStreamAvailable() override;
-  void OnDatagramReceived(absl::string_view datagram) override {}
+  void OnDatagramReceived(absl::string_view datagram) override;
   void OnCanCreateNewOutgoingUnidirectionalStream() override {}
   void OnCanCreateNewOutgoingBidirectionalStream() override {}
 

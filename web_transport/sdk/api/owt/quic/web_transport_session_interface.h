@@ -21,6 +21,7 @@ class OWT_EXPORT WebTransportSessionInterface {
     virtual void OnIncomingStream(WebTransportStreamInterface*) = 0;
     virtual void OnCanCreateNewOutgoingStream(bool unidirectional) = 0;
     virtual void OnConnectionClosed() = 0;
+    virtual void OnDatagramReceived(const uint8_t* data, size_t length) = 0;
   };
   virtual ~WebTransportSessionInterface() = default;
   virtual const char* ConnectionId() const = 0;

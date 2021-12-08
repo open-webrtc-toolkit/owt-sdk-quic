@@ -224,5 +224,12 @@ void WebTransportServerSession::AcceptIncomingStream(
   }
 }
 
+void WebTransportServerSession::OnDatagramReceived(absl::string_view datagram) {
+  if (visitor_) {
+    visitor_->OnDatagramReceived(
+        reinterpret_cast<const uint8_t*>(datagram.data()), datagram.size());
+  }
+}
+
 }  // namespace quic
 }  // namespace owt
