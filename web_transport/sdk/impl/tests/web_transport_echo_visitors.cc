@@ -50,7 +50,7 @@ void ServerEchoVisitor::OnSession(WebTransportSessionInterface* session) {
       std::make_unique<SessionEchoVisitor>();
   session->SetVisitor(visitor.get());
   session_visitors_.push_back(std::move(visitor));
-  sessions_.push_back(session);
+  sessions_.emplace_back(session);
 }
 
 }  // namespace test

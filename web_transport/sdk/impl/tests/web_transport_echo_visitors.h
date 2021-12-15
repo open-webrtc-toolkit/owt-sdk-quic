@@ -49,7 +49,9 @@ class ServerEchoVisitor : public WebTransportServerInterface::Visitor {
   void OnEnded() override {}
   void OnSession(WebTransportSessionInterface* session) override;
 
-  std::vector<WebTransportSessionInterface*> Sessions() { return sessions_; }
+  std::vector<WebTransportSessionInterface*> Sessions() const {
+    return sessions_;
+  }
 
  private:
   std::vector<std::unique_ptr<SessionEchoVisitor>> session_visitors_;
