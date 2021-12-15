@@ -150,8 +150,13 @@ void WebTransportOwtClientImpl::OnError(const net::WebTransportError& error) {
 }
 
 void WebTransportOwtClientImpl::OnClosed(
-      const absl::optional<net::WebTransportCloseInfo>& close_info) {
-  LOG(INFO) << "OnClosed.";
+    const absl::optional<net::WebTransportCloseInfo>& close_info) {
+  if (!visitor_) {
+    return;
+  }
+  visitor_->OnClosed(
+      close_info.has_value() ? close_info->code : 0,
+      close_info.has_value() ? nullptr : close_info->reason.c_str());
 }
 
 WebTransportStreamInterface*

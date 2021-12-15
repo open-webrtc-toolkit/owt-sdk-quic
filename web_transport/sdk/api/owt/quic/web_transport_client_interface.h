@@ -33,7 +33,9 @@ class OWT_EXPORT WebTransportClientInterface {
     // Called when an incoming stream is received.
     virtual void OnIncomingStream(WebTransportStreamInterface*) = 0;
     // Called when datagram is processed.
-    virtual void OnDatagramProcessed(MessageStatus) {}
+    virtual void OnDatagramProcessed(MessageStatus) = 0;
+    // Called when the connection is closed.
+    virtual void OnClosed(uint32_t code, const char* reason) = 0;
   };
   virtual ~WebTransportClientInterface() = default;
   // Set a visitor for the client.
