@@ -49,8 +49,15 @@ class ServerEchoVisitor : public WebTransportServerInterface::Visitor {
   void OnEnded() override {}
   void OnSession(WebTransportSessionInterface* session) override;
 
+  std::vector<WebTransportSessionInterface*> Sessions() const {
+    return sessions_;
+  }
+
  private:
   std::vector<std::unique_ptr<SessionEchoVisitor>> session_visitors_;
+  // A list of sessions created in the order of their creation. Closed sessions
+  // are not removed.
+  std::vector<WebTransportSessionInterface*> sessions_;
 };
 
 }  // namespace test

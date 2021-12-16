@@ -39,6 +39,7 @@ class ClientMockVisitor : public WebTransportClientInterface::Visitor {
   MOCK_METHOD0(OnConnectionFailed, void());
   MOCK_METHOD1(OnIncomingStream, void(WebTransportStreamInterface*));
   MOCK_METHOD1(OnDatagramProcessed, void(MessageStatus));
+  MOCK_METHOD2(OnClosed, void(uint32_t, const char*));
 };
 
 class StreamMockVisitor : public WebTransportStreamInterface::Visitor {
@@ -214,7 +215,7 @@ class WebTransportOwtEndToEndTest : public net::TestWithTaskEnvironment {
   TestConnectionHelper* helper_;  // Owned by |context_|.
   ClientMockVisitor visitor_;
   std::unique_ptr<WebTransportClientInterface> client_;
-  std::unique_ptr<WebTransportServerInterface::Visitor> server_visitor_;
+  std::unique_ptr<ServerEchoVisitor> server_visitor_;
 };
 
 TEST_F(WebTransportOwtEndToEndTest, Connect) {
@@ -279,6 +280,20 @@ TEST_F(WebTransportOwtEndToEndTest, ClientSendsDatagram) {
   }
   EXPECT_CALL(visitor_, OnDatagramProcessed(testing::_)).Times(1);
   client_->SendOrQueueDatagram(data, data_size);
+}
+
+TEST_F(WebTransportOwtEndToEndTest, ClientOnClosed) {
+  StartEchoServer();
+  client_ = CreateClient(GetServerUrl("/echo"));
+  client_->SetVisitor(&visitor_);
+  EXPECT_CALL(visitor_, OnConnected()).WillOnce(StopRunning());
+  client_->Connect();
+  Run();
+  EXPECT_EQ(server_visitor_->Sessions().size(), (unsigned long)1);
+  EXPECT_CALL(visitor_, OnClosed(testing::_, testing::_))
+      .WillOnce(StopRunning());
+  server_visitor_->Sessions()[0]->Close(0, "");
+  Run();
 }
 
 }  // namespace test
