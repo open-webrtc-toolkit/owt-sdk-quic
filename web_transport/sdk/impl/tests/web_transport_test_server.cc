@@ -7,6 +7,7 @@
 // Similar to net/tools/quic/quic_simple_server_bin.cc, it starts a WebTransport
 // echo server for testing.
 
+#include "base/test/bind.h"
 #include "base/threading/thread.h"
 #include "impl/tests/web_transport_echo_visitors.h"
 #include "impl/web_transport_owt_server_impl.h"
@@ -24,19 +25,28 @@ int main(int argc, char* argv[]) {
     exit(0);
   }
 
-  base::Thread::Options options;
-  options.message_pump_type = base::MessagePumpType::IO;
+  base::Thread::Options io_thread_options;
+  io_thread_options.message_pump_type = base::MessagePumpType::IO;
   base::Thread io_thread("web_transport_test_server_io_thread");
-  io_thread.StartWithOptions(options);
+  io_thread.StartWithOptions(std::move(io_thread_options));
+  base::Thread::Options event_thread_options;
+  event_thread_options.message_pump_type = base::MessagePumpType::IO;
   base::Thread event_thread("web_transport_test_server_event_thread");
-  event_thread.StartWithOptions(options);
+  event_thread.StartWithOptions(std::move(event_thread_options));
   auto proof_source = ::quic::CreateDefaultProofSource();
   auto server_visitor = std::make_unique<owt::quic::test::ServerEchoVisitor>();
-  owt::quic::WebTransportOwtServerImpl server(20001, std::vector<url::Origin>(),
-                                              std::move(proof_source),
-                                              &io_thread, &event_thread);
-  server.SetVisitor(server_visitor.get());
-  server.Start();
+  base::WaitableEvent event;
+  std::unique_ptr<owt::quic::WebTransportOwtServerImpl> server;
+  io_thread.task_runner()->PostTask(
+      FROM_HERE, base::BindLambdaForTesting([&]() {
+        server = std::make_unique<owt::quic::WebTransportOwtServerImpl>(
+            20001, std::vector<url::Origin>(), std::move(proof_source),
+            &io_thread, &event_thread);
+        event.Signal();
+      }));
+  event.Wait();
+  server->SetVisitor(server_visitor.get());
+  server->Start();
 
   base::RunLoop run_loop;
   run_loop.Run();
