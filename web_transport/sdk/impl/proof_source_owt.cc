@@ -24,7 +24,8 @@
 namespace owt {
 namespace quic {
 
-ProofSourceOwt::ProofSourceOwt() {}
+ProofSourceOwt::ProofSourceOwt()
+    : private_key_(nullptr), ticket_crypter_(nullptr) {}
 
 ProofSourceOwt::~ProofSourceOwt() {}
 
@@ -72,7 +73,8 @@ bool ProofSourceOwt::Initialize(const base::FilePath& pfx_path,
   }
 
   chain_ = new ::quic::ProofSource::Chain(certs_string);
-  private_key_ = crypto::RSAPrivateKey::CreateFromKey(key);
+  private_key_ = std::make_unique<::quic::CertificatePrivateKey>(
+      bssl::UniquePtr<EVP_PKEY>(key));
   return true;
 }
 
@@ -101,8 +103,8 @@ bool ProofSourceOwt::GetProofInner(
     ::quic::QuicCryptoProof* proof) {
   // This function is copied from `ProofSourceChromium`, but `leaf_cert_scts` is
   // not set.
-  DCHECK(proof != nullptr);
-  DCHECK(private_key_.get()) << " this: " << this;
+  DCHECK(proof);
+  DCHECK(private_key_);
 
   crypto::OpenSSLErrStackTracer err_tracer(FROM_HERE);
   bssl::ScopedEVP_MD_CTX sign_context;
@@ -110,9 +112,10 @@ bool ProofSourceOwt::GetProofInner(
 
   uint32_t len_tmp = chlo_hash.length();
   if (!EVP_DigestSignInit(sign_context.get(), &pkey_ctx, EVP_sha256(), nullptr,
-                          private_key_->key()) ||
-      !EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, RSA_PKCS1_PSS_PADDING) ||
-      !EVP_PKEY_CTX_set_rsa_pss_saltlen(pkey_ctx, -1) ||
+                          private_key_->private_key()) ||
+      (EVP_PKEY_id(private_key_->private_key()) == EVP_PKEY_RSA &&
+       (!EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, RSA_PKCS1_PSS_PADDING) ||
+        !EVP_PKEY_CTX_set_rsa_pss_saltlen(pkey_ctx, -1))) ||
       !EVP_DigestSignUpdate(
           sign_context.get(),
           reinterpret_cast<const uint8_t*>(::quic::kProofSignatureLabel),
@@ -198,9 +201,10 @@ void ProofSourceOwt::ComputeTlsSignature(
   size_t siglen;
   std::string sig;
   if (!EVP_DigestSignInit(sign_context.get(), &pkey_ctx, EVP_sha256(), nullptr,
-                          private_key_->key()) ||
-      !EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, RSA_PKCS1_PSS_PADDING) ||
-      !EVP_PKEY_CTX_set_rsa_pss_saltlen(pkey_ctx, -1) ||
+                          private_key_->private_key()) ||
+      (EVP_PKEY_id(private_key_->private_key()) == EVP_PKEY_RSA &&
+       (!EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, RSA_PKCS1_PSS_PADDING) ||
+        !EVP_PKEY_CTX_set_rsa_pss_saltlen(pkey_ctx, -1))) ||
       !EVP_DigestSignUpdate(sign_context.get(),
                             reinterpret_cast<const uint8_t*>(in.data()),
                             in.size()) ||
