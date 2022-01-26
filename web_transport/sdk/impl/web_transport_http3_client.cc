@@ -721,7 +721,11 @@ void WebTransportHttp3Client::OnConnectionClosed(
   }
 
   if (error == ::quic::QUIC_NO_ERROR) {
-    TransitionToState(net::WebTransportState::CLOSED);
+    // Session might be closed before connection is closed, e.g.: received a
+    // CLOSE_WEBTRANSPORT_SESSION capsule.
+    if (state_ != net::WebTransportState::CLOSED) {
+      TransitionToState(net::WebTransportState::CLOSED);
+    }
     return;
   }
 

@@ -72,7 +72,7 @@ class ProofSourceOwt : public ::quic::ProofSource {
           out_chain,
       ::quic::QuicCryptoProof* proof);
 
-  std::unique_ptr<crypto::RSAPrivateKey> private_key_;
+  std::unique_ptr<::quic::CertificatePrivateKey> private_key_;
   std::vector<scoped_refptr<net::X509Certificate>> certs_in_file_;
   ::quic::QuicReferenceCountedPointer<::quic::ProofSource::Chain> chain_;
   std::unique_ptr<::quic::ProofSource::TicketCrypter> ticket_crypter_;

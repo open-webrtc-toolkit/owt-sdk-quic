@@ -46,11 +46,11 @@ ServerEchoVisitor::~ServerEchoVisitor() {}
 
 void ServerEchoVisitor::OnSession(WebTransportSessionInterface* session) {
   CHECK(session);
-  LOG(INFO) << "Server on session.";
   std::unique_ptr<SessionEchoVisitor> visitor =
       std::make_unique<SessionEchoVisitor>();
   session->SetVisitor(visitor.get());
   session_visitors_.push_back(std::move(visitor));
+  sessions_.emplace_back(session);
 }
 
 }  // namespace test
