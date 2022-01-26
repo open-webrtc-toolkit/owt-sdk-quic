@@ -57,7 +57,7 @@ def setup_environment_variables():
 
 def build():
     gn_args = {'debug': 'is_debug=true is_component_build=false symbol_level=1',
-               'release': 'is_debug=false is_component_build=false'}
+               'release': 'is_debug=false is_component_build=false dcheck_always_on = false'}
     gn_bin = 'gn.bat' if sys.platform == 'win32' else 'gn'
     test_targets_on_this_platform = TEST_TARGETS
     if sys.platform == 'win32':
