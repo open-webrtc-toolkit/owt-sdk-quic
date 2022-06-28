@@ -26,7 +26,11 @@ SDK_TARGETS = ['owt_web_transport']
 TEST_TARGETS = ['owt_web_transport_tests']
 TEST_TARGETS_WIN = ['owt_web_transport_dll_tests']
 PATCH_LIST = [
-    ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH)
+    ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH),
+    ('0002-build-Relanding-Rudimentary-support-for-Visual-Studi.patch', SRC_PATH),
+    ('0003-Update-generate-certs.sh-to-use-ECDSA.patch', SRC_PATH),
+    ('0004-Roll-clang-llvmorg-14-init-8564-g34b903d8-2-llvmorg-.patch', SRC_PATH),
+    ('0005-Fix-compiling-issues-after-upgrading-clang-to-15.patch', SRC_PATH)
 ]
 GIT_BIN = 'git.bat' if sys.platform == 'win32' else 'git'
 

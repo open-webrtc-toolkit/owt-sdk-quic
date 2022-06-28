@@ -1,0 +1,37 @@
+From 143d1d128d0a8e1884cf1874a3f222d3c0dcafe7 Mon Sep 17 00:00:00 2001
+From: Jianjun Zhu <jianjun.zhu@intel.com>
+Date: Thu, 7 Apr 2022 10:43:23 +0800
+Subject: [PATCH 3/5] Update generate-certs.sh to use ECDSA.
+
+RSA is not supported when using serverCertificateHashes.
+See
+https://www.w3.org/TR/webtransport/#dom-webtransportoptions-servercertificatehashes.
+---
+ net/tools/quic/certs/generate-certs.sh | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/net/tools/quic/certs/generate-certs.sh b/net/tools/quic/certs/generate-certs.sh
+index 11dde0703a60d..a296323134a33 100755
+--- a/net/tools/quic/certs/generate-certs.sh
++++ b/net/tools/quic/certs/generate-certs.sh
+@@ -18,7 +18,7 @@ try /bin/sh -c "echo 01 > out/2048-sha256-root-serial"
+ touch out/2048-sha256-root-index.txt
+ 
+ # Generate the key.
+-try openssl genrsa -out out/2048-sha256-root.key 2048
++try openssl ecparam -genkey -name prime256v1 -out out/2048-sha256-root.key
+ 
+ # Generate the root certificate.
+ try openssl req \
+@@ -38,6 +38,8 @@ try openssl x509 \
+ # Generate the leaf certificate request.
+ try openssl req \
+   -new \
++  -newkey ec\
++  -pkeyopt ec_paramgen_curve:prime256v1\
+   -keyout out/leaf_cert.key \
+   -out out/leaf_cert.req \
+   -config leaf.cnf
+-- 
+2.33.0.windows.2
+

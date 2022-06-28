@@ -1,0 +1,152 @@
+From 55c25a8ec55837c1ccfdbca10c06a15c6f2a2665 Mon Sep 17 00:00:00 2001
+From: Bruce Dawson <brucedawson@chromium.org>
+Date: Tue, 21 Dec 2021 16:19:32 +0000
+Subject: [PATCH 2/5] build: Relanding Rudimentary support for Visual Studio
+ 2022.
+
+This CL patches vs_toolchain.py to handle an installed version of
+Visual Studio 2022. This is a necessary first step towards supporting
+VS2022, but it's not sufficient. There are no guarantees that the
+MSVC143 toolchain produces acceptable results.
+
+Visual Studio 2022 is the first 64-bit edition, so it is installed in
+C:\Program Files\, not C:\Program Files (x86)\. Handling both VS2022 and
+older versions introduces a bit of extra complexity in the path
+detection code. We'll be able to remove this complexity when we remove
+support for VS2019 and below.
+
+This was originally landed as crrev.com/c/3316095 but that change broke
+arm64 builds because this change inadvertently changed the toolset
+version for prepackaged toolchains which arm64 use to find the UCRT.
+
+Tested: Full build with Visual Studio 2022 Professional retail, gn gen
+of x64 and arm64 with packaged toolchain.
+
+Bug: 1277518
+Change-Id: Ic942ba82a71799bbe14dc64e4e640d9d36e62b22
+Reviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/3351095
+Reviewed-by: Victor Costan <pwnall@chromium.org>
+Reviewed-by: Peter Wen <wnwen@chromium.org>
+Commit-Queue: Bruce Dawson <brucedawson@chromium.org>
+Cr-Commit-Position: refs/heads/main@{#953228}
+---
+ build/vs_toolchain.py              | 58 ++++++++++++++++++------------
+ docs/windows_build_instructions.md |  8 +++--
+ 2 files changed, 40 insertions(+), 26 deletions(-)
+
+diff --git a/build/vs_toolchain.py b/build/vs_toolchain.py
+index ecf0971ab1349..e759bd6ca2afe 100755
+--- a/build/vs_toolchain.py
++++ b/build/vs_toolchain.py
+@@ -39,15 +39,20 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
+ json_data_file = os.path.join(script_dir, 'win_toolchain.json')
+ 
+ # VS versions are listed in descending order of priority (highest first).
++# The first version is assumed by this script to be the one that is packaged,
++# which makes a difference for the arm64 runtime.
+ MSVS_VERSIONS = collections.OrderedDict([
+-  ('2019', '16.0'),
+-  ('2017', '15.0'),
++    ('2019', '16.0'),  # Default and packaged version of Visual Studio.
++    ('2022', '17.0'),
++    ('2017', '15.0'),
+ ])
+ 
+ # List of preferred VC toolset version based on MSVS
++# Order is not relevant for this dictionary.
+ MSVC_TOOLSET_VERSION = {
+-   '2019' : 'VC142',
+-   '2017' : 'VC141',
++    '2022': 'VC143',
++    '2019': 'VC142',
++    '2017': 'VC141',
+ }
+ 
+ def _HostIsWindows():
+@@ -167,13 +172,17 @@ def GetVisualStudioVersion():
+     # Checking vs%s_install environment variables.
+     # For example, vs2019_install could have the value
+     # "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community".
+-    # Only vs2017_install and vs2019_install are supported.
++    # Only vs2017_install, vs2019_install and vs2022_install are supported.
+     path = os.environ.get('vs%s_install' % version)
+     if path and os.path.exists(path):
+       available_versions.append(version)
+       break
+     # Detecting VS under possible paths.
+-    path = os.path.expandvars('%ProgramFiles(x86)%' +
++    if version >= '2022':
++      program_files_path_variable = '%ProgramFiles%'
++    else:
++      program_files_path_variable = '%ProgramFiles(x86)%'
++    path = os.path.expandvars(program_files_path_variable +
+                               '/Microsoft Visual Studio/%s' % version)
+     if path and any(
+         os.path.exists(os.path.join(path, edition))
+@@ -200,23 +209,26 @@ def DetectVisualStudioPath():
+   # the registry. For details see:
+   # https://blogs.msdn.microsoft.com/heaths/2016/09/15/changes-to-visual-studio-15-setup/
+   # For now we use a hardcoded default with an environment variable override.
+-  for path in (
+-      os.environ.get('vs%s_install' % version_as_year),
+-      os.path.expandvars('%ProgramFiles(x86)%' +
+-                         '/Microsoft Visual Studio/%s/Enterprise' %
+-                         version_as_year),
+-      os.path.expandvars('%ProgramFiles(x86)%' +
+-                         '/Microsoft Visual Studio/%s/Professional' %
+-                         version_as_year),
+-      os.path.expandvars('%ProgramFiles(x86)%' +
+-                         '/Microsoft Visual Studio/%s/Community' %
+-                         version_as_year),
+-      os.path.expandvars('%ProgramFiles(x86)%' +
+-                         '/Microsoft Visual Studio/%s/Preview' %
+-                         version_as_year),
+-      os.path.expandvars('%ProgramFiles(x86)%' +
+-                         '/Microsoft Visual Studio/%s/BuildTools' %
+-                         version_as_year)):
++  if version_as_year >= '2022':
++    program_files_path_variable = '%ProgramFiles%'
++  else:
++    program_files_path_variable = '%ProgramFiles(x86)%'
++  for path in (os.environ.get('vs%s_install' % version_as_year),
++               os.path.expandvars(program_files_path_variable +
++                                  '/Microsoft Visual Studio/%s/Enterprise' %
++                                  version_as_year),
++               os.path.expandvars(program_files_path_variable +
++                                  '/Microsoft Visual Studio/%s/Professional' %
++                                  version_as_year),
++               os.path.expandvars(program_files_path_variable +
++                                  '/Microsoft Visual Studio/%s/Community' %
++                                  version_as_year),
++               os.path.expandvars(program_files_path_variable +
++                                  '/Microsoft Visual Studio/%s/Preview' %
++                                  version_as_year),
++               os.path.expandvars(program_files_path_variable +
++                                  '/Microsoft Visual Studio/%s/BuildTools' %
++                                  version_as_year)):
+     if path and os.path.exists(path):
+       return path
+ 
+diff --git a/docs/windows_build_instructions.md b/docs/windows_build_instructions.md
+index 2cfd0f7cebb81..83de36d71a69e 100644
+--- a/docs/windows_build_instructions.md
++++ b/docs/windows_build_instructions.md
+@@ -90,10 +90,12 @@ Also, add a DEPOT_TOOLS_WIN_TOOLCHAIN system variable in the same way, and set
+ it to 0. This tells depot_tools to use your locally installed version of Visual
+ Studio (by default, depot_tools will try to use a google-internal version).
+ 
+-You may also have to set variable `vs2017_install` or `vs2019_install` to your
+-installation path of Visual Studio 2017 or 19, like
++You may also have to set variable `vs2017_install` or `vs2019_install` or
++`vs2022_install` to your installation path of Visual Studio 2017 or 19 or 22, like
+ `set vs2019_install=C:\Program Files (x86)\Microsoft Visual Studio\2019\Professional`
+-for Visual Studio 2019.
++for Visual Studio 2019, or
++`set vs2022_install=C:\Program Files\Microsoft Visual Studio\2022\Professional`
++for Visual Studio 2022.
+ 
+ From a cmd.exe shell, run:
+ 
+-- 
+2.33.0.windows.2
+
