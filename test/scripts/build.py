@@ -33,10 +33,15 @@ PATCH_LIST = [
     ('0005-Fix-compiling-issues-after-upgrading-clang-to-15.patch', SRC_PATH)
 ]
 GIT_BIN = 'git.bat' if sys.platform == 'win32' else 'git'
+GCLIENT_BIN = 'gclient.bat' if sys.platform == 'win32' else 'gclient'
 
 def sync():
-    gclient_bin = 'gclient.bat' if sys.platform == 'win32' else 'gclient'
-    if subprocess.call([gclient_bin, 'sync', '--reset'], cwd=SRC_PATH, shell=False):
+    if subprocess.call([GCLIENT_BIN, 'sync', '--reset'], cwd=SRC_PATH, shell=False):
+        return False
+    return True
+
+def run_hooks():
+   if subprocess.call([GCLIENT_BIN, 'runhooks'], cwd=SRC_PATH, shell=False):
         return False
     return True
 
@@ -146,6 +151,8 @@ def main():
     if not sync():
         return 1
     patch()
+    if not run_hooks():
+        return 1
     create_gclient_args()
     setup_environment_variables()
     if not build():
