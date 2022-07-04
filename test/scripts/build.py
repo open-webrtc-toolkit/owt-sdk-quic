@@ -36,12 +36,19 @@ GIT_BIN = 'git.bat' if sys.platform == 'win32' else 'git'
 GCLIENT_BIN = 'gclient.bat' if sys.platform == 'win32' else 'gclient'
 
 def sync():
-    if subprocess.call([GCLIENT_BIN, 'sync', '--reset'], cwd=SRC_PATH, shell=False):
+    if subprocess.call([GCLIENT_BIN, 'sync', '--reset', '--nohooks'], cwd=SRC_PATH, shell=False):
         return False
     return True
 
 def run_hooks():
-   if subprocess.call([GCLIENT_BIN, 'runhooks'], cwd=SRC_PATH, shell=False):
+    if subprocess.call([GCLIENT_BIN, 'runhooks'], cwd=SRC_PATH, shell=False):
+        return False
+    return True
+
+
+def update_perfetto():
+    # Manually update perfetto because this script patches DEPS after sync.
+    if subprocess.call([GIT_BIN, 'fetch', 'https://android.googlesource.com/platform/external/perfetto.git', 'd8081faeb0e9264d0343208d9a2325525bb90832'], cwd=SRC_PATH/'third_party'/'perfetto', shell=False) or subprocess.call([GIT_BIN, 'checkout', 'FETCH_HEAD'], cwd=SRC_PATH/'third_party'/'perfetto', shell=False):
         return False
     return True
 
@@ -151,6 +158,8 @@ def main():
     if not sync():
         return 1
     patch()
+    if not update_perfetto():
+        return 1
     if not run_hooks():
         return 1
     create_gclient_args()
