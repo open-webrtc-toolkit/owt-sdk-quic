@@ -1,14 +1,14 @@
-From 1d409ac32a4381e43d0b67d08bedfabac91da371 Mon Sep 17 00:00:00 2001
+From f2a513d78caf635e5786be41aeaaf688f23f50dc Mon Sep 17 00:00:00 2001
 From: Jianjun Zhu <jianjun.zhu@intel.com>
 Date: Sat, 30 Oct 2021 00:20:39 +0800
-Subject: [PATCH] Add owt_web_transport to BUILD.gn.
+Subject: [PATCH 1/5] Add owt_web_transport to BUILD.gn.
 
 ---
  BUILD.gn | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index fe0ed6dd1b584..963d0df64a453 100644
+index 8b6f4bf90557a..5ed8919d17662 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -101,6 +101,7 @@ group("gn_all") {
@@ -20,5 +20,5 @@ index fe0ed6dd1b584..963d0df64a453 100644
  
    if (!is_component_build) {
 -- 
-2.33.1
+2.33.0.windows.2
 

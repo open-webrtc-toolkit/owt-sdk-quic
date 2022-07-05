@@ -1,0 +1,28 @@
+From ff2ff6d9d87858fe4b0ac4800b098f7f14c2dd31 Mon Sep 17 00:00:00 2001
+From: Jianjun Zhu <jianjun.zhu@intel.com>
+Date: Mon, 27 Jun 2022 19:31:34 +0800
+Subject: [PATCH 4/5] Roll clang llvmorg-14-init-8564-g34b903d8-2 :
+ llvmorg-15-init-13850-ge2913362-1
+
+---
+ tools/clang/scripts/update.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/tools/clang/scripts/update.py b/tools/clang/scripts/update.py
+index 9a8bae564d9a7..4198f07dbbb4f 100755
+--- a/tools/clang/scripts/update.py
++++ b/tools/clang/scripts/update.py
+@@ -34,8 +34,8 @@ import zipfile
+ # https://chromium.googlesource.com/chromium/src/+/main/docs/updating_clang.md
+ # Reverting problematic clang rolls is safe, though.
+ # This is the output of `git describe` and is usable as a commit-ish.
+-CLANG_REVISION = 'llvmorg-14-init-8564-g34b903d8'
+-CLANG_SUB_REVISION = 2
++CLANG_REVISION = 'llvmorg-15-init-13850-ge2913362'
++CLANG_SUB_REVISION = 1
+ 
+ PACKAGE_VERSION = '%s-%s' % (CLANG_REVISION, CLANG_SUB_REVISION)
+ RELEASE_VERSION = '14.0.0'
+-- 
+2.33.0.windows.2
+

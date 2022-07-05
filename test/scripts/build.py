@@ -26,13 +26,29 @@ SDK_TARGETS = ['owt_web_transport']
 TEST_TARGETS = ['owt_web_transport_tests']
 TEST_TARGETS_WIN = ['owt_web_transport_dll_tests']
 PATCH_LIST = [
-    ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH)
+    ('0001-Add-owt_web_transport-to-BUILD.gn.patch', SRC_PATH),
+    ('0002-build-Relanding-Rudimentary-support-for-Visual-Studi.patch', SRC_PATH),
+    ('0003-Update-generate-certs.sh-to-use-ECDSA.patch', SRC_PATH),
+    ('0004-Roll-clang-llvmorg-14-init-8564-g34b903d8-2-llvmorg-.patch', SRC_PATH),
+    ('0005-Fix-compiling-issues-after-upgrading-clang-to-15.patch', SRC_PATH)
 ]
 GIT_BIN = 'git.bat' if sys.platform == 'win32' else 'git'
+GCLIENT_BIN = 'gclient.bat' if sys.platform == 'win32' else 'gclient'
 
 def sync():
-    gclient_bin = 'gclient.bat' if sys.platform == 'win32' else 'gclient'
-    if subprocess.call([gclient_bin, 'sync', '--reset'], cwd=SRC_PATH, shell=False):
+    if subprocess.call([GCLIENT_BIN, 'sync', '--reset', '--nohooks'], cwd=SRC_PATH, shell=False):
+        return False
+    return True
+
+def run_hooks():
+    if subprocess.call([GCLIENT_BIN, 'runhooks'], cwd=SRC_PATH, shell=False):
+        return False
+    return True
+
+
+def update_perfetto():
+    # Manually update perfetto because this script patches DEPS after sync.
+    if subprocess.call([GIT_BIN, 'fetch', 'https://android.googlesource.com/platform/external/perfetto.git', 'd8081faeb0e9264d0343208d9a2325525bb90832'], cwd=SRC_PATH/'third_party'/'perfetto', shell=False) or subprocess.call([GIT_BIN, 'checkout', 'FETCH_HEAD'], cwd=SRC_PATH/'third_party'/'perfetto', shell=False):
         return False
     return True
 
@@ -142,6 +158,10 @@ def main():
     if not sync():
         return 1
     patch()
+    if not update_perfetto():
+        return 1
+    if not run_hooks():
+        return 1
     create_gclient_args()
     setup_environment_variables()
     if not build():
