@@ -26,6 +26,8 @@ class OWT_EXPORT QuicTransportStreamInterface {
   virtual uint32_t Id() const = 0;
   virtual void SetVisitor(Visitor* visitor) = 0;
   virtual void SendData(char* data, size_t len) = 0;
+  // Close the stream.
+  virtual void Close() = 0;
 };
 }  // namespace quic
 }

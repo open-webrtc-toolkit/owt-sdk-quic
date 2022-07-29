@@ -43,6 +43,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTStreamImpl : public QuicStream,
   // Returns true if the sequencer has delivered the FIN, and no more body bytes
   // will be available.
   bool IsClosed() { return sequencer()->IsClosed(); }
+  void Close() override;
 
  protected:
   owt::quic::QuicTransportStreamInterface::Visitor* visitor() { return visitor_; }

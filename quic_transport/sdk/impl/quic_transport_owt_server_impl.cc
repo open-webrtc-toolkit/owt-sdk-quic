@@ -157,6 +157,12 @@ void QuicTransportOWTServerImpl::StartOnCurrentThread() {
 }
 
 void QuicTransportOWTServerImpl::Stop() {
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOWTServerImpl::StopOnCurrentThread, weak_factory_.GetWeakPtr()));
+}
+
+void QuicTransportOWTServerImpl::StopOnCurrentThread() {
   // Before we shut down the epoll server, give all active sessions a chance to
   // notify clients that they're closing.
   dispatcher_->Shutdown();

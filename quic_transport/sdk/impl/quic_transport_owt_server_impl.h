@@ -84,6 +84,7 @@ class QuicTransportOWTServerImpl
   void Initialize();
 
   void StartOnCurrentThread();
+  void StopOnCurrentThread();
 
   const int port_;
 

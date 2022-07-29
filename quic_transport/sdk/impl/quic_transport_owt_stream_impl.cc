@@ -47,6 +47,11 @@ void QuicTransportOWTStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterf
   visitor_ = visitor; 
 }
 
+void QuicTransportOWTStreamImpl::Close() {
+  // TODO: Post to IO runner.
+  CloseWriteSide();
+}
+
 void QuicTransportOWTStreamImpl::SendData(char* data, size_t len) {
   std::string s_data(data, len);
   task_runner_->PostTask(FROM_HERE,
