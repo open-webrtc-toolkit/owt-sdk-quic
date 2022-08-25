@@ -25,6 +25,8 @@ class OWT_EXPORT QuicTransportClientInterface {
     virtual void OnConnectionFailed() = 0;
     // Called when an incoming stream is received.
     virtual void OnIncomingStream(QuicTransportStreamInterface*) = 0;
+    //Called when a stream is closed
+    virtual void OnStreamClosed(uint32_t id) = 0;
   };
 
   virtual ~QuicTransportClientInterface() = default;
@@ -33,6 +35,9 @@ class OWT_EXPORT QuicTransportClientInterface {
   virtual void Start() = 0;
   // Close QuicTransport session with server.
   virtual void Stop() = 0;
+
+  virtual const char* Id() = 0;
+  virtual uint8_t length() = 0;
   // Create a bidirectional stream.
   virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
 };

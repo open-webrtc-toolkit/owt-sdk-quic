@@ -30,6 +30,7 @@ class QuicTransportOWTClientSession
 
     // Called when new incoming stream created
     virtual void OnIncomingNewStream(QuicTransportOWTStreamImpl* stream) = 0;
+    virtual void OnStreamClosed(uint32_t id) = 0;
 
    protected:
     virtual ~Visitor() {}
@@ -108,6 +109,8 @@ class QuicTransportOWTClientSession
 
   // Returns true if there are open HTTP requests.
   bool ShouldKeepConnectionAlive() const override;
+
+  void OnStreamClosed(quic::QuicStreamId stream_id) override;
 
   // // If an incoming stream can be created, return true.
   // // TODO(fayang): move this up to QuicSpdyClientSessionBase.

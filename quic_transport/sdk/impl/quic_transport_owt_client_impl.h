@@ -52,6 +52,9 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
   void SetVisitor(owt::quic::QuicTransportClientInterface::Visitor* visitor) override;
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
   void OnIncomingNewStream(quic::QuicTransportOWTStreamImpl* stream) override;
+  void OnStreamClosed(uint32_t id) override;
+  const char* Id() override;
+  uint8_t length() override;
 
  private:
 

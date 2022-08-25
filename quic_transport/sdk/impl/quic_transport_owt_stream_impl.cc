@@ -64,7 +64,6 @@ void QuicTransportOWTStreamImpl::SendDataOnCurrentThread(const std::string& data
 }
 
 void QuicTransportOWTStreamImpl::processData() {
-  printf("QuicTransportOWTStreamImpl::OnDataAvailable\n");
   while (sequencer()->HasBytesToRead()) {
     struct iovec iov;
     if (sequencer()->GetReadableRegions(&iov, 1) == 0) {
@@ -72,9 +71,8 @@ void QuicTransportOWTStreamImpl::processData() {
       printf("No more data to read\n");
       break;
     }
-    printf("Stream: %d processd:%zu, bytes in thread:%d\n",id(), iov.iov_len, base::PlatformThread::CurrentId());
+    //printf("Stream: %d processd:%zu, bytes in thread:%d\n",id(), iov.iov_len, base::PlatformThread::CurrentId());
     if (visitor()) {
-      printf("Call visitor onData\n");
       visitor()->OnData(this, static_cast<char*>(iov.iov_base), iov.iov_len);
     }
     sequencer()->MarkConsumed(iov.iov_len);
@@ -82,7 +80,6 @@ void QuicTransportOWTStreamImpl::processData() {
 
   if (!sequencer()->IsClosed()) {
     sequencer()->SetUnblocked();
-    printf("set sequencer unblocked\n");
     return;
   }
 

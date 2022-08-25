@@ -197,4 +197,10 @@ bool QuicTransportOWTClientSession::ShouldKeepConnectionAlive() const {
   return GetNumActiveStreams() + pending_streams_size() > 0;
 }
 
+void QuicTransportOWTClientSession::OnStreamClosed(quic::QuicStreamId stream_id) {
+  if (visitor_) {
+    visitor_->OnStreamClosed(stream_id);
+  }
+}
+
 }  // namespace quic

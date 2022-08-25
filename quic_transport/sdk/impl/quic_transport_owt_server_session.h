@@ -51,6 +51,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
 
   //Implement QuicTransportSessionInterface
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
+  void Stop() override;
   void SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
   const char* Id() override;
   uint8_t length() override;
@@ -87,6 +88,9 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
 
   // Returns true if there are open dynamic streams.
   bool ShouldKeepConnectionAlive() const override;
+
+  //Notify stream closed
+  void OnStreamClosed(quic::QuicStreamId stream_id) override;
 
   bool IsConnected() { return connection()->connected(); }
 

@@ -77,13 +77,30 @@ void QuicTransportOWTServerSession::OnConnectionClosed(
   }
 }
 
+void QuicTransportOWTServerSession::OnStreamClosed(quic::QuicStreamId stream_id) {
+  if (visitor_) {
+    visitor_->OnStreamClosed(stream_id);
+  }
+}
+
+void QuicTransportOWTServerSession::Stop() {
+  connection()->CloseConnection(
+        quic::QUIC_PEER_GOING_AWAY, "Shutting down",
+        quic::ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
+}
+
 void QuicTransportOWTServerSession::SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) { 
   visitor_ = visitor;
 }
 
 const char* QuicTransportOWTServerSession::Id() {
   QUIC_DLOG(INFO) << "QuicTransportOWTServerSession Get session id:" << connection()->connection_id().ToString();
-  return connection()->connection_id().data();
+  const std::string& session_id_str =
+      connection()->connection_id().ToString();
+  char* id = new char[session_id_str.size() + 1];
+  strcpy(id, session_id_str.c_str());
+
+  return id;
 }
 
 uint8_t QuicTransportOWTServerSession::length() {

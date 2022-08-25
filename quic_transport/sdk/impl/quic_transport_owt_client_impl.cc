@@ -119,7 +119,7 @@ void QuicTransportOWTClientImpl::StartOnCurrentThread() {
 }
 
 void QuicTransportOWTClientImpl::Stop() {
-  
+  Disconnect();
 }
 
 int QuicTransportOWTClientImpl::SocketPort() {
@@ -134,6 +134,27 @@ void QuicTransportOWTClientImpl::OnIncomingNewStream(quic::QuicTransportOWTStrea
   if(visitor_) {
     visitor_->OnIncomingStream(stream);
   }
+}
+
+void QuicTransportOWTClientImpl::OnStreamClosed(uint32_t id) {
+  if(visitor_) {
+    visitor_->OnStreamClosed(id);
+  }
+}
+
+const char* QuicTransportOWTClientImpl::Id() {
+  std::cerr << "QuicTransportOWTClientImpl Get client session id:" << client_session()->connection()->client_connection_id().ToString();
+  const std::string& session_id_str =
+      client_session()->connection()->client_connection_id().ToString();
+  char* id = new char[session_id_str.size() + 1];
+  strcpy(id, session_id_str.c_str());
+
+  return id;
+
+}
+
+uint8_t QuicTransportOWTClientImpl::length() {
+  return client_session()->connection()->client_connection_id().length();
 }
 
 owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidirectionalStream() {
