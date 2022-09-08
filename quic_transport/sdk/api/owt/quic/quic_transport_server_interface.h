@@ -22,6 +22,8 @@ class OWT_EXPORT QuicTransportServerInterface {
     virtual void OnEnded() = 0;
     // Called when a new session is created.
     virtual void OnSession(QuicTransportSessionInterface*) = 0;
+    // Called when a session is closed.
+    virtual void OnClosedSession(QuicTransportSessionInterface*) = 0;
   };
   virtual ~QuicTransportServerInterface() = default;
   virtual int Start() = 0;

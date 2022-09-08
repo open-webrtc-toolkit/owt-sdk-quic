@@ -180,7 +180,7 @@ QuicTransportOWTServerSession::CreateQuicCryptoServerStream(
                                   stream_helper());
 }
 
-QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(QuicStreamId id) {
+QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStreamOnCurrentThread(QuicStreamId id) {
   if (!ShouldCreateIncomingStream(id)) {
     return nullptr;
   }
@@ -192,6 +192,26 @@ QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(
     visitor_->OnIncomingStream(stream);
   }
   return stream;
+}
+
+
+QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(QuicStreamId id) {
+  QuicTransportOWTStreamImpl* result(nullptr);
+  base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
+                           base::WaitableEvent::InitialState::NOT_SIGNALED);
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](QuicTransportOWTServerSession* session,
+             QuicStreamId& id,
+             QuicTransportOWTStreamImpl** result, base::WaitableEvent* event) {
+            *result = session->CreateIncomingStreamOnCurrentThread(id);
+            event->Signal();
+          },
+          base::Unretained(this), std::ref(id), base::Unretained(&result),
+          base::Unretained(&done)));
+  done.Wait();
+  return result;
 }
 
 QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(

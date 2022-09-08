@@ -85,6 +85,8 @@ class QuicTransportOWTServerImpl
 
   void StartOnCurrentThread();
   void StopOnCurrentThread();
+  void ScheduleReadPackets();
+  void NewSessionCreated(quic::QuicTransportOWTServerSession* session);
 
   const int port_;
 

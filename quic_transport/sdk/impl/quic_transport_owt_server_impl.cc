@@ -178,13 +178,30 @@ void QuicTransportOWTServerImpl::SetVisitor(owt::quic::QuicTransportServerInterf
   visitor_ = visitor; 
 }
 
-void QuicTransportOWTServerImpl::OnSessionCreated(quic::QuicTransportOWTServerSession* session) {
+void QuicTransportOWTServerImpl::NewSessionCreated(quic::QuicTransportOWTServerSession* session) {
   printf("QuicTransportOWTServerImpl call visitor OnSession\n");
   visitor_->OnSession(session);
 }
 
-void QuicTransportOWTServerImpl::OnSessionClosed(quic::QuicTransportOWTServerSession* session) {
+void QuicTransportOWTServerImpl::OnSessionCreated(quic::QuicTransportOWTServerSession* session) {
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](QuicTransportOWTServerImpl* server,
+             quic::QuicTransportOWTServerSession* session) {
+            server->NewSessionCreated(session);
+          },
+          base::Unretained(this), base::Unretained(session)));
+}
 
+void QuicTransportOWTServerImpl::OnSessionClosed(quic::QuicTransportOWTServerSession* session) {
+  visitor_->OnClosedSession(session);
+}
+
+void QuicTransportOWTServerImpl::ScheduleReadPackets() {
+  task_runner_->PostTask(FROM_HERE,
+                         base::BindOnce(&QuicTransportOWTServerImpl::StartReading,
+                                        weak_factory_.GetWeakPtr()));
 }
 
 void QuicTransportOWTServerImpl::StartReading() {
@@ -209,6 +226,7 @@ void QuicTransportOWTServerImpl::StartReading() {
       base::ThreadTaskRunnerHandle::Get()->PostTask(
           FROM_HERE, base::BindOnce(&QuicTransportOWTServerImpl::StartReading,
                                 weak_factory_.GetWeakPtr()));
+      //ScheduleReadPackets();
     }
     return;
   }
@@ -220,6 +238,7 @@ void QuicTransportOWTServerImpl::StartReading() {
     base::ThreadTaskRunnerHandle::Get()->PostTask(
         FROM_HERE, base::BindOnce(&QuicTransportOWTServerImpl::OnReadComplete,
                               weak_factory_.GetWeakPtr(), result));
+    //OnReadComplete(result);
   } else {
     OnReadComplete(result);
   }

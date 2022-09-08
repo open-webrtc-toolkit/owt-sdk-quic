@@ -110,6 +110,8 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
   // Called when the size of the compressed frame payload is available.
   void OnCompressedFrameSize(size_t frame_len);
 
+  QuicTransportOWTStreamImpl* CreateIncomingStreamOnCurrentThread(QuicStreamId id);
+
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
 
   const QuicCryptoServerConfig* crypto_config_;
