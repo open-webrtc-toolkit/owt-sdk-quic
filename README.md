@@ -7,7 +7,7 @@ Open WebRTC Toolkit QUIC SDK based on the Chromium project to provide C++ APIs f
 This repository has two projects for QUIC support. They might be merged in the future.
 
 - **quic_io** is developed for QUIC based internal I/O among OWT server agents. 
-- **quic_transport** is a SDK for both server side and client side [WebTransport](https://w3c.github.io/webtransport/) support.
+- **web_transport** is a SDK for both server side and client side [WebTransport](https://w3c.github.io/webtransport/) support.
 
 ## How to build
 
