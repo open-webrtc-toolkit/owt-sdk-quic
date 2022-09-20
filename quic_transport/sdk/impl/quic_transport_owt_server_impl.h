@@ -64,7 +64,7 @@ class QuicTransportOWTServerImpl
 
   //Implement quic::QuicTransportOWTDispatcher::Visitor
   void OnSessionCreated(quic::QuicTransportOWTServerSession* session) override;
-  void OnSessionClosed(quic::QuicTransportOWTServerSession* session) override;
+  void OnSessionClosed(quic::QuicConnectionId sessionId) override;
 
   // Start reading on the socket. On asynchronous reads, this registers
   // OnReadComplete as the callback, which will then call StartReading again.
@@ -87,6 +87,7 @@ class QuicTransportOWTServerImpl
   void StopOnCurrentThread();
   void ScheduleReadPackets();
   void NewSessionCreated(quic::QuicTransportOWTServerSession* session);
+  void SessionClosed(quic::QuicConnectionId sessionId);
 
   const int port_;
 

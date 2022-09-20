@@ -203,4 +203,17 @@ void QuicTransportOWTClientSession::OnStreamClosed(quic::QuicStreamId stream_id)
   }
 }
 
+void QuicTransportOWTClientSession::OnConnectionClosed(
+    const quic::QuicConnectionCloseFrame& frame,
+    quic::ConnectionCloseSource source) {
+  std::cerr << "QuicTransportOWTClientSession::OnConnectionClosed and client session id:" << connection()->connection_id().ToString() << " in thread" << base::PlatformThread::CurrentId();
+  const std::string& session_id_str =
+      connection()->client_connection_id().ToString();
+  char* id = new char[session_id_str.size() + 1];
+  strcpy(id, session_id_str.c_str());
+  if (visitor_) {
+    visitor_->OnConnectionClosed(id, session_id_str.size());
+  }
+}
+
 }  // namespace quic

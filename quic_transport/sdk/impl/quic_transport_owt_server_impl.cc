@@ -180,7 +180,9 @@ void QuicTransportOWTServerImpl::SetVisitor(owt::quic::QuicTransportServerInterf
 
 void QuicTransportOWTServerImpl::NewSessionCreated(quic::QuicTransportOWTServerSession* session) {
   printf("QuicTransportOWTServerImpl call visitor OnSession\n");
-  visitor_->OnSession(session);
+  if (visitor_) {
+    visitor_->OnSession(session);
+  }
 }
 
 void QuicTransportOWTServerImpl::OnSessionCreated(quic::QuicTransportOWTServerSession* session) {
@@ -194,8 +196,25 @@ void QuicTransportOWTServerImpl::OnSessionCreated(quic::QuicTransportOWTServerSe
           base::Unretained(this), base::Unretained(session)));
 }
 
-void QuicTransportOWTServerImpl::OnSessionClosed(quic::QuicTransportOWTServerSession* session) {
-  visitor_->OnClosedSession(session);
+void QuicTransportOWTServerImpl::SessionClosed(quic::QuicConnectionId sessionId) {
+  if (visitor_) {
+    const std::string& session_id_str = sessionId.ToString();
+    printf("server session:%s closed\n", session_id_str.c_str());
+    char* id = new char[session_id_str.size() + 1];
+    strcpy(id, session_id_str.c_str());
+    visitor_->OnClosedSession(id, session_id_str.size());
+  }
+}
+
+void QuicTransportOWTServerImpl::OnSessionClosed(quic::QuicConnectionId sessionId) {
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](QuicTransportOWTServerImpl* server,
+             quic::QuicConnectionId& sessionId) {
+            server->SessionClosed(sessionId);
+          },
+          base::Unretained(this), std::ref(sessionId)));
 }
 
 void QuicTransportOWTServerImpl::ScheduleReadPackets() {

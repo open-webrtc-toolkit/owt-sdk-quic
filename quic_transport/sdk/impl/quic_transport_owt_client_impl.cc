@@ -96,29 +96,37 @@ void QuicTransportOWTClientImpl::Start() {
 
 void QuicTransportOWTClientImpl::StartOnCurrentThread() {
   if (!Initialize()) {
-      std::cerr << "Failed to initialize client." << std::endl;
-      if(visitor_) {
-        visitor_->OnConnectionFailed();
-      }
-      return;
-    }
-    if (!Connect()) {
-      std::cerr << "Failed to connect." << std::endl;
-      if(visitor_) {
-        visitor_->OnConnectionFailed();
-      }
-      return;
-    }
-
-    std::cerr << "client connect to quic server succeed" << std::endl;
-    session_ = client_session();
-    session_->set_visitor(this);
+    std::cerr << "Failed to initialize client." << std::endl;
     if(visitor_) {
-      visitor_->OnConnected();
+      visitor_->OnConnectionFailed();
     }
+    return;
+  }
+  if (!Connect()) {
+    std::cerr << "Failed to connect." << std::endl;
+    if(visitor_) {
+      visitor_->OnConnectionFailed();
+    }
+    return;
+  }
+
+  session_ = client_session();
+  session_->set_visitor(this);
+  if(visitor_) {
+    printf("client call onConnected\n");
+    visitor_->OnConnected();
+  }
+  std::cerr << "client connect to quic server succeed in thread:" << base::PlatformThread::CurrentId() << std::endl;
 }
 
 void QuicTransportOWTClientImpl::Stop() {
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOWTClientImpl::StopOnCurrentThread, weak_factory_.GetWeakPtr()));
+      return ;
+}
+
+void QuicTransportOWTClientImpl::StopOnCurrentThread() {
   Disconnect();
 }
 
@@ -128,6 +136,12 @@ int QuicTransportOWTClientImpl::SocketPort() {
 
 void QuicTransportOWTClientImpl::SetVisitor(owt::quic::QuicTransportClientInterface::Visitor* visitor) {
   visitor_ = visitor;
+}
+
+void QuicTransportOWTClientImpl::OnConnectionClosed(char* id, size_t len) {
+  if(visitor_) {
+    visitor_->OnConnectionClosed(id, len);
+  }
 }
 
 void QuicTransportOWTClientImpl::OnIncomingNewStream(quic::QuicTransportOWTStreamImpl* stream) {

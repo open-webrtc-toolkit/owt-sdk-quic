@@ -28,6 +28,7 @@ class QuicTransportOWTClientSession
     Visitor(const Visitor&) = delete;
     Visitor& operator=(const Visitor&) = delete;
 
+    virtual void OnConnectionClosed(char*, size_t len) = 0;
     // Called when new incoming stream created
     virtual void OnIncomingNewStream(QuicTransportOWTStreamImpl* stream) = 0;
     virtual void OnStreamClosed(uint32_t id) = 0;
@@ -94,6 +95,10 @@ class QuicTransportOWTClientSession
   void set_respect_goaway(bool respect_goaway) {
     respect_goaway_ = respect_goaway;
   }
+
+  // quic::QuicConnectionVisitorInterface methods:
+  void OnConnectionClosed(const quic::QuicConnectionCloseFrame& frame,
+                          quic::ConnectionCloseSource source) override;
 
   bool IsConnected() { return connection()->connected(); }
   void set_visitor(Visitor* visitor) { visitor_ = visitor; }

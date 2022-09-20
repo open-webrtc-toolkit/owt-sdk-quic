@@ -18,7 +18,6 @@ class OWT_EXPORT QuicTransportSessionInterface {
    public:
     virtual ~Visitor() = default;
     virtual void OnIncomingStream(QuicTransportStreamInterface*) = 0;
-    virtual void OnConnectionClosed() = 0;
     virtual void OnStreamClosed(uint32_t id) = 0;
   };
   virtual ~QuicTransportSessionInterface() = default;

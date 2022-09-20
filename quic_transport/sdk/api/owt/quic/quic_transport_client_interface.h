@@ -23,6 +23,8 @@ class OWT_EXPORT QuicTransportClientInterface {
     virtual void OnConnected() = 0;
     // Called when the connection state changed from connecting to failed.
     virtual void OnConnectionFailed() = 0;
+    // Called when a session is closed.
+    virtual void OnConnectionClosed(char*, size_t len) = 0;
     // Called when an incoming stream is received.
     virtual void OnIncomingStream(QuicTransportStreamInterface*) = 0;
     //Called when a stream is closed

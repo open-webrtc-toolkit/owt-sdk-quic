@@ -38,7 +38,7 @@ std::unique_ptr<QuicSession> QuicTransportOWTDispatcher::CreateQuicSession(
     const ParsedQuicVersion& version,
     absl::string_view /*sni*/) {
   // The QuicServerSessionBase takes ownership of |connection| below.
-    printf("QuicTransportOWTDispatcher::CreateQuicSession\n");
+    printf("QuicTransportOWTDispatcher::CreateQuicSession in thread:%d\n", base::PlatformThread::CurrentId());
   QuicConnection* connection = 
       new QuicConnection(connection_id, self_address, peer_address, helper(),
                          alarm_factory(), writer(),
@@ -55,5 +55,18 @@ std::unique_ptr<QuicSession> QuicTransportOWTDispatcher::CreateQuicSession(
   }
   return session;
 }
+
+// Called when the connection is closed after the streams have been closed.
+  void QuicTransportOWTDispatcher::OnConnectionClosed(QuicConnectionId server_connection_id,
+                                    QuicErrorCode error,
+                                    const std::string& error_details,
+                                    ConnectionCloseSource source) {
+    printf("QuicTransportOWTDispatcher OnConnectionClosed for connection:%s in thread:%d\n", server_connection_id.ToString().c_str(), base::PlatformThread::CurrentId());
+    if (visitor_) {
+      visitor_->OnSessionClosed(server_connection_id);
+    }
+
+    printf("QuicTransportOWTDispatcher OnConnectionClosed ends\n");
+  }
 
 }  // namespace quic

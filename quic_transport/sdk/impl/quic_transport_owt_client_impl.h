@@ -51,6 +51,7 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
   void Stop() override;
   void SetVisitor(owt::quic::QuicTransportClientInterface::Visitor* visitor) override;
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
+  void OnConnectionClosed(char*, size_t len) override;
   void OnIncomingNewStream(quic::QuicTransportOWTStreamImpl* stream) override;
   void OnStreamClosed(uint32_t id) override;
   const char* Id() override;
@@ -62,6 +63,7 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
   QuicChromiumConnectionHelper* CreateQuicConnectionHelper();
   QuicClientMessageLooplNetworkHelper* CreateNetworkHelper();
   void StartOnCurrentThread();
+  void StopOnCurrentThread();
 
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
   //  Used by |helper_| to time alarms.

@@ -24,7 +24,7 @@ class QuicTransportOWTDispatcher : public QuicDispatcher {
 
     // Called when new session created
     virtual void OnSessionCreated(QuicTransportOWTServerSession* session) = 0;
-    virtual void OnSessionClosed(QuicTransportOWTServerSession* session) = 0;
+    virtual void OnSessionClosed(QuicConnectionId server_connection_id) = 0;
 
    protected:
     virtual ~Visitor() {}
@@ -42,6 +42,13 @@ class QuicTransportOWTDispatcher : public QuicDispatcher {
       base::SingleThreadTaskRunner* event_runner);
 
   ~QuicTransportOWTDispatcher() override;
+
+  //Implement QuicSession::Visitor
+  // Called when the connection is closed after the streams have been closed.
+  void OnConnectionClosed(QuicConnectionId server_connection_id,
+                                    QuicErrorCode error,
+                                    const std::string& error_details,
+                                    ConnectionCloseSource source) override;
 
   void set_visitor(Visitor* visitor) { visitor_ = visitor; }
 
