@@ -186,7 +186,7 @@ void QuicTransportOWTServerImpl::NewSessionCreated(quic::QuicTransportOWTServerS
 }
 
 void QuicTransportOWTServerImpl::OnSessionCreated(quic::QuicTransportOWTServerSession* session) {
-  event_runner_->PostTask(
+  task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportOWTServerImpl* server,
@@ -207,14 +207,14 @@ void QuicTransportOWTServerImpl::SessionClosed(quic::QuicConnectionId sessionId)
 }
 
 void QuicTransportOWTServerImpl::OnSessionClosed(quic::QuicConnectionId sessionId) {
-  event_runner_->PostTask(
+  task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportOWTServerImpl* server,
-             quic::QuicConnectionId& sessionId) {
+             quic::QuicConnectionId sessionId) {
             server->SessionClosed(sessionId);
           },
-          base::Unretained(this), std::ref(sessionId)));
+          base::Unretained(this), sessionId));
 }
 
 void QuicTransportOWTServerImpl::ScheduleReadPackets() {
