@@ -103,6 +103,17 @@ const char* QuicTransportOWTServerSession::Id() {
   return id;
 }
 
+void QuicTransportOWTServerSession::CloseStreamOnCurrentThread(uint32_t id) {
+  printf("QuicTransportOWTServerSession::CloseStreamOnCurrentThread close stream:%d\n", id);
+  ResetStream(id, QUIC_STREAM_CANCELLED);
+}
+
+void QuicTransportOWTServerSession::CloseStream(uint32_t id) {
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOWTServerSession::CloseStreamOnCurrentThread, base::Unretained(this), id));
+}
+
 uint8_t QuicTransportOWTServerSession::length() {
   return connection()->connection_id().length();
 }
@@ -239,7 +250,7 @@ QuicTransportOWTServerSession::CreateOutgoingBidirectionalStream() {
   owt::quic::QuicTransportStreamInterface* result(nullptr);
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
-  task_runner_->PostTask(
+  event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportOWTServerSession* session,

@@ -144,10 +144,21 @@ void QuicTransportOWTClientImpl::OnConnectionClosed(char* id, size_t len) {
   }
 }
 
-void QuicTransportOWTClientImpl::OnIncomingNewStream(quic::QuicTransportOWTStreamImpl* stream) {
+void QuicTransportOWTClientImpl::NewStreamCreated(quic::QuicTransportOWTStreamImpl* stream) {
   if(visitor_) {
     visitor_->OnIncomingStream(stream);
   }
+}
+
+void QuicTransportOWTClientImpl::OnIncomingNewStream(quic::QuicTransportOWTStreamImpl* stream) {
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(
+          [](QuicTransportOWTClientImpl* client,
+             quic::QuicTransportOWTStreamImpl* stream) {
+            client->NewStreamCreated(stream);
+          },
+          base::Unretained(this), base::Unretained(stream)));
 }
 
 void QuicTransportOWTClientImpl::OnStreamClosed(uint32_t id) {
@@ -167,6 +178,17 @@ const char* QuicTransportOWTClientImpl::Id() {
 
 }
 
+void QuicTransportOWTClientImpl::CloseStreamOnCurrentThread(uint32_t id) {
+  printf("QuicTransportOWTClientImpl::CloseStreamOnCurrentThread close stream:%d\n", id);
+  session_->ResetStream(id, quic::QUIC_STREAM_CANCELLED);
+}
+
+void QuicTransportOWTClientImpl::CloseStream(uint32_t id) {
+  event_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOWTClientImpl::CloseStreamOnCurrentThread, base::Unretained(this), id));
+}
+
 uint8_t QuicTransportOWTClientImpl::length() {
   return client_session()->connection()->client_connection_id().length();
 }
@@ -176,7 +198,7 @@ owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidir
   owt::quic::QuicTransportStreamInterface* result(nullptr);
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
-  task_runner_->PostTask(
+  event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportOWTClientImpl* client,

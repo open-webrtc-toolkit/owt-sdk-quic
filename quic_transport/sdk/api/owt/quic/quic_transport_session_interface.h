@@ -26,6 +26,7 @@ class OWT_EXPORT QuicTransportSessionInterface {
   virtual QuicTransportStreamInterface* CreateBidirectionalStream() = 0;
   virtual const char* Id() = 0;
   virtual uint8_t length() = 0;
+  virtual void CloseStream(uint32_t id) = 0;
 };
 }  // namespace quic
 }

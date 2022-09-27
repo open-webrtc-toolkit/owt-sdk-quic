@@ -192,9 +192,7 @@ bool QuicTransportOWTClientSession::HasActiveRequestStreams() const {
 }
 
 bool QuicTransportOWTClientSession::ShouldKeepConnectionAlive() const {
-  QUICHE_DCHECK(VersionUsesHttp3(transport_version()) ||
-                0u == pending_streams_size());
-  return GetNumActiveStreams() + pending_streams_size() > 0;
+  return true;
 }
 
 void QuicTransportOWTClientSession::OnStreamClosed(quic::QuicStreamId stream_id) {

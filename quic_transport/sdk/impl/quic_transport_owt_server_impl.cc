@@ -186,7 +186,7 @@ void QuicTransportOWTServerImpl::NewSessionCreated(quic::QuicTransportOWTServerS
 }
 
 void QuicTransportOWTServerImpl::OnSessionCreated(quic::QuicTransportOWTServerSession* session) {
-  task_runner_->PostTask(
+  event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportOWTServerImpl* server,
@@ -207,7 +207,7 @@ void QuicTransportOWTServerImpl::SessionClosed(quic::QuicConnectionId sessionId)
 }
 
 void QuicTransportOWTServerImpl::OnSessionClosed(quic::QuicConnectionId sessionId) {
-  task_runner_->PostTask(
+  event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
           [](QuicTransportOWTServerImpl* server,

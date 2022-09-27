@@ -53,7 +53,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTStreamImpl : public QuicStream,
   void CloseOnCurrentThread();
   void processData();
   base::SingleThreadTaskRunner* task_runner_;
-  base::SingleThreadTaskRunner* event_runner_;
+  //base::SingleThreadTaskRunner* event_runner_;
   owt::quic::QuicTransportStreamInterface::Visitor* visitor_;
 };
 

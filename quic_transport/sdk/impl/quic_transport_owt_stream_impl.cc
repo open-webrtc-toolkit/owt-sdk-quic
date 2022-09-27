@@ -20,7 +20,7 @@ QuicTransportOWTStreamImpl::QuicTransportOWTStreamImpl(
     base::SingleThreadTaskRunner* event_runner)
     : QuicStream(id, session, /*is_static=*/false, type),
       task_runner_(io_runner),
-      event_runner_(event_runner),
+      //event_runner_(event_runner),
       visitor_(nullptr) {
 
 }
@@ -33,7 +33,7 @@ QuicTransportOWTStreamImpl::QuicTransportOWTStreamImpl(
     base::SingleThreadTaskRunner* event_runner)
     : QuicStream(pending, session, type, /* is_static= */ false),
       task_runner_(io_runner),
-      event_runner_(event_runner),
+      //event_runner_(event_runner),
       visitor_(nullptr) {}
 
 QuicTransportOWTStreamImpl::~QuicTransportOWTStreamImpl() {}
@@ -49,11 +49,11 @@ void QuicTransportOWTStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterf
 
 void QuicTransportOWTStreamImpl::CloseOnCurrentThread() {
   // TODO: Post to IO runner.
-  MaybeSendRstStream(QUIC_STREAM_CANCELLED);
+  Reset(QUIC_STREAM_CANCELLED);
 }
 
 void QuicTransportOWTStreamImpl::Close() {
-  event_runner_->PostTask(
+  task_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(&QuicTransportOWTStreamImpl::CloseOnCurrentThread, base::Unretained(this)));
 }
@@ -66,7 +66,9 @@ void QuicTransportOWTStreamImpl::SendData(char* data, size_t len) {
 }
 
 void QuicTransportOWTStreamImpl::SendDataOnCurrentThread(const std::string& data) {
-  WriteOrBufferData(data, false, nullptr);
+  if (!write_side_closed()) {
+    WriteOrBufferData(data, false, nullptr);
+  }
 }
 
 void QuicTransportOWTStreamImpl::processData() {

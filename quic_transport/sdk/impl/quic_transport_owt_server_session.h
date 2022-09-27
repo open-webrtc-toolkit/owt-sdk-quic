@@ -55,6 +55,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
   void SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;
   const char* Id() override;
   uint8_t length() override;
+  void CloseStream(uint32_t id) override;
 
  protected:
   // QuicSession methods(override them with return type of QuicSpdyStream*):
@@ -113,6 +114,8 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
   QuicTransportOWTStreamImpl* CreateIncomingStreamOnCurrentThread(QuicStreamId id);
 
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
+
+  void CloseStreamOnCurrentThread(uint32_t id);
 
   const QuicCryptoServerConfig* crypto_config_;
 
