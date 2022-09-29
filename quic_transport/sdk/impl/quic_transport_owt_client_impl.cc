@@ -170,7 +170,7 @@ void QuicTransportOWTClientImpl::OnStreamClosed(uint32_t id) {
 const char* QuicTransportOWTClientImpl::Id() {
   std::cerr << "QuicTransportOWTClientImpl Get client session id:" << client_session()->connection()->connection_id().ToString();
   const std::string& session_id_str =
-      client_session()->connection()->client_connection_id().ToString();
+      client_session()->connection()->connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];
   strcpy(id, session_id_str.c_str());
 
