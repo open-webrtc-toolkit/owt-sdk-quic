@@ -19,6 +19,8 @@
 namespace owt {
 namespace quic {
 
+class WebTransportStreamImpl;
+
 // A proxy of ::quic::WebTransportHttp3. WebTransport over HTTP/2 is not
 // supported.
 class WebTransportServerSession : public WebTransportSessionInterface,
@@ -66,7 +68,7 @@ class WebTransportServerSession : public WebTransportSessionInterface,
   ::quic::QuicSpdySession* http3_session_;
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
-  std::vector<std::unique_ptr<WebTransportStreamInterface>> streams_;
+  std::vector<std::unique_ptr<WebTransportStreamImpl>> streams_;
   WebTransportSessionInterface::Visitor* visitor_;
   ConnectionStats stats_;
 };

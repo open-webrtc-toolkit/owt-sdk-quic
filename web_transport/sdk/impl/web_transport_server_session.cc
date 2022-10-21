@@ -132,7 +132,7 @@ WebTransportStreamInterface*
 WebTransportServerSession::CreateBidirectionalStreamOnCurrentThread() {
   ::quic::WebTransportStream* wt_stream =
       session_->OpenOutgoingBidirectionalStream();
-  std::unique_ptr<WebTransportStreamInterface> stream =
+  std::unique_ptr<WebTransportStreamImpl> stream =
       std::make_unique<WebTransportStreamImpl>(
           wt_stream,
           http3_session_->GetOrCreateStream(wt_stream->GetStreamId()),
@@ -205,6 +205,9 @@ void WebTransportServerSession::OnIncomingUnidirectionalStreamAvailable() {
 void WebTransportServerSession::OnSessionClosed(
     ::quic::WebTransportSessionError error_code,
     const std::string& error_message) {
+  for (auto& stream : streams_) {
+    stream->OnSessionClosed();
+  }
   if (visitor_) {
     visitor_->OnConnectionClosed();
   }
@@ -212,8 +215,7 @@ void WebTransportServerSession::OnSessionClosed(
 
 void WebTransportServerSession::AcceptIncomingStream(
     ::quic::WebTransportStream* stream) {
-  LOG(INFO) << "Accept incoming stream.";
-  std::unique_ptr<WebTransportStreamInterface> wt_stream =
+  std::unique_ptr<WebTransportStreamImpl> wt_stream =
       std::make_unique<WebTransportStreamImpl>(
           stream, http3_session_->GetOrCreateStream(stream->GetStreamId()),
           io_runner_, event_runner_);

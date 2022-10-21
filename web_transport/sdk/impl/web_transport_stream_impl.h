@@ -48,16 +48,17 @@ class WebTransportStreamImpl : public WebTransportStreamInterface,
   uint64_t BufferedDataBytes() const override;
   bool CanWrite() const override;
 
+  void OnSessionClosed();
+
   // Overrides ::quic::WebTransportStreamVisitor.
   void OnCanRead() override;
   void OnCanWrite() override;
-  void OnResetStreamReceived(::quic::WebTransportStreamError error) override {}
-  void OnStopSendingReceived(::quic::WebTransportStreamError error) override {}
+  void OnResetStreamReceived(::quic::WebTransportStreamError error) override;
+  void OnStopSendingReceived(::quic::WebTransportStreamError error) override;
   void OnWriteSideInDataRecvdState() override {}
 
  private:
   void OnCanReadOnCurrentThread();
-  void OnFinReadOnCurrentThread();
   void OnCanWriteOnCurrentThread();
 
   ::quic::WebTransportStream* stream_;
@@ -68,6 +69,7 @@ class WebTransportStreamImpl : public WebTransportStreamInterface,
   base::SingleThreadTaskRunner* io_runner_;
   base::SingleThreadTaskRunner* event_runner_;
   owt::quic::WebTransportStreamInterface::Visitor* visitor_;
+  bool write_side_closed_;
   base::WeakPtrFactory<WebTransportStreamImpl> weak_factory_{this};
 };
 }  // namespace quic
