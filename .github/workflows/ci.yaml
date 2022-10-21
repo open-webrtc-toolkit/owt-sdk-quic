@@ -1,6 +1,11 @@
 name: Continuous Integration
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 */90 * *'
+
 
 jobs:
   build:
@@ -26,7 +31,7 @@ jobs:
           rm $git_sha.zip
       - uses: actions/upload-artifact@v2
         name: Upload SDK
-        if: ${{ github.event_name == 'push' }}
+        if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
         with:
           name: quic-sdk-ubuntu-x64-ci
           path: ${{ steps.build-and-test.outputs.git_sha}}
