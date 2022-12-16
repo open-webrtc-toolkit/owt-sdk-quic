@@ -23,9 +23,9 @@ namespace quic {
 class ProofVerifier;
 class QuicServerId;
 
-class QuicTransportOWTClientBase : public QuicClientBase {
+class QuicTransportOwtClientBase : public QuicClientBase {
  public:
-  QuicTransportOWTClientBase(const QuicServerId& server_id,
+  QuicTransportOwtClientBase(const QuicServerId& server_id,
                      const ParsedQuicVersionVector& supported_versions,
                      const QuicConfig& config,
                      QuicConnectionHelperInterface* helper,
@@ -35,10 +35,10 @@ class QuicTransportOWTClientBase : public QuicClientBase {
                      std::unique_ptr<SessionCache> session_cache,
                      base::SingleThreadTaskRunner* io_runner,
                      base::SingleThreadTaskRunner* event_runner);
-  QuicTransportOWTClientBase(const QuicTransportOWTClientBase&) = delete;
-  QuicTransportOWTClientBase& operator=(const QuicTransportOWTClientBase&) = delete;
+  QuicTransportOwtClientBase(const QuicTransportOwtClientBase&) = delete;
+  QuicTransportOwtClientBase& operator=(const QuicTransportOwtClientBase&) = delete;
 
-  ~QuicTransportOWTClientBase() override;
+  ~QuicTransportOwtClientBase() override;
 
    // QuicClientBase
   void ResendSavedData() override {}
@@ -51,7 +51,7 @@ class QuicTransportOWTClientBase : public QuicClientBase {
 
   // Returns a the session used for this client downcasted to a
   // QuicRawClientSession.
-  QuicTransportOWTClientSession* client_session();
+  QuicTransportOwtClientSession* client_session();
 
  protected:
   int GetNumSentClientHellosFromSession() override;

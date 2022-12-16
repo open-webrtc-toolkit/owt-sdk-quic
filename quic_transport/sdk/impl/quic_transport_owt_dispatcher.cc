@@ -6,7 +6,7 @@
 
 namespace quic {
 
-QuicTransportOWTDispatcher::QuicTransportOWTDispatcher(
+QuicTransportOwtDispatcher::QuicTransportOwtDispatcher(
     const QuicConfig* config,
     const QuicCryptoServerConfig* crypto_config,
     QuicVersionManager* version_manager,
@@ -28,10 +28,10 @@ QuicTransportOWTDispatcher::QuicTransportOWTDispatcher(
       event_runner_(event_runner),
       visitor_(nullptr){}
 
-QuicTransportOWTDispatcher::~QuicTransportOWTDispatcher() = default;
+QuicTransportOwtDispatcher::~QuicTransportOwtDispatcher() = default;
 
 
-std::unique_ptr<QuicSession> QuicTransportOWTDispatcher::CreateQuicSession(
+std::unique_ptr<QuicSession> QuicTransportOwtDispatcher::CreateQuicSession(
     QuicConnectionId connection_id,
     const QuicSocketAddress& self_address,
     const QuicSocketAddress& peer_address,
@@ -39,35 +39,35 @@ std::unique_ptr<QuicSession> QuicTransportOWTDispatcher::CreateQuicSession(
     const ParsedQuicVersion& version,
     const ParsedClientHello& parsed_chlo) {
   // The QuicServerSessionBase takes ownership of |connection| below.
-  //printf("QuicTransportOWTDispatcher::CreateQuicSession in thread:%d\n", base::PlatformThread::CurrentId());
+  //printf("QuicTransportOwtDispatcher::CreateQuicSession in thread:%d\n", base::PlatformThread::CurrentId());
   QuicConnection* connection = 
       new QuicConnection(connection_id, self_address, peer_address, helper(),
                          alarm_factory(), writer(),
                          /* owns_writer= */ false, Perspective::IS_SERVER,
                          ParsedQuicVersionVector{version}, connection_id_generator());
 
-  auto session = std::make_unique<QuicTransportOWTServerSession>(
+  auto session = std::make_unique<QuicTransportOwtServerSession>(
       connection, this, config(), GetSupportedVersions(), session_helper(),
       crypto_config(), compressed_certs_cache(), task_runner_, event_runner_);
   session->Initialize();
   if (visitor_) {
-    printf("QuicTransportOWTDispatcher call visitor OnSessionCreated\n");
+    printf("QuicTransportOwtDispatcher call visitor OnSessionCreated\n");
     visitor_->OnSessionCreated(session.get());
   }
   return session;
 }
 
 // Called when the connection is closed after the streams have been closed.
-  void QuicTransportOWTDispatcher::OnConnectionClosed(QuicConnectionId server_connection_id,
+  void QuicTransportOwtDispatcher::OnConnectionClosed(QuicConnectionId server_connection_id,
                                     QuicErrorCode error,
                                     const std::string& error_details,
                                     ConnectionCloseSource source) {
-    //printf("QuicTransportOWTDispatcher OnConnectionClosed for connection:%s in thread:%d\n", server_connection_id.ToString().c_str(), base::PlatformThread::CurrentId());
+    //printf("QuicTransportOwtDispatcher OnConnectionClosed for connection:%s in thread:%d\n", server_connection_id.ToString().c_str(), base::PlatformThread::CurrentId());
     if (visitor_) {
       visitor_->OnSessionClosed(server_connection_id);
     }
 
-    printf("QuicTransportOWTDispatcher OnConnectionClosed ends\n");
+    printf("QuicTransportOwtDispatcher OnConnectionClosed ends\n");
   }
 
 }  // namespace quic

@@ -36,16 +36,16 @@ class QuicDispatcher;
 }  // namespace quic
 namespace net {
 
-class QuicTransportOWTServerImpl 
+class QuicTransportOwtServerImpl 
       : public owt::quic::QuicTransportServerInterface,
-        public quic::QuicTransportOWTDispatcher::Visitor {
+        public quic::QuicTransportOwtDispatcher::Visitor {
  public:
-  QuicTransportOWTServerImpl(
+  QuicTransportOwtServerImpl(
       int port,
       std::unique_ptr<quic::ProofSource> proof_source,
       base::Thread* io_thread,
       base::Thread* event_thread);
-  QuicTransportOWTServerImpl(
+  QuicTransportOwtServerImpl(
       int port,
       std::unique_ptr<quic::ProofSource> proof_source,
       const quic::QuicConfig& config,
@@ -54,7 +54,7 @@ class QuicTransportOWTServerImpl
       base::Thread* io_thread,
       base::Thread* event_thread);
 
-  ~QuicTransportOWTServerImpl() override;
+  ~QuicTransportOwtServerImpl() override;
 
   //Implement quic::QuicTransportServerInterface
   // Start listening on the specified address. Returns an error code.
@@ -63,8 +63,8 @@ class QuicTransportOWTServerImpl
   void Stop() override;
   void SetVisitor(owt::quic::QuicTransportServerInterface::Visitor* visitor) override;
 
-  //Implement quic::QuicTransportOWTDispatcher::Visitor
-  void OnSessionCreated(quic::QuicTransportOWTServerSession* session) override;
+  //Implement quic::QuicTransportOwtDispatcher::Visitor
+  void OnSessionCreated(quic::QuicTransportOwtServerSession* session) override;
   void OnSessionClosed(quic::QuicConnectionId sessionId) override;
 
   // Start reading on the socket. On asynchronous reads, this registers
@@ -75,7 +75,7 @@ class QuicTransportOWTServerImpl
   // continues the read loop.
   void OnReadComplete(int result);
 
-  quic::QuicTransportOWTDispatcher* dispatcher() { return dispatcher_.get(); }
+  quic::QuicTransportOwtDispatcher* dispatcher() { return dispatcher_.get(); }
 
   IPEndPoint server_address() const { return server_address_; }
 
@@ -87,7 +87,7 @@ class QuicTransportOWTServerImpl
   void StartOnCurrentThread();
   void StopOnCurrentThread();
   void ScheduleReadPackets();
-  void NewSessionCreated(quic::QuicTransportOWTServerSession* session);
+  void NewSessionCreated(quic::QuicTransportOwtServerSession* session);
   void SessionClosed(quic::QuicConnectionId sessionId);
 
   const int port_;
@@ -95,7 +95,7 @@ class QuicTransportOWTServerImpl
   quic::QuicVersionManager version_manager_;
 
   // Accepts data from the framer and demuxes clients to sessions.
-  std::unique_ptr<quic::QuicTransportOWTDispatcher> dispatcher_;
+  std::unique_ptr<quic::QuicTransportOwtDispatcher> dispatcher_;
 
   // Used by the helper_ to time alarms.
   quic::QuicChromiumClock clock_;
@@ -143,9 +143,9 @@ class QuicTransportOWTServerImpl
 
   quic::DeterministicConnectionIdGenerator connection_id_generator_;
 
-  base::WeakPtrFactory<QuicTransportOWTServerImpl> weak_factory_;
+  base::WeakPtrFactory<QuicTransportOwtServerImpl> weak_factory_;
 
-  //DISALLOW_COPY_AND_ASSIGN(QuicTransportOWTServerImpl);
+  //DISALLOW_COPY_AND_ASSIGN(QuicTransportOwtServerImpl);
 };
 
 }  // namespace net

@@ -17,7 +17,7 @@ namespace quic {
 class QuicConnection;
 class QuicServerId;
 
-class QuicTransportOWTClientSession
+class QuicTransportOwtClientSession
     : public QuicSession,
       public QuicCryptoClientStream::ProofHandler {
  public:
@@ -30,7 +30,7 @@ class QuicTransportOWTClientSession
 
     virtual void OnConnectionClosed(char*, size_t len) = 0;
     // Called when new incoming stream created
-    virtual void OnIncomingNewStream(QuicTransportOWTStreamImpl* stream) = 0;
+    virtual void OnIncomingNewStream(QuicTransportOwtStreamImpl* stream) = 0;
     virtual void OnStreamClosed(uint32_t id) = 0;
 
    protected:
@@ -39,7 +39,7 @@ class QuicTransportOWTClientSession
 
   // Takes ownership of |connection|. Caller retains ownership of
   // |promised_by_url|.
-  QuicTransportOWTClientSession(QuicConnection* connection,
+  QuicTransportOwtClientSession(QuicConnection* connection,
                         QuicSession::Visitor* visitor,
                         const QuicConfig& config,
                         const ParsedQuicVersionVector& supported_versions,
@@ -47,9 +47,9 @@ class QuicTransportOWTClientSession
                         QuicCryptoClientConfig* crypto_config,
                         base::SingleThreadTaskRunner* io_runner,
                         base::SingleThreadTaskRunner* event_runner);
-  QuicTransportOWTClientSession(const QuicTransportOWTClientSession&) = delete;
-  QuicTransportOWTClientSession& operator=(const QuicTransportOWTClientSession&) = delete;
-  ~QuicTransportOWTClientSession() override;
+  QuicTransportOwtClientSession(const QuicTransportOwtClientSession&) = delete;
+  QuicTransportOwtClientSession& operator=(const QuicTransportOwtClientSession&) = delete;
+  ~QuicTransportOwtClientSession() override;
   // Set up the QuicRawClientSession. Must be called prior to use.
   void Initialize() override;
 
@@ -105,10 +105,10 @@ class QuicTransportOWTClientSession
 
  protected:
   // QuicSession methods:
-  QuicTransportOWTStreamImpl* CreateIncomingStream(QuicStreamId id) override;
+  QuicTransportOwtStreamImpl* CreateIncomingStream(QuicStreamId id) override;
   // QuicRawStream* CreateIncomingStream(PendingStream pending) override;
   // If an outgoing stream can be created, return true.
-  QuicTransportOWTStreamImpl* CreateIncomingStream(PendingStream* pending) override;
+  QuicTransportOwtStreamImpl* CreateIncomingStream(PendingStream* pending) override;
   bool ShouldCreateOutgoingBidirectionalStream();
   bool ShouldCreateOutgoingUnidirectionalStream();
 

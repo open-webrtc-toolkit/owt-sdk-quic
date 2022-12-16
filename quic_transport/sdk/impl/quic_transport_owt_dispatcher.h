@@ -13,7 +13,7 @@
 
 namespace quic {
 
-class QuicTransportOWTDispatcher : public QuicDispatcher {
+class QuicTransportOwtDispatcher : public QuicDispatcher {
  public:
   // Visitor receives callbacks from the QuicRawDispatcher.
   class QUIC_EXPORT_PRIVATE Visitor {
@@ -23,14 +23,14 @@ class QuicTransportOWTDispatcher : public QuicDispatcher {
     Visitor& operator=(const Visitor&) = delete;
 
     // Called when new session created
-    virtual void OnSessionCreated(QuicTransportOWTServerSession* session) = 0;
+    virtual void OnSessionCreated(QuicTransportOwtServerSession* session) = 0;
     virtual void OnSessionClosed(QuicConnectionId server_connection_id) = 0;
 
    protected:
     virtual ~Visitor() {}
   };
 
-  QuicTransportOWTDispatcher(
+  QuicTransportOwtDispatcher(
       const QuicConfig* config,
       const QuicCryptoServerConfig* crypto_config,
       QuicVersionManager* version_manager,
@@ -42,7 +42,7 @@ class QuicTransportOWTDispatcher : public QuicDispatcher {
       base::SingleThreadTaskRunner* io_runner,
       base::SingleThreadTaskRunner* event_runner);
 
-  ~QuicTransportOWTDispatcher() override;
+  ~QuicTransportOwtDispatcher() override;
 
   //Implement QuicSession::Visitor
   // Called when the connection is closed after the streams have been closed.

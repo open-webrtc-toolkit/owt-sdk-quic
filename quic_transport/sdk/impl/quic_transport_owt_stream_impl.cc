@@ -12,7 +12,7 @@
 
 namespace quic {
 
-QuicTransportOWTStreamImpl::QuicTransportOWTStreamImpl(
+QuicTransportOwtStreamImpl::QuicTransportOwtStreamImpl(
     QuicStreamId id,
     QuicSession* session,
     StreamType type,
@@ -25,7 +25,7 @@ QuicTransportOWTStreamImpl::QuicTransportOWTStreamImpl(
 
 }
 
-QuicTransportOWTStreamImpl::QuicTransportOWTStreamImpl(
+QuicTransportOwtStreamImpl::QuicTransportOwtStreamImpl(
     PendingStream* pending,
     QuicSession* session,
     StreamType type,
@@ -36,42 +36,42 @@ QuicTransportOWTStreamImpl::QuicTransportOWTStreamImpl(
       //event_runner_(event_runner),
       visitor_(nullptr) {}
 
-QuicTransportOWTStreamImpl::~QuicTransportOWTStreamImpl() {}
+QuicTransportOwtStreamImpl::~QuicTransportOwtStreamImpl() {}
 
-uint32_t QuicTransportOWTStreamImpl::Id() const {
+uint32_t QuicTransportOwtStreamImpl::Id() const {
   return id();
 }
 
-void QuicTransportOWTStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterface::Visitor* visitor) {
-  printf("QuicTransportOWTStreamImpl::SetVisitor\n");
+void QuicTransportOwtStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterface::Visitor* visitor) {
+  printf("QuicTransportOwtStreamImpl::SetVisitor\n");
   visitor_ = visitor; 
 }
 
-void QuicTransportOWTStreamImpl::CloseOnCurrentThread() {
+void QuicTransportOwtStreamImpl::CloseOnCurrentThread() {
   // TODO: Post to IO runner.
   Reset(QUIC_STREAM_CANCELLED);
 }
 
-void QuicTransportOWTStreamImpl::Close() {
+void QuicTransportOwtStreamImpl::Close() {
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTStreamImpl::CloseOnCurrentThread, base::Unretained(this)));
+      base::BindOnce(&QuicTransportOwtStreamImpl::CloseOnCurrentThread, base::Unretained(this)));
 }
 
-void QuicTransportOWTStreamImpl::SendData(char* data, size_t len) {
+void QuicTransportOwtStreamImpl::SendData(char* data, size_t len) {
   std::string s_data(data, len);
   task_runner_->PostTask(FROM_HERE,
-          base::BindOnce(&QuicTransportOWTStreamImpl::SendDataOnCurrentThread,
+          base::BindOnce(&QuicTransportOwtStreamImpl::SendDataOnCurrentThread,
               base::Unretained(this), s_data));
 }
 
-void QuicTransportOWTStreamImpl::SendDataOnCurrentThread(const std::string& data) {
+void QuicTransportOwtStreamImpl::SendDataOnCurrentThread(const std::string& data) {
   if (!write_side_closed()) {
     WriteOrBufferData(data, false, nullptr);
   }
 }
 
-void QuicTransportOWTStreamImpl::processData() {
+void QuicTransportOwtStreamImpl::processData() {
   while (sequencer()->HasBytesToRead()) {
     struct iovec iov;
     if (sequencer()->GetReadableRegions(&iov, 1) == 0) {
@@ -101,10 +101,10 @@ void QuicTransportOWTStreamImpl::processData() {
   }
 }
 
-void QuicTransportOWTStreamImpl::OnDataAvailable() {
+void QuicTransportOwtStreamImpl::OnDataAvailable() {
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTStreamImpl::processData, base::Unretained(this)));
+      base::BindOnce(&QuicTransportOwtStreamImpl::processData, base::Unretained(this)));
 }
 
 }  // namespace quic

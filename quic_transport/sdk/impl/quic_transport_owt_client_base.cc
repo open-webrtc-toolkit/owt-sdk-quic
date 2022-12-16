@@ -13,7 +13,7 @@ using std::string;
 
 namespace quic {
 
-QuicTransportOWTClientBase::QuicTransportOWTClientBase(
+QuicTransportOwtClientBase::QuicTransportOwtClientBase(
     const QuicServerId& server_id,
     const ParsedQuicVersionVector& supported_versions,
     const QuicConfig& config,
@@ -35,46 +35,46 @@ QuicTransportOWTClientBase::QuicTransportOWTClientBase(
       task_runner_(io_runner),
       event_runner_(event_runner) {}
 
-QuicTransportOWTClientBase::~QuicTransportOWTClientBase() {
+QuicTransportOwtClientBase::~QuicTransportOwtClientBase() {
   // If we own something. We need to explicitly kill
   // the session before something goes out of scope.
   ResetSession();
 }
 
-QuicTransportOWTClientSession* QuicTransportOWTClientBase::client_session() {
-  return static_cast<QuicTransportOWTClientSession*>(QuicClientBase::session());
+QuicTransportOwtClientSession* QuicTransportOwtClientBase::client_session() {
+  return static_cast<QuicTransportOwtClientSession*>(QuicClientBase::session());
 }
 
-void QuicTransportOWTClientBase::InitializeSession() {
+void QuicTransportOwtClientBase::InitializeSession() {
   client_session()->Initialize();
   client_session()->CryptoConnect();
 }
 
-std::unique_ptr<QuicSession> QuicTransportOWTClientBase::CreateQuicClientSession(
+std::unique_ptr<QuicSession> QuicTransportOwtClientBase::CreateQuicClientSession(
     const quic::ParsedQuicVersionVector& supported_versions,
     QuicConnection* connection) {
-  return std::make_unique<QuicTransportOWTClientSession>(
+  return std::make_unique<QuicTransportOwtClientSession>(
       connection, nullptr, *config(), supported_versions, server_id(),
       crypto_config(), task_runner_, event_runner_);
 }
 
-bool QuicTransportOWTClientBase::EarlyDataAccepted() {
+bool QuicTransportOwtClientBase::EarlyDataAccepted() {
   return client_session()->EarlyDataAccepted();
 }
 
-bool QuicTransportOWTClientBase::ReceivedInchoateReject() {
+bool QuicTransportOwtClientBase::ReceivedInchoateReject() {
   return client_session()->ReceivedInchoateReject();
 }
 
-int QuicTransportOWTClientBase::GetNumSentClientHellosFromSession() {
+int QuicTransportOwtClientBase::GetNumSentClientHellosFromSession() {
   return client_session()->GetNumSentClientHellos();
 }
 
-int QuicTransportOWTClientBase::GetNumReceivedServerConfigUpdatesFromSession() {
+int QuicTransportOwtClientBase::GetNumReceivedServerConfigUpdatesFromSession() {
   return client_session()->GetNumReceivedServerConfigUpdates();
 }
 
-bool QuicTransportOWTClientBase::HasActiveRequests() {
+bool QuicTransportOwtClientBase::HasActiveRequests() {
   return client_session()->HasActiveRequestStreams();
 }
 

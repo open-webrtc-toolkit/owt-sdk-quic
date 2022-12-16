@@ -171,7 +171,7 @@ owt::quic::QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTra
             net::IPAddress ip = net::IPAddress::IPv6AllZeros();
             ::quic::QuicConfig config;
 
-            *result = new net::QuicTransportOWTServerImpl(
+            *result = new net::QuicTransportOwtServerImpl(
                 port, std::move(proof_source), config, 
                 ::quic::QuicCryptoServerConfig::ConfigOptions(),
                 ::quic::AllSupportedVersions(),
@@ -233,7 +233,7 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
                                          net::PRIVACY_MODE_DISABLED);
             ::quic::ParsedQuicVersionVector versions = ::quic::CurrentSupportedVersions();
 
-            *result = new net::QuicTransportOWTClientImpl(
+            *result = new net::QuicTransportOwtClientImpl(
                 ::quic::QuicSocketAddress(ip_addr, port), server_id, versions, std::move(proof_verifier),
                 io_thread, event_thread);
             event->Signal();

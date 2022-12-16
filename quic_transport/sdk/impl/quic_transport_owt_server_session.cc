@@ -17,7 +17,7 @@
 
 namespace quic {
 
-QuicTransportOWTServerSession::QuicTransportOWTServerSession(
+QuicTransportOwtServerSession::QuicTransportOwtServerSession(
     QuicConnection* connection,
     QuicSession::Visitor* visitor,
     const QuicConfig& config,
@@ -36,7 +36,7 @@ QuicTransportOWTServerSession::QuicTransportOWTServerSession(
       visitor_(nullptr) {
 }
 
-QuicTransportOWTServerSession::~QuicTransportOWTServerSession() {
+QuicTransportOwtServerSession::~QuicTransportOwtServerSession() {
   // Set the streams' session pointers in closed and dynamic stream lists
   // to null to avoid subsequent use of this session.
   // for (auto& stream : *closed_streams()) {
@@ -49,26 +49,26 @@ QuicTransportOWTServerSession::~QuicTransportOWTServerSession() {
   //   static_cast<QuicRawStream*>(kv.second.get())->ClearSession();
   // }
   //delete visitor_;
-  printf("We are in ~QuicTransportOWTServerSession\n");
+  printf("We are in ~QuicTransportOwtServerSession\n");
   //visitor_ = nullptr;
 }
 
-void QuicTransportOWTServerSession::Initialize() {
+void QuicTransportOwtServerSession::Initialize() {
   crypto_stream_ =
       CreateQuicCryptoServerStream(crypto_config_, compressed_certs_cache_);
   QuicSession::Initialize();
 }
 
-QuicCryptoServerStreamBase* QuicTransportOWTServerSession::GetMutableCryptoStream() {
+QuicCryptoServerStreamBase* QuicTransportOwtServerSession::GetMutableCryptoStream() {
   return crypto_stream_.get();
 }
 
-const QuicCryptoServerStreamBase* QuicTransportOWTServerSession::GetCryptoStream()
+const QuicCryptoServerStreamBase* QuicTransportOwtServerSession::GetCryptoStream()
     const {
   return crypto_stream_.get();
 }
 
-void QuicTransportOWTServerSession::OnConnectionClosed(
+void QuicTransportOwtServerSession::OnConnectionClosed(
     const QuicConnectionCloseFrame& frame,
     ConnectionCloseSource source) {
   QuicSession::OnConnectionClosed(frame, source);
@@ -79,34 +79,34 @@ void QuicTransportOWTServerSession::OnConnectionClosed(
   }
 }
 
-void QuicTransportOWTServerSession::OnStreamClosed(quic::QuicStreamId stream_id) {
+void QuicTransportOwtServerSession::OnStreamClosed(quic::QuicStreamId stream_id) {
   if (visitor_) {
     visitor_->OnStreamClosed(stream_id);
   }
 }
 
-void QuicTransportOWTServerSession::StopOnCurrentThread() {
+void QuicTransportOwtServerSession::StopOnCurrentThread() {
   connection()->CloseConnection(
         quic::QUIC_PEER_GOING_AWAY, "Shutting down",
         quic::ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
 }
 
-void QuicTransportOWTServerSession::Stop() {
+void QuicTransportOwtServerSession::Stop() {
   if (task_runner_->BelongsToCurrentThread()) {
-    printf("QuicTransportOWTServerSession::Stop in current thread\n");
+    printf("QuicTransportOwtServerSession::Stop in current thread\n");
     return StopOnCurrentThread();
   }
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTServerSession::StopOnCurrentThread, base::Unretained(this)));
+      base::BindOnce(&QuicTransportOwtServerSession::StopOnCurrentThread, base::Unretained(this)));
 }
 
-void QuicTransportOWTServerSession::SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) { 
+void QuicTransportOwtServerSession::SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) { 
   visitor_ = visitor;
 }
 
-const char* QuicTransportOWTServerSession::Id() {
-  QUIC_DLOG(INFO) << "QuicTransportOWTServerSession Get session id:" << connection()->connection_id().ToString();
+const char* QuicTransportOwtServerSession::Id() {
+  QUIC_DLOG(INFO) << "QuicTransportOwtServerSession Get session id:" << connection()->connection_id().ToString();
   const std::string& session_id_str =
       connection()->connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];
@@ -115,22 +115,22 @@ const char* QuicTransportOWTServerSession::Id() {
   return id;
 }
 
-void QuicTransportOWTServerSession::CloseStreamOnCurrentThread(uint32_t id) {
-  printf("QuicTransportOWTServerSession::CloseStreamOnCurrentThread close stream:%d\n", id);
+void QuicTransportOwtServerSession::CloseStreamOnCurrentThread(uint32_t id) {
+  printf("QuicTransportOwtServerSession::CloseStreamOnCurrentThread close stream:%d\n", id);
   ResetStream(id, QUIC_STREAM_CANCELLED);
 }
 
-void QuicTransportOWTServerSession::CloseStream(uint32_t id) {
+void QuicTransportOwtServerSession::CloseStream(uint32_t id) {
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTServerSession::CloseStreamOnCurrentThread, base::Unretained(this), id));
+      base::BindOnce(&QuicTransportOwtServerSession::CloseStreamOnCurrentThread, base::Unretained(this), id));
 }
 
-uint8_t QuicTransportOWTServerSession::length() {
+uint8_t QuicTransportOwtServerSession::length() {
   return connection()->connection_id().length();
 }
 
-owt::quic::QuicTransportStreamInterface* QuicTransportOWTServerSession::CreateBidirectionalStream() {
+owt::quic::QuicTransportStreamInterface* QuicTransportOwtServerSession::CreateBidirectionalStream() {
   if (!connection()->connected()) {
     return nullptr;
   }
@@ -141,14 +141,14 @@ owt::quic::QuicTransportStreamInterface* QuicTransportOWTServerSession::CreateBi
   return stream;
 }
 
-void QuicTransportOWTServerSession::CloseConnectionWithDetails(QuicErrorCode error,
+void QuicTransportOwtServerSession::CloseConnectionWithDetails(QuicErrorCode error,
                                                  const std::string& details) {
   connection()->CloseConnection(
       error, details, ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
 }
 
 
-bool QuicTransportOWTServerSession::ShouldCreateIncomingStream(QuicStreamId id) {
+bool QuicTransportOwtServerSession::ShouldCreateIncomingStream(QuicStreamId id) {
   if (!connection()->connected()) {
     QUIC_BUG(quic_bug_10393_1) << "ShouldCreateIncomingStream called when disconnected";
     return false;
@@ -165,7 +165,7 @@ bool QuicTransportOWTServerSession::ShouldCreateIncomingStream(QuicStreamId id) 
   return true;
 }
 
-bool QuicTransportOWTServerSession::ShouldCreateOutgoingBidirectionalStream() {
+bool QuicTransportOwtServerSession::ShouldCreateOutgoingBidirectionalStream() {
   if (!connection()->connected()) {
     QUIC_BUG(quic_bug_12513_2)
         << "ShouldCreateOutgoingBidirectionalStream called when disconnected";
@@ -180,7 +180,7 @@ bool QuicTransportOWTServerSession::ShouldCreateOutgoingBidirectionalStream() {
   return CanOpenNextOutgoingBidirectionalStream();
 }
 
-bool QuicTransportOWTServerSession::ShouldCreateOutgoingUnidirectionalStream() {
+bool QuicTransportOwtServerSession::ShouldCreateOutgoingUnidirectionalStream() {
   if (!connection()->connected()) {
     QUIC_BUG(quic_bug_12513_3)
         << "ShouldCreateOutgoingUnidirectionalStream called when disconnected";
@@ -196,19 +196,19 @@ bool QuicTransportOWTServerSession::ShouldCreateOutgoingUnidirectionalStream() {
 }
 
 std::unique_ptr<QuicCryptoServerStreamBase>
-QuicTransportOWTServerSession::CreateQuicCryptoServerStream(
+QuicTransportOwtServerSession::CreateQuicCryptoServerStream(
     const QuicCryptoServerConfig* crypto_config,
     QuicCompressedCertsCache* compressed_certs_cache) {
   return CreateCryptoServerStream(crypto_config, compressed_certs_cache, this,
                                   stream_helper());
 }
 
-QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStreamOnCurrentThread(QuicStreamId id) {
+QuicTransportOwtStreamImpl* QuicTransportOwtServerSession::CreateIncomingStreamOnCurrentThread(QuicStreamId id) {
   if (!ShouldCreateIncomingStream(id)) {
     return nullptr;
   }
 
-  QuicTransportOWTStreamImpl* stream = new QuicTransportOWTStreamImpl(
+  QuicTransportOwtStreamImpl* stream = new QuicTransportOwtStreamImpl(
       id, this, BIDIRECTIONAL, task_runner_, event_runner_);
   ActivateStream(absl::WrapUnique(stream));
   if (visitor_) {
@@ -218,16 +218,16 @@ QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStreamO
 }
 
 
-QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(QuicStreamId id) {
-  QuicTransportOWTStreamImpl* result(nullptr);
+QuicTransportOwtStreamImpl* QuicTransportOwtServerSession::CreateIncomingStream(QuicStreamId id) {
+  QuicTransportOwtStreamImpl* result(nullptr);
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](QuicTransportOWTServerSession* session,
+          [](QuicTransportOwtServerSession* session,
              QuicStreamId& id,
-             QuicTransportOWTStreamImpl** result, base::WaitableEvent* event) {
+             QuicTransportOwtStreamImpl** result, base::WaitableEvent* event) {
             *result = session->CreateIncomingStreamOnCurrentThread(id);
             event->Signal();
           },
@@ -237,9 +237,9 @@ QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(
   return result;
 }
 
-QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(
+QuicTransportOwtStreamImpl* QuicTransportOwtServerSession::CreateIncomingStream(
     PendingStream* pending) {
-  QuicTransportOWTStreamImpl* stream = new QuicTransportOWTStreamImpl(
+  QuicTransportOwtStreamImpl* stream = new QuicTransportOwtStreamImpl(
       pending, this, BIDIRECTIONAL, task_runner_, event_runner_);
   ActivateStream(absl::WrapUnique(stream));
   if (visitor_) {
@@ -257,7 +257,7 @@ QuicTransportOWTStreamImpl* QuicTransportOWTServerSession::CreateIncomingStream(
 // }
 
 owt::quic::QuicTransportStreamInterface*
-QuicTransportOWTServerSession::CreateOutgoingBidirectionalStream() {
+QuicTransportOwtServerSession::CreateOutgoingBidirectionalStream() {
   
   owt::quic::QuicTransportStreamInterface* result(nullptr);
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
@@ -265,7 +265,7 @@ QuicTransportOWTServerSession::CreateOutgoingBidirectionalStream() {
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](QuicTransportOWTServerSession* session,
+          [](QuicTransportOwtServerSession* session,
              owt::quic::QuicTransportStreamInterface** result, base::WaitableEvent* event) {
             *result = session->CreateBidirectionalStreamOnCurrentThread();
             event->Signal();
@@ -278,13 +278,13 @@ QuicTransportOWTServerSession::CreateOutgoingBidirectionalStream() {
 }
 
 owt::quic::QuicTransportStreamInterface*
-QuicTransportOWTServerSession::CreateBidirectionalStreamOnCurrentThread() {
+QuicTransportOwtServerSession::CreateBidirectionalStreamOnCurrentThread() {
   if (!ShouldCreateOutgoingBidirectionalStream()) {
     return nullptr;
   }
 
-  std::unique_ptr<QuicTransportOWTStreamImpl> stream =
-        std::make_unique<QuicTransportOWTStreamImpl>(GetNextOutgoingBidirectionalStreamId(),
+  std::unique_ptr<QuicTransportOwtStreamImpl> stream =
+        std::make_unique<QuicTransportOwtStreamImpl>(GetNextOutgoingBidirectionalStreamId(),
                                         this, BIDIRECTIONAL, task_runner_, event_runner_);
     owt::quic::QuicTransportStreamInterface* stream_ptr = stream.get();
     ActivateStream(std::move(stream));
@@ -293,13 +293,13 @@ QuicTransportOWTServerSession::CreateBidirectionalStreamOnCurrentThread() {
 }
 
 owt::quic::QuicTransportStreamInterface*
-QuicTransportOWTServerSession::CreateOutgoingUnidirectionalStream() {
+QuicTransportOwtServerSession::CreateOutgoingUnidirectionalStream() {
   if (!ShouldCreateOutgoingUnidirectionalStream()) {
     return nullptr;
   }
 
-  std::unique_ptr<QuicTransportOWTStreamImpl> stream =
-        std::make_unique<QuicTransportOWTStreamImpl>(GetNextOutgoingUnidirectionalStreamId(),
+  std::unique_ptr<QuicTransportOwtStreamImpl> stream =
+        std::make_unique<QuicTransportOwtStreamImpl>(GetNextOutgoingUnidirectionalStreamId(),
                                         this, WRITE_UNIDIRECTIONAL, task_runner_, event_runner_);
     owt::quic::QuicTransportStreamInterface* stream_ptr = stream.get();
     ActivateStream(std::move(stream));
@@ -308,7 +308,7 @@ QuicTransportOWTServerSession::CreateOutgoingUnidirectionalStream() {
 }
 
 // True if there are open dynamic streams.
-bool QuicTransportOWTServerSession::ShouldKeepConnectionAlive() const {
+bool QuicTransportOwtServerSession::ShouldKeepConnectionAlive() const {
   //return GetNumOpenDynamicStreams() > 0;
   return true;
 }

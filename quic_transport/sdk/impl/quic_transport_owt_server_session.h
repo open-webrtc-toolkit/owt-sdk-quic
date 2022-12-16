@@ -21,12 +21,12 @@
 namespace quic {
 
 // A QUIC session with raw stream.
-class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
+class QUIC_EXPORT_PRIVATE QuicTransportOwtServerSession
     : public QuicSession,
       public owt::quic::QuicTransportSessionInterface {
  public:
   // Does not take ownership of |connection| or |visitor|.
-  QuicTransportOWTServerSession(QuicConnection* connection,
+  QuicTransportOwtServerSession(QuicConnection* connection,
                  QuicSession::Visitor* visitor,
                  const QuicConfig& config,
                  const ParsedQuicVersionVector& supported_versions,
@@ -35,10 +35,10 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
                  QuicCompressedCertsCache* compressed_certs_cache,
                  base::SingleThreadTaskRunner* io_runner,
                  base::SingleThreadTaskRunner* event_runner);
-  QuicTransportOWTServerSession(const QuicTransportOWTServerSession&) = delete;
-  QuicTransportOWTServerSession& operator=(const QuicTransportOWTServerSession&) = delete;
+  QuicTransportOwtServerSession(const QuicTransportOwtServerSession&) = delete;
+  QuicTransportOwtServerSession& operator=(const QuicTransportOwtServerSession&) = delete;
 
-  ~QuicTransportOWTServerSession() override;
+  ~QuicTransportOwtServerSession() override;
 
   void Initialize() override;
 
@@ -69,8 +69,8 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
   // Override CreateIncomingStream(), CreateOutgoingBidirectionalStream() and
   // CreateOutgoingUnidirectionalStream() with QuicSpdyStream return type to
   // make sure that all data streams are QuicSpdyStreams.
-  QuicTransportOWTStreamImpl* CreateIncomingStream(QuicStreamId id) override;
-  QuicTransportOWTStreamImpl* CreateIncomingStream(PendingStream* pending) override;
+  QuicTransportOwtStreamImpl* CreateIncomingStream(QuicStreamId id) override;
+  QuicTransportOwtStreamImpl* CreateIncomingStream(PendingStream* pending) override;
 
   virtual owt::quic::QuicTransportStreamInterface* CreateOutgoingBidirectionalStream();
   virtual owt::quic::QuicTransportStreamInterface* CreateOutgoingUnidirectionalStream();
@@ -111,7 +111,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
   // Called when the size of the compressed frame payload is available.
   void OnCompressedFrameSize(size_t frame_len);
 
-  QuicTransportOWTStreamImpl* CreateIncomingStreamOnCurrentThread(QuicStreamId id);
+  QuicTransportOwtStreamImpl* CreateIncomingStreamOnCurrentThread(QuicStreamId id);
 
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
 

@@ -35,14 +35,14 @@ using std::string;
 
 namespace net {
 
-QuicTransportOWTClientImpl::QuicTransportOWTClientImpl(
+QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     quic::QuicSocketAddress server_address,
     const quic::QuicServerId& server_id,
     const quic::ParsedQuicVersionVector& supported_versions,
     std::unique_ptr<quic::ProofVerifier> proof_verifier,
     base::Thread* io_thread,
     base::Thread* event_thread)
-    : quic::QuicTransportOWTClientBase(
+    : quic::QuicTransportOwtClientBase(
           server_id,
           supported_versions,
           quic::QuicConfig(),
@@ -69,7 +69,7 @@ QuicTransportOWTClientImpl::QuicTransportOWTClientImpl(
   set_server_address(server_address);
 }
 
-QuicTransportOWTClientImpl::~QuicTransportOWTClientImpl() {
+QuicTransportOwtClientImpl::~QuicTransportOwtClientImpl() {
   if (connected()) {
     session()->connection()->CloseConnection(
         quic::QUIC_PEER_GOING_AWAY, "Shutting down",
@@ -77,24 +77,24 @@ QuicTransportOWTClientImpl::~QuicTransportOWTClientImpl() {
   }
 }
 
-QuicChromiumConnectionHelper* QuicTransportOWTClientImpl::CreateQuicConnectionHelper() {
+QuicChromiumConnectionHelper* QuicTransportOwtClientImpl::CreateQuicConnectionHelper() {
   return new QuicChromiumConnectionHelper(&clock_,
                                           quic::QuicRandom::GetInstance());
 }
 
-QuicClientMessageLooplNetworkHelper* QuicTransportOWTClientImpl::CreateNetworkHelper() {
+QuicClientMessageLooplNetworkHelper* QuicTransportOwtClientImpl::CreateNetworkHelper() {
   created_helper_ = new QuicClientMessageLooplNetworkHelper(&clock_, this);
   return created_helper_;
 }
 
-void QuicTransportOWTClientImpl::Start() {
+void QuicTransportOwtClientImpl::Start() {
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTClientImpl::StartOnCurrentThread, weak_factory_.GetWeakPtr()));
+      base::BindOnce(&QuicTransportOwtClientImpl::StartOnCurrentThread, weak_factory_.GetWeakPtr()));
       return ;
 }
 
-void QuicTransportOWTClientImpl::StartOnCurrentThread() {
+void QuicTransportOwtClientImpl::StartOnCurrentThread() {
   if (!Initialize()) {
     std::cerr << "Failed to initialize client." << std::endl;
     if(visitor_) {
@@ -119,56 +119,56 @@ void QuicTransportOWTClientImpl::StartOnCurrentThread() {
   std::cerr << "client connect to quic server succeed in thread:" << base::PlatformThread::CurrentId() << std::endl;
 }
 
-void QuicTransportOWTClientImpl::Stop() {
+void QuicTransportOwtClientImpl::Stop() {
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTClientImpl::StopOnCurrentThread, weak_factory_.GetWeakPtr()));
+      base::BindOnce(&QuicTransportOwtClientImpl::StopOnCurrentThread, weak_factory_.GetWeakPtr()));
       return ;
 }
 
-void QuicTransportOWTClientImpl::StopOnCurrentThread() {
+void QuicTransportOwtClientImpl::StopOnCurrentThread() {
   Disconnect();
 }
 
-int QuicTransportOWTClientImpl::SocketPort() {
+int QuicTransportOwtClientImpl::SocketPort() {
   return created_helper_->GetLatestClientAddress().port();
 }
 
-void QuicTransportOWTClientImpl::SetVisitor(owt::quic::QuicTransportClientInterface::Visitor* visitor) {
+void QuicTransportOwtClientImpl::SetVisitor(owt::quic::QuicTransportClientInterface::Visitor* visitor) {
   visitor_ = visitor;
 }
 
-void QuicTransportOWTClientImpl::OnConnectionClosed(char* id, size_t len) {
+void QuicTransportOwtClientImpl::OnConnectionClosed(char* id, size_t len) {
   if(visitor_) {
     visitor_->OnConnectionClosed(id, len);
   }
 }
 
-void QuicTransportOWTClientImpl::NewStreamCreated(quic::QuicTransportOWTStreamImpl* stream) {
+void QuicTransportOwtClientImpl::NewStreamCreated(quic::QuicTransportOwtStreamImpl* stream) {
   if(visitor_) {
     visitor_->OnIncomingStream(stream);
   }
 }
 
-void QuicTransportOWTClientImpl::OnIncomingNewStream(quic::QuicTransportOWTStreamImpl* stream) {
+void QuicTransportOwtClientImpl::OnIncomingNewStream(quic::QuicTransportOwtStreamImpl* stream) {
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](QuicTransportOWTClientImpl* client,
-             quic::QuicTransportOWTStreamImpl* stream) {
+          [](QuicTransportOwtClientImpl* client,
+             quic::QuicTransportOwtStreamImpl* stream) {
             client->NewStreamCreated(stream);
           },
           base::Unretained(this), base::Unretained(stream)));
 }
 
-void QuicTransportOWTClientImpl::OnStreamClosed(uint32_t id) {
+void QuicTransportOwtClientImpl::OnStreamClosed(uint32_t id) {
   if(visitor_) {
     visitor_->OnStreamClosed(id);
   }
 }
 
-const char* QuicTransportOWTClientImpl::Id() {
-  std::cerr << "QuicTransportOWTClientImpl Get client session id:" << client_session()->connection()->connection_id().ToString();
+const char* QuicTransportOwtClientImpl::Id() {
+  std::cerr << "QuicTransportOwtClientImpl Get client session id:" << client_session()->connection()->connection_id().ToString();
   const std::string& session_id_str =
       client_session()->connection()->connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];
@@ -178,30 +178,30 @@ const char* QuicTransportOWTClientImpl::Id() {
 
 }
 
-void QuicTransportOWTClientImpl::CloseStreamOnCurrentThread(uint32_t id) {
-  printf("QuicTransportOWTClientImpl::CloseStreamOnCurrentThread close stream:%d\n", id);
+void QuicTransportOwtClientImpl::CloseStreamOnCurrentThread(uint32_t id) {
+  printf("QuicTransportOwtClientImpl::CloseStreamOnCurrentThread close stream:%d\n", id);
   session_->ResetStream(id, quic::QUIC_STREAM_CANCELLED);
 }
 
-void QuicTransportOWTClientImpl::CloseStream(uint32_t id) {
+void QuicTransportOwtClientImpl::CloseStream(uint32_t id) {
   event_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTClientImpl::CloseStreamOnCurrentThread, base::Unretained(this), id));
+      base::BindOnce(&QuicTransportOwtClientImpl::CloseStreamOnCurrentThread, base::Unretained(this), id));
 }
 
-uint8_t QuicTransportOWTClientImpl::length() {
+uint8_t QuicTransportOwtClientImpl::length() {
   return client_session()->connection()->client_connection_id().length();
 }
 
-owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidirectionalStream() {
-  std::cerr << "QuicTransportOWTClientImpl::CreateBidirectionalStream" << std::endl;
+owt::quic::QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateBidirectionalStream() {
+  std::cerr << "QuicTransportOwtClientImpl::CreateBidirectionalStream" << std::endl;
   owt::quic::QuicTransportStreamInterface* result(nullptr);
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](QuicTransportOWTClientImpl* client,
+          [](QuicTransportOwtClientImpl* client,
              owt::quic::QuicTransportStreamInterface** result, base::WaitableEvent* event) {
             *result = client->CreateBidirectionalStreamOnCurrentThread();
             event->Signal();
@@ -212,8 +212,8 @@ owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidir
   return result;
 }
 
-owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidirectionalStreamOnCurrentThread() {
-  std::cerr << "QuicTransportOWTClientImpl::CreateBidirectionalStreamOnCurrentThread" << std::endl;
+owt::quic::QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateBidirectionalStreamOnCurrentThread() {
+  std::cerr << "QuicTransportOwtClientImpl::CreateBidirectionalStreamOnCurrentThread" << std::endl;
   if (!connected()) {
     return nullptr;
   }
@@ -221,11 +221,11 @@ owt::quic::QuicTransportStreamInterface* QuicTransportOWTClientImpl::CreateBidir
   auto* stream = static_cast<owt::quic::QuicTransportStreamInterface*>(
       client_session()->CreateOutgoingBidirectionalStream());
  
-  std::cerr << "QuicTransportOWTClientImpl::CreateBidirectionalStreamOnCurrentThread succeed" << std::endl;
+  std::cerr << "QuicTransportOwtClientImpl::CreateBidirectionalStreamOnCurrentThread succeed" << std::endl;
   return stream;
 }
 
-QuicChromiumAlarmFactory* QuicTransportOWTClientImpl::CreateQuicAlarmFactory() {
+QuicChromiumAlarmFactory* QuicTransportOwtClientImpl::CreateQuicAlarmFactory() {
   return new QuicChromiumAlarmFactory(base::ThreadTaskRunnerHandle::Get().get(),
                                       &clock_);
 }

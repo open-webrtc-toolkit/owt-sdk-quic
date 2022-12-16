@@ -31,20 +31,20 @@ namespace net {
 class QuicChromiumAlarmFactory;
 class QuicChromiumConnectionHelper;
 
-class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
-                                   public quic::QuicTransportOWTClientSession::Visitor,
+class QuicTransportOwtClientImpl : public quic::QuicTransportOwtClientBase,
+                                   public quic::QuicTransportOwtClientSession::Visitor,
                                    public owt::quic::QuicTransportClientInterface {
  public:
 
   // Create a quic client, which will have events managed by the message loop.
-  QuicTransportOWTClientImpl(quic::QuicSocketAddress server_address,
+  QuicTransportOwtClientImpl(quic::QuicSocketAddress server_address,
                    const quic::QuicServerId& server_id,
                    const quic::ParsedQuicVersionVector& supported_versions,
                    std::unique_ptr<quic::ProofVerifier> proof_verifier,
                    base::Thread* io_thread,
                    base::Thread* event_thread);
 
-  ~QuicTransportOWTClientImpl() override;
+  ~QuicTransportOwtClientImpl() override;
 
   int SocketPort();
   void Start() override;
@@ -52,7 +52,7 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
   void SetVisitor(owt::quic::QuicTransportClientInterface::Visitor* visitor) override;
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
   void OnConnectionClosed(char*, size_t len) override;
-  void OnIncomingNewStream(quic::QuicTransportOWTStreamImpl* stream) override;
+  void OnIncomingNewStream(quic::QuicTransportOwtStreamImpl* stream) override;
   void OnStreamClosed(uint32_t id) override;
   const char* Id() override;
   uint8_t length() override;
@@ -66,7 +66,7 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
   void StartOnCurrentThread();
   void StopOnCurrentThread();
   void CloseStreamOnCurrentThread(uint32_t id);
-  void NewStreamCreated(quic::QuicTransportOWTStreamImpl* stream);
+  void NewStreamCreated(quic::QuicTransportOwtStreamImpl* stream);
 
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
   //  Used by |helper_| to time alarms.
@@ -78,11 +78,11 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
   QuicTransportClientInterface::Visitor* visitor_;
-  quic::QuicTransportOWTClientSession* session_;
+  quic::QuicTransportOwtClientSession* session_;
 
-  base::WeakPtrFactory<QuicTransportOWTClientImpl> weak_factory_;
+  base::WeakPtrFactory<QuicTransportOwtClientImpl> weak_factory_;
 
-  //DISALLOW_COPY_AND_ASSIGN(QuicTransportOWTClientImpl);
+  //DISALLOW_COPY_AND_ASSIGN(QuicTransportOwtClientImpl);
 };
 
 }  // namespace net

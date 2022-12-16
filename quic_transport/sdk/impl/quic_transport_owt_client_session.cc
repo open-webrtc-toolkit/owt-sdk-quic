@@ -13,7 +13,7 @@
 
 namespace quic {
 
-QuicTransportOWTClientSession::QuicTransportOWTClientSession(
+QuicTransportOwtClientSession::QuicTransportOwtClientSession(
     QuicConnection* connection,
     QuicSession::Visitor* visitor,
     const QuicConfig& config,
@@ -29,20 +29,20 @@ QuicTransportOWTClientSession::QuicTransportOWTClientSession(
       event_runner_(event_runner),
       respect_goaway_(false) {}
 
-QuicTransportOWTClientSession::~QuicTransportOWTClientSession() = default;
+QuicTransportOwtClientSession::~QuicTransportOwtClientSession() = default;
 
-void QuicTransportOWTClientSession::Initialize() {
+void QuicTransportOwtClientSession::Initialize() {
   crypto_stream_ = CreateQuicCryptoStream();
   QuicSession::Initialize();
 }
 
-void QuicTransportOWTClientSession::OnProofValid(
+void QuicTransportOwtClientSession::OnProofValid(
     const QuicCryptoClientConfig::CachedState& /*cached*/) {}
 
-void QuicTransportOWTClientSession::OnProofVerifyDetailsAvailable(
+void QuicTransportOwtClientSession::OnProofVerifyDetailsAvailable(
     const ProofVerifyDetails& /*verify_details*/) {}
 
-bool QuicTransportOWTClientSession::ShouldCreateOutgoingBidirectionalStream() {
+bool QuicTransportOwtClientSession::ShouldCreateOutgoingBidirectionalStream() {
   if (!crypto_stream_->encryption_established()) {
     QUIC_DLOG(INFO) << "Encryption not active so no outgoing stream created.";
     return false;
@@ -72,18 +72,18 @@ bool QuicTransportOWTClientSession::ShouldCreateOutgoingBidirectionalStream() {
   return true;
 }
 
-bool QuicTransportOWTClientSession::ShouldCreateOutgoingUnidirectionalStream() {
+bool QuicTransportOwtClientSession::ShouldCreateOutgoingUnidirectionalStream() {
   QUIC_BUG(quic_bug_10396_1) << "Try to create outgoing unidirectional client data streams";
   return false;
 }
 
 owt::quic::QuicTransportStreamInterface*
-QuicTransportOWTClientSession::CreateOutgoingBidirectionalStream() {
+QuicTransportOwtClientSession::CreateOutgoingBidirectionalStream() {
   if (!ShouldCreateOutgoingBidirectionalStream()) {
     return nullptr;
   }
-  std::unique_ptr<QuicTransportOWTStreamImpl> stream =
-        std::make_unique<QuicTransportOWTStreamImpl>(GetNextOutgoingBidirectionalStreamId(),
+  std::unique_ptr<QuicTransportOwtStreamImpl> stream =
+        std::make_unique<QuicTransportOwtStreamImpl>(GetNextOutgoingBidirectionalStreamId(),
                                         this, BIDIRECTIONAL, task_runner_, event_runner_);
   owt::quic::QuicTransportStreamInterface* stream_ptr = stream.get();
   ActivateStream(std::move(stream));
@@ -91,42 +91,42 @@ QuicTransportOWTClientSession::CreateOutgoingBidirectionalStream() {
 }
 
 owt::quic::QuicTransportStreamInterface*
-QuicTransportOWTClientSession::CreateOutgoingUnidirectionalStream() {
+QuicTransportOwtClientSession::CreateOutgoingUnidirectionalStream() {
   QUIC_BUG(quic_bug_10396_2) << "Try to create outgoing unidirectional client data streams";
   return nullptr;
 }
 
-QuicCryptoClientStreamBase* QuicTransportOWTClientSession::GetMutableCryptoStream() {
+QuicCryptoClientStreamBase* QuicTransportOwtClientSession::GetMutableCryptoStream() {
   return crypto_stream_.get();
 }
 
-const QuicCryptoClientStreamBase* QuicTransportOWTClientSession::GetCryptoStream()
+const QuicCryptoClientStreamBase* QuicTransportOwtClientSession::GetCryptoStream()
     const {
   return crypto_stream_.get();
 }
 
-void QuicTransportOWTClientSession::CryptoConnect() {
+void QuicTransportOwtClientSession::CryptoConnect() {
   DCHECK(flow_controller());
   crypto_stream_->CryptoConnect();
 }
 
-int QuicTransportOWTClientSession::GetNumSentClientHellos() const {
+int QuicTransportOwtClientSession::GetNumSentClientHellos() const {
   return crypto_stream_->num_sent_client_hellos();
 }
 
-int QuicTransportOWTClientSession::GetNumReceivedServerConfigUpdates() const {
+int QuicTransportOwtClientSession::GetNumReceivedServerConfigUpdates() const {
   return crypto_stream_->num_scup_messages_received();
 }
 
-bool QuicTransportOWTClientSession::EarlyDataAccepted() const {
+bool QuicTransportOwtClientSession::EarlyDataAccepted() const {
   return crypto_stream_->EarlyDataAccepted();
 }
 
-bool QuicTransportOWTClientSession::ReceivedInchoateReject() const {
+bool QuicTransportOwtClientSession::ReceivedInchoateReject() const {
   return crypto_stream_->ReceivedInchoateReject();
 }
 
-bool QuicTransportOWTClientSession::ShouldCreateIncomingStream(QuicStreamId id) {
+bool QuicTransportOwtClientSession::ShouldCreateIncomingStream(QuicStreamId id) {
   if (!connection()->connected()) {
     QUIC_BUG(quic_bug_10396_3) << "ShouldCreateIncomingStream called when disconnected";
     return false;
@@ -150,12 +150,12 @@ bool QuicTransportOWTClientSession::ShouldCreateIncomingStream(QuicStreamId id) 
   return true;
 }
 
-QuicTransportOWTStreamImpl* QuicTransportOWTClientSession::CreateIncomingStream(QuicStreamId id) {
+QuicTransportOwtStreamImpl* QuicTransportOwtClientSession::CreateIncomingStream(QuicStreamId id) {
   if (!ShouldCreateIncomingStream(id)) {
     return nullptr;
   }
 
-  QuicTransportOWTStreamImpl* stream = new QuicTransportOWTStreamImpl(
+  QuicTransportOwtStreamImpl* stream = new QuicTransportOwtStreamImpl(
       id, this, BIDIRECTIONAL, task_runner_, event_runner_);
   ActivateStream(absl::WrapUnique(stream));
   if (visitor_) {
@@ -164,9 +164,9 @@ QuicTransportOWTStreamImpl* QuicTransportOWTClientSession::CreateIncomingStream(
   return stream;
 }
 
-QuicTransportOWTStreamImpl* QuicTransportOWTClientSession::CreateIncomingStream(
+QuicTransportOwtStreamImpl* QuicTransportOwtClientSession::CreateIncomingStream(
     PendingStream* pending) {
-  QuicTransportOWTStreamImpl* stream = new QuicTransportOWTStreamImpl(
+  QuicTransportOwtStreamImpl* stream = new QuicTransportOwtStreamImpl(
       pending, this, BIDIRECTIONAL, task_runner_, event_runner_);
   ActivateStream(absl::WrapUnique(stream));
   if (visitor_) {
@@ -176,35 +176,35 @@ QuicTransportOWTStreamImpl* QuicTransportOWTClientSession::CreateIncomingStream(
 }
 
 std::unique_ptr<QuicCryptoClientStreamBase>
-QuicTransportOWTClientSession::CreateQuicCryptoStream() {
+QuicTransportOwtClientSession::CreateQuicCryptoStream() {
   return std::make_unique<QuicCryptoClientStream>(
       server_id_, this,
       crypto_config_->proof_verifier()->CreateDefaultContext(), crypto_config_,
       this, /*has_application_state = */ false);
 }
 
-void QuicTransportOWTClientSession::OnConfigNegotiated() {
+void QuicTransportOwtClientSession::OnConfigNegotiated() {
   QuicSession::OnConfigNegotiated();
 }
 
-bool QuicTransportOWTClientSession::HasActiveRequestStreams() const {
+bool QuicTransportOwtClientSession::HasActiveRequestStreams() const {
   return GetNumActiveStreams() + num_draining_streams() > 0;
 }
 
-bool QuicTransportOWTClientSession::ShouldKeepConnectionAlive() const {
+bool QuicTransportOwtClientSession::ShouldKeepConnectionAlive() const {
   return true;
 }
 
-void QuicTransportOWTClientSession::OnStreamClosed(quic::QuicStreamId stream_id) {
+void QuicTransportOwtClientSession::OnStreamClosed(quic::QuicStreamId stream_id) {
   if (visitor_) {
     visitor_->OnStreamClosed(stream_id);
   }
 }
 
-void QuicTransportOWTClientSession::OnConnectionClosed(
+void QuicTransportOwtClientSession::OnConnectionClosed(
     const quic::QuicConnectionCloseFrame& frame,
     quic::ConnectionCloseSource source) {
-  //std::cerr << "QuicTransportOWTClientSession::OnConnectionClosed and client session id:" << connection()->connection_id().ToString() << " in thread" << base::PlatformThread::CurrentId();
+  //std::cerr << "QuicTransportOwtClientSession::OnConnectionClosed and client session id:" << connection()->connection_id().ToString() << " in thread" << base::PlatformThread::CurrentId();
   const std::string& session_id_str =
       connection()->client_connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];

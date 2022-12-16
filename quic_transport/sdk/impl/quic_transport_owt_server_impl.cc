@@ -36,7 +36,7 @@ const int kReadBufferSize = 16 * quic::kMaxIncomingPacketSize;
 }  // namespace
 
 
-QuicTransportOWTServerImpl::QuicTransportOWTServerImpl(
+QuicTransportOwtServerImpl::QuicTransportOwtServerImpl(
     int port,
     std::unique_ptr<quic::ProofSource> proof_source,
     const quic::QuicConfig& config,
@@ -68,7 +68,7 @@ QuicTransportOWTServerImpl::QuicTransportOWTServerImpl(
   Initialize();
 }
 
-void QuicTransportOWTServerImpl::Initialize() {
+void QuicTransportOwtServerImpl::Initialize() {
 #if MMSG_MORE
   use_recvmmsg_ = true;
 #endif
@@ -94,18 +94,18 @@ void QuicTransportOWTServerImpl::Initialize() {
                                       crypto_config_options_));
 }
 
-QuicTransportOWTServerImpl::~QuicTransportOWTServerImpl() {
+QuicTransportOwtServerImpl::~QuicTransportOwtServerImpl() {
 
 }
 
-int QuicTransportOWTServerImpl::Start() {
+int QuicTransportOwtServerImpl::Start() {
       task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTServerImpl::StartOnCurrentThread, weak_factory_.GetWeakPtr()));
+      base::BindOnce(&QuicTransportOwtServerImpl::StartOnCurrentThread, weak_factory_.GetWeakPtr()));
       return true;
 }
 
-void QuicTransportOWTServerImpl::StartOnCurrentThread() {
+void QuicTransportOwtServerImpl::StartOnCurrentThread() {
 // Determine IP address to connect to from supplied hostname.
   net::IPAddress ip = net::IPAddress::IPv6AllZeros();
 
@@ -120,7 +120,7 @@ void QuicTransportOWTServerImpl::StartOnCurrentThread() {
   }
 
   // These send and receive buffer sizes are sized for a single connection,
-  // because the default usage of QuicTransportOWTServerImpl is as a test server with
+  // because the default usage of QuicTransportOwtServerImpl is as a test server with
   // one or two clients.  Adjust higher for use with many clients.
   rc = socket->SetReceiveBufferSize(
       static_cast<int32_t>(quic::kDefaultSocketReceiveBuffer));
@@ -142,7 +142,7 @@ void QuicTransportOWTServerImpl::StartOnCurrentThread() {
 
   socket_.swap(socket);
 
-  dispatcher_.reset(new quic::QuicTransportOWTDispatcher(
+  dispatcher_.reset(new quic::QuicTransportOwtDispatcher(
       &config_, &crypto_config_, &version_manager_,
       std::unique_ptr<quic::QuicConnectionHelperInterface>(helper_),
       std::unique_ptr<quic::QuicCryptoServerStream::Helper>(
@@ -157,13 +157,13 @@ void QuicTransportOWTServerImpl::StartOnCurrentThread() {
 
 }
 
-void QuicTransportOWTServerImpl::Stop() {
+void QuicTransportOwtServerImpl::Stop() {
   task_runner_->PostTask(
       FROM_HERE,
-      base::BindOnce(&QuicTransportOWTServerImpl::StopOnCurrentThread, weak_factory_.GetWeakPtr()));
+      base::BindOnce(&QuicTransportOwtServerImpl::StopOnCurrentThread, weak_factory_.GetWeakPtr()));
 }
 
-void QuicTransportOWTServerImpl::StopOnCurrentThread() {
+void QuicTransportOwtServerImpl::StopOnCurrentThread() {
   // Before we shut down the epoll server, give all active sessions a chance to
   // notify clients that they're closing.
   dispatcher_->Shutdown();
@@ -175,29 +175,29 @@ void QuicTransportOWTServerImpl::StopOnCurrentThread() {
   socket_.reset();
 }
 
-void QuicTransportOWTServerImpl::SetVisitor(owt::quic::QuicTransportServerInterface::Visitor* visitor) { 
+void QuicTransportOwtServerImpl::SetVisitor(owt::quic::QuicTransportServerInterface::Visitor* visitor) { 
   visitor_ = visitor; 
 }
 
-void QuicTransportOWTServerImpl::NewSessionCreated(quic::QuicTransportOWTServerSession* session) {
-  printf("QuicTransportOWTServerImpl call visitor OnSession\n");
+void QuicTransportOwtServerImpl::NewSessionCreated(quic::QuicTransportOwtServerSession* session) {
+  printf("QuicTransportOwtServerImpl call visitor OnSession\n");
   if (visitor_) {
     visitor_->OnSession(session);
   }
 }
 
-void QuicTransportOWTServerImpl::OnSessionCreated(quic::QuicTransportOWTServerSession* session) {
+void QuicTransportOwtServerImpl::OnSessionCreated(quic::QuicTransportOwtServerSession* session) {
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](QuicTransportOWTServerImpl* server,
-             quic::QuicTransportOWTServerSession* session) {
+          [](QuicTransportOwtServerImpl* server,
+             quic::QuicTransportOwtServerSession* session) {
             server->NewSessionCreated(session);
           },
           base::Unretained(this), base::Unretained(session)));
 }
 
-void QuicTransportOWTServerImpl::SessionClosed(quic::QuicConnectionId sessionId) {
+void QuicTransportOwtServerImpl::SessionClosed(quic::QuicConnectionId sessionId) {
   if (visitor_) {
     const std::string& session_id_str = sessionId.ToString();
     printf("server session:%s closed\n", session_id_str.c_str());
@@ -207,24 +207,24 @@ void QuicTransportOWTServerImpl::SessionClosed(quic::QuicConnectionId sessionId)
   }
 }
 
-void QuicTransportOWTServerImpl::OnSessionClosed(quic::QuicConnectionId sessionId) {
+void QuicTransportOwtServerImpl::OnSessionClosed(quic::QuicConnectionId sessionId) {
   event_runner_->PostTask(
       FROM_HERE,
       base::BindOnce(
-          [](QuicTransportOWTServerImpl* server,
+          [](QuicTransportOwtServerImpl* server,
              quic::QuicConnectionId sessionId) {
             server->SessionClosed(sessionId);
           },
           base::Unretained(this), sessionId));
 }
 
-void QuicTransportOWTServerImpl::ScheduleReadPackets() {
+void QuicTransportOwtServerImpl::ScheduleReadPackets() {
   task_runner_->PostTask(FROM_HERE,
-                         base::BindOnce(&QuicTransportOWTServerImpl::StartReading,
+                         base::BindOnce(&QuicTransportOwtServerImpl::StartReading,
                                         weak_factory_.GetWeakPtr()));
 }
 
-void QuicTransportOWTServerImpl::StartReading() {
+void QuicTransportOwtServerImpl::StartReading() {
   if (synchronous_read_count_ == 0) {
     // Only process buffered packets once per message loop.
     dispatcher_->ProcessBufferedChlos(kNumSessionsToCreatePerSocketEvent);
@@ -237,14 +237,14 @@ void QuicTransportOWTServerImpl::StartReading() {
 
   int result = socket_->RecvFrom(
       read_buffer_.get(), read_buffer_->size(), &client_address_,
-      base::BindOnce(&QuicTransportOWTServerImpl::OnReadComplete, base::Unretained(this)));
+      base::BindOnce(&QuicTransportOwtServerImpl::OnReadComplete, base::Unretained(this)));
 
   if (result == ERR_IO_PENDING) {
     synchronous_read_count_ = 0;
     if (dispatcher_->HasChlosBuffered()) {
       // No more packets to read, so yield before processing buffered packets.
       base::ThreadTaskRunnerHandle::Get()->PostTask(
-          FROM_HERE, base::BindOnce(&QuicTransportOWTServerImpl::StartReading,
+          FROM_HERE, base::BindOnce(&QuicTransportOwtServerImpl::StartReading,
                                 weak_factory_.GetWeakPtr()));
       //ScheduleReadPackets();
     }
@@ -256,7 +256,7 @@ void QuicTransportOWTServerImpl::StartReading() {
     // Schedule the processing through the message loop to 1) prevent infinite
     // recursion and 2) avoid blocking the thread for too long.
     base::ThreadTaskRunnerHandle::Get()->PostTask(
-        FROM_HERE, base::BindOnce(&QuicTransportOWTServerImpl::OnReadComplete,
+        FROM_HERE, base::BindOnce(&QuicTransportOwtServerImpl::OnReadComplete,
                               weak_factory_.GetWeakPtr(), result));
     //OnReadComplete(result);
   } else {
@@ -264,7 +264,7 @@ void QuicTransportOWTServerImpl::StartReading() {
   }
 }
 
-void QuicTransportOWTServerImpl::OnReadComplete(int result) {
+void QuicTransportOwtServerImpl::OnReadComplete(int result) {
   read_pending_ = false;
   if (result == 0)
     result = ERR_CONNECTION_CLOSED;

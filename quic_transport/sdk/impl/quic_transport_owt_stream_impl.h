@@ -13,23 +13,23 @@
 
 namespace quic {
 
-class QUIC_EXPORT_PRIVATE QuicTransportOWTStreamImpl : public QuicStream,
+class QUIC_EXPORT_PRIVATE QuicTransportOwtStreamImpl : public QuicStream,
                                                        public owt::quic::QuicTransportStreamInterface {
  public:
 
-  QuicTransportOWTStreamImpl(QuicStreamId id,
+  QuicTransportOwtStreamImpl(QuicStreamId id,
                 QuicSession* session,
                 StreamType type,
                 base::SingleThreadTaskRunner* io_runner,
                 base::SingleThreadTaskRunner* event_runner);
-  QuicTransportOWTStreamImpl(PendingStream* pending,
+  QuicTransportOwtStreamImpl(PendingStream* pending,
                        QuicSession* session,
                        StreamType type,
                        base::SingleThreadTaskRunner* io_runner,
                        base::SingleThreadTaskRunner* event_runner);
-  QuicTransportOWTStreamImpl(const QuicTransportOWTStreamImpl&) = delete;
-  QuicTransportOWTStreamImpl& operator=(const QuicTransportOWTStreamImpl&) = delete;
-  ~QuicTransportOWTStreamImpl() override;
+  QuicTransportOwtStreamImpl(const QuicTransportOwtStreamImpl&) = delete;
+  QuicTransportOwtStreamImpl& operator=(const QuicTransportOwtStreamImpl&) = delete;
+  ~QuicTransportOwtStreamImpl() override;
 
   // QuicStream implementation called by the sequencer when there is
   // data (or a FIN) to be read.
