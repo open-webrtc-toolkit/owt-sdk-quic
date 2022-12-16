@@ -17,7 +17,7 @@
 #include "base/files/file_path.h"
 #include "crypto/rsa_private_key.h"
 #include "net/cert/x509_certificate.h"
-#include "net/third_party/quiche/src/quic/core/crypto/proof_verifier.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/proof_verifier.h"
 
 namespace quic {
 using std::endl;

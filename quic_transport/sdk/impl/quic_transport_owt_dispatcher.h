@@ -6,10 +6,10 @@
 #define QUIC_TRANSPORT_OWT_DISPATCHER_H_
 
 #include "absl/strings/string_view.h"
-#include "net/third_party/quiche/src/quic/core/quic_dispatcher.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_dispatcher.h"
 
 #include "owt/quic_transport/sdk/impl/quic_transport_owt_server_session.h"
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 
 namespace quic {
 
@@ -38,6 +38,7 @@ class QuicTransportOWTDispatcher : public QuicDispatcher {
       std::unique_ptr<QuicCryptoServerStream::Helper> session_helper,
       std::unique_ptr<QuicAlarmFactory> alarm_factory,
       uint8_t expected_server_connection_id_length,
+      ConnectionIdGeneratorInterface& generator,
       base::SingleThreadTaskRunner* io_runner,
       base::SingleThreadTaskRunner* event_runner);
 
@@ -59,7 +60,7 @@ class QuicTransportOWTDispatcher : public QuicDispatcher {
       const QuicSocketAddress& peer_address,
       absl::string_view alpn,
       const ParsedQuicVersion& version,
-      absl::string_view sni) override;
+      const ParsedClientHello& parsed_chlo) override;
 
  private:
   base::SingleThreadTaskRunner* task_runner_;

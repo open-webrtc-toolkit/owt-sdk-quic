@@ -16,7 +16,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "crypto/openssl_util.h"
 #include "net/cert/x509_util.h"
-#include "net/third_party/quiche/src/quic/core/crypto/crypto_protocol.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/crypto_protocol.h"
 #include "third_party/boringssl/src/include/openssl/base.h"
 #include "third_party/boringssl/src/include/openssl/pkcs8.h"
 #include "third_party/boringssl/src/include/openssl/stack.h"

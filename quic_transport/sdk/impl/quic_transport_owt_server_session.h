@@ -9,14 +9,14 @@
 #include <memory>
 #include <string>
 
-#include "net/third_party/quiche/src/quic/core/quic_session.h"
-#include "net/third_party/quiche/src/quic/core/quic_versions.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_export.h"
-#include "net/third_party/quiche/src/quic/core/quic_crypto_server_stream.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_session.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_versions.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_export.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_crypto_server_stream.h"
 
 #include "owt/quic/quic_transport_session_interface.h"
 #include "owt/quic_transport/sdk/impl/quic_transport_owt_stream_impl.h"
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 
 namespace quic {
 
@@ -114,6 +114,8 @@ class QUIC_EXPORT_PRIVATE QuicTransportOWTServerSession
   QuicTransportOWTStreamImpl* CreateIncomingStreamOnCurrentThread(QuicStreamId id);
 
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStreamOnCurrentThread();
+
+  void StopOnCurrentThread();
 
   void CloseStreamOnCurrentThread(uint32_t id);
 

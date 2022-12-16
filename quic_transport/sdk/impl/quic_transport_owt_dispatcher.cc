@@ -14,6 +14,7 @@ QuicTransportOWTDispatcher::QuicTransportOWTDispatcher(
     std::unique_ptr<QuicCryptoServerStream::Helper> session_helper,
     std::unique_ptr<QuicAlarmFactory> alarm_factory,
     uint8_t expected_server_connection_id_length,
+    ConnectionIdGeneratorInterface& generator,
     base::SingleThreadTaskRunner* io_runner,
     base::SingleThreadTaskRunner* event_runner)
     : QuicDispatcher(config,
@@ -22,7 +23,7 @@ QuicTransportOWTDispatcher::QuicTransportOWTDispatcher(
                      std::move(helper),
                      std::move(session_helper),
                      std::move(alarm_factory),
-                     expected_server_connection_id_length),
+                     expected_server_connection_id_length, generator),
       task_runner_(io_runner),
       event_runner_(event_runner),
       visitor_(nullptr){}
@@ -36,14 +37,14 @@ std::unique_ptr<QuicSession> QuicTransportOWTDispatcher::CreateQuicSession(
     const QuicSocketAddress& peer_address,
     absl::string_view /*alpn*/,
     const ParsedQuicVersion& version,
-    absl::string_view /*sni*/) {
+    const ParsedClientHello& parsed_chlo) {
   // The QuicServerSessionBase takes ownership of |connection| below.
-    printf("QuicTransportOWTDispatcher::CreateQuicSession in thread:%d\n", base::PlatformThread::CurrentId());
+  //printf("QuicTransportOWTDispatcher::CreateQuicSession in thread:%d\n", base::PlatformThread::CurrentId());
   QuicConnection* connection = 
       new QuicConnection(connection_id, self_address, peer_address, helper(),
                          alarm_factory(), writer(),
                          /* owns_writer= */ false, Perspective::IS_SERVER,
-                         ParsedQuicVersionVector{version});
+                         ParsedQuicVersionVector{version}, connection_id_generator());
 
   auto session = std::make_unique<QuicTransportOWTServerSession>(
       connection, this, config(), GetSupportedVersions(), session_helper(),
@@ -61,7 +62,7 @@ std::unique_ptr<QuicSession> QuicTransportOWTDispatcher::CreateQuicSession(
                                     QuicErrorCode error,
                                     const std::string& error_details,
                                     ConnectionCloseSource source) {
-    printf("QuicTransportOWTDispatcher OnConnectionClosed for connection:%s in thread:%d\n", server_connection_id.ToString().c_str(), base::PlatformThread::CurrentId());
+    //printf("QuicTransportOWTDispatcher OnConnectionClosed for connection:%s in thread:%d\n", server_connection_id.ToString().c_str(), base::PlatformThread::CurrentId());
     if (visitor_) {
       visitor_->OnSessionClosed(server_connection_id);
     }

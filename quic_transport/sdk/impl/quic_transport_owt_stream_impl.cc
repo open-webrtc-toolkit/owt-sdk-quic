@@ -4,11 +4,11 @@
 #include <list>
 #include <utility>
 
-#include "net/third_party/quiche/src/quic/core/quic_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_bug_tracker.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_map_util.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_utils.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_bug_tracker.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flags.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_logging.h"
+//#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_map_util.h"
 
 namespace quic {
 
@@ -31,7 +31,7 @@ QuicTransportOWTStreamImpl::QuicTransportOWTStreamImpl(
     StreamType type,
     base::SingleThreadTaskRunner* io_runner,
     base::SingleThreadTaskRunner* event_runner)
-    : QuicStream(pending, session, type, /* is_static= */ false),
+    : QuicStream(pending, session, /* is_static= */ false),
       task_runner_(io_runner),
       //event_runner_(event_runner),
       visitor_(nullptr) {}

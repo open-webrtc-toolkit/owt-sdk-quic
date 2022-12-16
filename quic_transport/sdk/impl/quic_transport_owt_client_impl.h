@@ -9,15 +9,15 @@
 #include <string>
 
 #include "base/command_line.h"
-#include "base/macros.h"
+#include "absl/base/macros.h"
 #include "net/base/ip_address.h"
 #include "net/base/ip_endpoint.h"
 #include "net/http/http_response_headers.h"
 #include "net/log/net_log.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 #include "net/quic/quic_chromium_packet_reader.h"
-#include "net/third_party/quiche/src/quic/core/http/quic_spdy_stream.h"
-#include "net/third_party/quiche/src/quic/core/quic_config.h"
+#include "net/third_party/quiche/src/quiche/quic/core/http/quic_spdy_stream.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_config.h"
 #include "net/tools/quic/quic_client_message_loop_network_helper.h"
 
 #include "owt/quic_transport/sdk/impl/quic_transport_owt_client_base.h"
@@ -82,7 +82,7 @@ class QuicTransportOWTClientImpl : public quic::QuicTransportOWTClientBase,
 
   base::WeakPtrFactory<QuicTransportOWTClientImpl> weak_factory_;
 
-  DISALLOW_COPY_AND_ASSIGN(QuicTransportOWTClientImpl);
+  //DISALLOW_COPY_AND_ASSIGN(QuicTransportOWTClientImpl);
 };
 
 }  // namespace net

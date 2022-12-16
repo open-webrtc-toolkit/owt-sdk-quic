@@ -19,9 +19,9 @@
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 #include "net/quic/quic_chromium_alarm_factory.h"
 #include "net/quic/quic_chromium_connection_helper.h"
-#include "net/third_party/quiche/src/quic/core/crypto/proof_source.h"
-#include "net/third_party/quiche/src/quic/core/crypto/quic_crypto_server_config.h"
-#include "net/third_party/quiche/src/quic/core/quic_types.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/proof_source.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/quic_crypto_server_config.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_types.h"
 #include "url/gurl.h"
 #include "net/quic/address_utils.h"
 #include "net/tools/quic/synchronous_host_resolver.h"
@@ -43,21 +43,23 @@ class FakeProofSource : public ::quic::ProofSource {
                 ::quic::QuicTransportVersion transport_version,
                 absl::string_view chlo_hash,
                 std::unique_ptr<Callback> callback) override {
-    ::quic::QuicReferenceCountedPointer<ProofSource::Chain> chain =
-        GetCertChain(server_address, client_address, hostname);
+    bool cert_matched_sni;
+    ::quiche::QuicheReferenceCountedPointer<ProofSource::Chain> chain =
+        GetCertChain(server_address, client_address, hostname, &cert_matched_sni);
     ::quic::QuicCryptoProof proof;
     proof.signature = "fake signature";
     proof.leaf_cert_scts = "fake timestamp";
     callback->Run(true, chain, proof, nullptr);
   }
 
-  ::quic::QuicReferenceCountedPointer<Chain> GetCertChain(
+  ::quiche::QuicheReferenceCountedPointer<Chain> GetCertChain(
       const ::quic::QuicSocketAddress& server_address,
       const ::quic::QuicSocketAddress& client_address,
-      const std::string& hostname) override {
+      const std::string& hostname,
+      bool* cert_matched_sni) override {
     std::vector<std::string> certs;
     certs.push_back("fake cert");
-    return ::quic::QuicReferenceCountedPointer<ProofSource::Chain>(
+    return ::quiche::QuicheReferenceCountedPointer<ProofSource::Chain>(
         new ProofSource::Chain(certs));
   }
 
@@ -215,7 +217,7 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
             
             if (!ip_addr.FromString(host)) {
               net::AddressList addresses;
-              int rv = net::SynchronousHostResolver::Resolve(host, &addresses);
+              int rv = net::SynchronousHostResolver::Resolve(url::SchemeHostPort(url::kHttpsScheme, host, port), &addresses);
               if (rv != net::OK) {
                 LOG(ERROR) << "Unable to resolve '" << host
                            << "' : " << net::ErrorToShortString(rv);

@@ -9,20 +9,21 @@
 
 #include <memory>
 
-#include "base/macros.h"
+#include "absl/base/macros.h"
 #include "net/base/io_buffer.h"
 #include "net/base/ip_endpoint.h"
 #include "net/log/net_log.h"
 #include "net/quic/quic_chromium_alarm_factory.h"
 #include "net/quic/quic_chromium_connection_helper.h"
-#include "net/third_party/quiche/src/quic/core/crypto/quic_crypto_server_config.h"
-#include "net/third_party/quiche/src/quic/core/quic_config.h"
-#include "net/third_party/quiche/src/quic/core/quic_version_manager.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/quic_crypto_server_config.h"
+#include "net/third_party/quiche/src/quiche/quic/core/deterministic_connection_id_generator.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_config.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_version_manager.h"
 #include "net/quic/platform/impl/quic_chromium_clock.h"
 #include "owt/quic_transport/sdk/impl/quic_transport_owt_dispatcher.h"
 #include "owt/quic/quic_transport_server_interface.h"
 #include "owt/quic_transport/sdk/impl/proof_source_owt.h"
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 #include "base/threading/thread.h"
 
 namespace net {
@@ -134,14 +135,17 @@ class QuicTransportOWTServerImpl
   // The source address of the current read.
   IPEndPoint client_address_;
 
+
   scoped_refptr<base::SingleThreadTaskRunner> task_runner_;
   scoped_refptr<base::SingleThreadTaskRunner> event_runner_;
 
   owt::quic::QuicTransportServerInterface::Visitor* visitor_;
 
+  quic::DeterministicConnectionIdGenerator connection_id_generator_;
+
   base::WeakPtrFactory<QuicTransportOWTServerImpl> weak_factory_;
 
-  DISALLOW_COPY_AND_ASSIGN(QuicTransportOWTServerImpl);
+  //DISALLOW_COPY_AND_ASSIGN(QuicTransportOWTServerImpl);
 };
 
 }  // namespace net

@@ -19,7 +19,7 @@ source_set("owt_quic_transport_impl") {
     "//base",
     "//net",
     "//net:simple_quic_tools",
-    "//net/third_party/quiche:simple_quic_tools_core",
+    "//net/third_party/quiche:quiche_tool_support",
     "//third_party/boringssl",
   ]
   sources = [

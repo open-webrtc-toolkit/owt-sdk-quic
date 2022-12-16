@@ -12,12 +12,12 @@
 #include "net/base/net_errors.h"
 #include "net/log/net_log_source.h"
 #include "net/socket/udp_server_socket.h"
-#include "net/third_party/quiche/src/quic/core/crypto/crypto_handshake.h"
-#include "net/third_party/quiche/src/quic/core/crypto/quic_random.h"
-#include "net/third_party/quiche/src/quic/core/quic_crypto_stream.h"
-#include "net/third_party/quiche/src/quic/core/quic_data_reader.h"
-#include "net/third_party/quiche/src/quic/core/quic_packets.h"
-#include "net/third_party/quiche/src/quic/core/tls_server_handshaker.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/crypto_handshake.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/quic_random.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_crypto_stream.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_data_reader.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_packets.h"
+#include "net/third_party/quiche/src/quiche/quic/core/tls_server_handshaker.h"
 #include "net/tools/quic/quic_simple_server_packet_writer.h"
 #include "net/tools/quic/quic_simple_server_session_helper.h"
 #include "net/quic/address_utils.h"
@@ -63,6 +63,7 @@ QuicTransportOWTServerImpl::QuicTransportOWTServerImpl(
       read_buffer_(base::MakeRefCounted<IOBufferWithSize>(kReadBufferSize)),
       task_runner_(io_thread->task_runner()),
       event_runner_(event_thread->task_runner()),
+      connection_id_generator_(quic::kQuicDefaultConnectionIdLength),
       weak_factory_(this) {
   Initialize();
 }
@@ -146,7 +147,7 @@ void QuicTransportOWTServerImpl::StartOnCurrentThread() {
       std::unique_ptr<quic::QuicConnectionHelperInterface>(helper_),
       std::unique_ptr<quic::QuicCryptoServerStream::Helper>(
           new QuicSimpleServerSessionHelper(quic::QuicRandom::GetInstance())),
-      std::unique_ptr<quic::QuicAlarmFactory>(alarm_factory_), quic::kQuicDefaultConnectionIdLength, task_runner_.get(), event_runner_.get()));
+      std::unique_ptr<quic::QuicAlarmFactory>(alarm_factory_), quic::kQuicDefaultConnectionIdLength, connection_id_generator_, task_runner_.get(), event_runner_.get()));
   QuicSimpleServerPacketWriter* writer =
       new QuicSimpleServerPacketWriter(socket_.get(), dispatcher_.get());
   dispatcher_->InitializeWithWriter(writer);

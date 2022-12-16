@@ -5,11 +5,11 @@
 #ifndef QUIC_TRANSPORT_OWT_STREAM_IMPL_H_
 #define QUIC_TRANSPORT_OWT_STREAM_IMPL_H_
 
-#include "base/macros.h"
-#include "net/third_party/quiche/src/quic/core/quic_stream.h"
-#include "net/third_party/quiche/src/quic/core/quic_session.h"
+#include "absl/base/macros.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_stream.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_session.h"
 #include "owt/quic/quic_transport_stream_interface.h"
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 
 namespace quic {
 

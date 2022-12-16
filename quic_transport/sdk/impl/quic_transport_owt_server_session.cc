@@ -9,11 +9,11 @@
 #include <string>
 #include <utility>
 
-#include "net/third_party/quiche/src/quic/core/quic_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_bug_tracker.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flag_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_utils.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_bug_tracker.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flag_utils.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flags.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_logging.h"
 
 namespace quic {
 
@@ -48,7 +48,9 @@ QuicTransportOWTServerSession::~QuicTransportOWTServerSession() {
   // for (auto const& kv : dynamic_streams()) {
   //   static_cast<QuicRawStream*>(kv.second.get())->ClearSession();
   // }
-  delete connection();
+  //delete visitor_;
+  printf("We are in ~QuicTransportOWTServerSession\n");
+  //visitor_ = nullptr;
 }
 
 void QuicTransportOWTServerSession::Initialize() {
@@ -83,10 +85,20 @@ void QuicTransportOWTServerSession::OnStreamClosed(quic::QuicStreamId stream_id)
   }
 }
 
-void QuicTransportOWTServerSession::Stop() {
+void QuicTransportOWTServerSession::StopOnCurrentThread() {
   connection()->CloseConnection(
         quic::QUIC_PEER_GOING_AWAY, "Shutting down",
         quic::ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);
+}
+
+void QuicTransportOWTServerSession::Stop() {
+  if (task_runner_->BelongsToCurrentThread()) {
+    printf("QuicTransportOWTServerSession::Stop in current thread\n");
+    return StopOnCurrentThread();
+  }
+  task_runner_->PostTask(
+      FROM_HERE,
+      base::BindOnce(&QuicTransportOWTServerSession::StopOnCurrentThread, base::Unretained(this)));
 }
 
 void QuicTransportOWTServerSession::SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) { 

@@ -6,11 +6,11 @@
 #include <memory>
 #include <string>
 
-#include "net/third_party/quiche/src/quic/core/quic_crypto_client_stream.h"
-#include "net/third_party/quiche/src/quic/core/quic_packets.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_crypto_client_stream.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_packets.h"
 
 #include "owt/quic_transport/sdk/impl/quic_transport_owt_stream_impl.h"
-#include "base/single_thread_task_runner.h"
+#include "base/task/single_thread_task_runner.h"
 
 namespace quic {
 

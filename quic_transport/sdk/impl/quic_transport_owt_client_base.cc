@@ -4,10 +4,10 @@
 
 #include "owt/quic_transport/sdk/impl/quic_transport_owt_client_base.h"
 
-#include "net/third_party/quiche/src/quic/core/crypto/quic_random.h"
-#include "net/third_party/quiche/src/quic/core/quic_server_id.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/quic_random.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_server_id.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flags.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_logging.h"
 
 using std::string;
 

@@ -10,11 +10,11 @@
 
 #include <string>
 
-#include "base/macros.h"
-#include "net/third_party/quiche/src/quic/core/crypto/crypto_handshake.h"
-#include "net/third_party/quiche/src/quic/core/quic_config.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_socket_address.h"
-#include "net/third_party/quiche/src/quic/tools/quic_client_base.h"
+#include "absl/base/macros.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/crypto_handshake.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_config.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_socket_address.h"
+#include "net/third_party/quiche/src/quiche/quic/tools/quic_client_base.h"
 
 #include "owt/quic_transport/sdk/impl/quic_transport_owt_client_session.h"
 

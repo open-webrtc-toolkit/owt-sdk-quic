@@ -19,7 +19,7 @@ namespace quic {
 class QuicAlarmFactory;
 class QuicConnectionHelperInterface;
 class QuicClock;
-class QuicRandom;
+//class QuicRandom;
 class QuicCompressedCertsCache;
 class QuicCryptoServerConfig;
 class ProofSource;

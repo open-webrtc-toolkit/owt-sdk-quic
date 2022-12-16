@@ -16,7 +16,7 @@
 #include "base/strings/string_number_conversions.h"
 #include "crypto/openssl_util.h"
 #include "net/cert/x509_util.h"
-#include "net/third_party/quiche/src/quic/core/crypto/crypto_protocol.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/crypto_protocol.h"
 #include "third_party/boringssl/src/include/openssl/base.h"
 #include "third_party/boringssl/src/include/openssl/pkcs8.h"
 #include "third_party/boringssl/src/include/openssl/stack.h"
@@ -38,21 +38,23 @@ void ProofSourceOwt::GetProof(const QuicSocketAddress& server_address,
                               QuicTransportVersion quic_version,
                               absl::string_view chlo_hash,
                               std::unique_ptr<Callback> callback) {
-  QuicReferenceCountedPointer<ProofSource::Chain> chain =
-      GetCertChain(server_address, client_address, hostname);
+  bool cert_matched_sni;
+  ::quiche::QuicheReferenceCountedPointer<ProofSource::Chain> chain =
+      GetCertChain(server_address, client_address, hostname, &cert_matched_sni);
   QuicCryptoProof proof;
   proof.signature = "fake signature";
   proof.leaf_cert_scts = "fake timestamp";
   callback->Run(true, chain, proof, nullptr);
 }
 
-QuicReferenceCountedPointer<ProofSource::Chain>
+::quiche::QuicheReferenceCountedPointer<ProofSource::Chain>
 ProofSourceOwt::GetCertChain(const QuicSocketAddress& server_address,
                              const QuicSocketAddress& client_address,
-                             const std::string& hostname) {
+                             const std::string& hostname,
+			     bool* cert_matched_sni) {
   std::vector<std::string> certs;
   certs.push_back("fake cert");
-  return QuicReferenceCountedPointer<ProofSource::Chain>(
+  return ::quiche::QuicheReferenceCountedPointer<ProofSource::Chain>(
       new ProofSource::Chain(certs));
 }
 

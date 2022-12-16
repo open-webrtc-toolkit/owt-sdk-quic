@@ -3,13 +3,13 @@
 
 #include <string>
 
-#include "net/third_party/quiche/src/quic/core/crypto/crypto_protocol.h"
-#include "net/third_party/quiche/src/quic/core/quic_server_id.h"
-#include "net/third_party/quiche/src/quic/core/quic_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_bug_tracker.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flag_utils.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/crypto_protocol.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_server_id.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_utils.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_bug_tracker.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flag_utils.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flags.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_logging.h"
 
 namespace quic {
 
@@ -204,7 +204,7 @@ void QuicTransportOWTClientSession::OnStreamClosed(quic::QuicStreamId stream_id)
 void QuicTransportOWTClientSession::OnConnectionClosed(
     const quic::QuicConnectionCloseFrame& frame,
     quic::ConnectionCloseSource source) {
-  std::cerr << "QuicTransportOWTClientSession::OnConnectionClosed and client session id:" << connection()->connection_id().ToString() << " in thread" << base::PlatformThread::CurrentId();
+  //std::cerr << "QuicTransportOWTClientSession::OnConnectionClosed and client session id:" << connection()->connection_id().ToString() << " in thread" << base::PlatformThread::CurrentId();
   const std::string& session_id_str =
       connection()->client_connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];

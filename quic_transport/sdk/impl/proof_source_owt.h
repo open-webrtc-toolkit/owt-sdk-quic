@@ -17,7 +17,7 @@
 #include "base/files/file_path.h"
 #include "crypto/rsa_private_key.h"
 #include "net/cert/x509_certificate.h"
-#include "net/third_party/quiche/src/quic/core/crypto/proof_source.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/proof_source.h"
 
 namespace quic {
 
@@ -38,10 +38,11 @@ class ProofSourceOwt : public ProofSource {
                 absl::string_view chlo_hash,
                 std::unique_ptr<Callback> callback) override;
 
-  QuicReferenceCountedPointer<ProofSource::Chain> GetCertChain(
+  ::quiche::QuicheReferenceCountedPointer<ProofSource::Chain> GetCertChain(
       const QuicSocketAddress& server_address,
       const QuicSocketAddress& client_address,
-      const std::string& hostname) override;
+      const std::string& hostname,
+      bool* cert_matched_sni) override;
 
   void ComputeTlsSignature(
       const QuicSocketAddress& server_address,
