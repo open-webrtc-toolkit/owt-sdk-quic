@@ -39,11 +39,16 @@ class OWT_EXPORT QuicTransportFactoryImpl : public owt::quic::QuicTransportFacto
   ~QuicTransportFactoryImpl() override;
   void InitializeAtExitManager();
   // `accepted_origins` is removed at this time because ABI compatible issue.
-  owt::quic::QuicTransportServerInterface* CreateQuicTransportServer(
+  QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_path,
-      const char* key_path) override;
-  owt::quic::QuicTransportClientInterface* CreateQuicTransportClient(
+      const char* key_path,
+      const char* secret_path) override;
+  QuicTransportServerInterface* CreateQuicTransportServer(
+    int port,
+    const char* pfx_path,
+    const char* password) override;
+  QuicTransportClientInterface* CreateQuicTransportClient(
       const char* host,
       int port) override;
 

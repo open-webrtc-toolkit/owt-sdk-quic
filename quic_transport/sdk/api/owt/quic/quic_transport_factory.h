@@ -19,19 +19,26 @@ class OWT_EXPORT QuicTransportFactory {
  public:
   virtual ~QuicTransportFactory() = default;
 
-  /// Create a WebTransportFactory.
+  /// Create a QuicTransportFactory.
   static QuicTransportFactory* Create();
-  /// Create a WebTransportFactory for testing. It will not initialize
+  /// Create a QuicTransportFactory for testing. It will not initialize
   /// AtExitManager since testing tools will initialize one.
   static QuicTransportFactory* CreateForTesting();
-  // Create a WebTransport over HTTP/3 server with certificate, key and secret
+  // Create a server directly over Quic with certificate, key and secret
   // file. Ownership of returned value is moved to caller. Returns nullptr if
   // creation is failed.
   virtual QuicTransportServerInterface* CreateQuicTransportServer(
       int port,
       const char* cert_file,
-      const char* key_file) = 0;
-  // Create a WebTransport over HTTP/3 client. It will not connect to the given
+      const char* key_file,
+      const char* secret_path) = 0;
+  // Create a server directly over Quic with pkcs12 file. Ownership of
+  // returned value is moved to caller. Returns nullptr if creation is failed.
+  virtual QuicTransportServerInterface* CreateQuicTransportServer(
+      int port,
+      const char* pfx_path,
+      const char* password) = 0;
+  // Create a Quic client. It will not connect to the given
   // `url` immediately after creation.
   virtual QuicTransportClientInterface* CreateQuicTransportClient(
       const char* host,

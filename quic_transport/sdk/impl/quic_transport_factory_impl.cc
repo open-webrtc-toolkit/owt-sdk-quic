@@ -30,54 +30,6 @@
 namespace owt {
 namespace quic {
 
-// FakeProofSource for server
-class FakeProofSource : public ::quic::ProofSource {
- public:
-  FakeProofSource() {}
-  ~FakeProofSource() override {}
-
-  void GetProof(const ::quic::QuicSocketAddress& server_address,
-                const ::quic::QuicSocketAddress& client_address,
-                const std::string& hostname,
-                const std::string& server_config,
-                ::quic::QuicTransportVersion transport_version,
-                absl::string_view chlo_hash,
-                std::unique_ptr<Callback> callback) override {
-    bool cert_matched_sni;
-    ::quiche::QuicheReferenceCountedPointer<ProofSource::Chain> chain =
-        GetCertChain(server_address, client_address, hostname, &cert_matched_sni);
-    ::quic::QuicCryptoProof proof;
-    proof.signature = "fake signature";
-    proof.leaf_cert_scts = "fake timestamp";
-    callback->Run(true, chain, proof, nullptr);
-  }
-
-  ::quiche::QuicheReferenceCountedPointer<Chain> GetCertChain(
-      const ::quic::QuicSocketAddress& server_address,
-      const ::quic::QuicSocketAddress& client_address,
-      const std::string& hostname,
-      bool* cert_matched_sni) override {
-    std::vector<std::string> certs;
-    certs.push_back("fake cert");
-    return ::quiche::QuicheReferenceCountedPointer<ProofSource::Chain>(
-        new ProofSource::Chain(certs));
-  }
-
-  void ComputeTlsSignature(
-      const ::quic::QuicSocketAddress& server_address,
-      const ::quic::QuicSocketAddress& client_address,
-      const std::string& hostname,
-      uint16_t signature_algorithm,
-      absl::string_view in,
-      std::unique_ptr<SignatureCallback> callback) override {
-    callback->Run(true, "fake signature", nullptr);
-  }
-
-  ProofSource::TicketCrypter* GetTicketCrypter() override {
-    return nullptr;
-}
-};
-
 // FakeProofVerifier for client
 class FakeProofVerifier : public ::quic::ProofVerifier {
  public:
@@ -141,10 +93,11 @@ void QuicTransportFactoryImpl::InitializeAtExitManager() {
   at_exit_manager_ = std::make_unique<base::AtExitManager>();
 }
 
-owt::quic::QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServer(
+QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServer(
     int port,
     const char* cert_file,
-    const char* key_file) {
+    const char* key_file,
+    const char* secret_path) {
   auto proof_source = std::make_unique<net::ProofSourceChromium>();
   if (!proof_source->Initialize(
       base::FilePath(cert_file),
@@ -155,7 +108,21 @@ owt::quic::QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTra
   return CreateQuicTransportServerOnIOThread(port, std::move(proof_source));
 }
 
-owt::quic::QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServerOnIOThread(
+QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServer(
+    int port,
+    const char* pfx_path,
+    const char* password) {
+  auto proof_source = std::make_unique<ProofSourceOwt>();
+  if (!proof_source->Initialize(
+      base::FilePath::FromUTF8Unsafe(pfx_path),
+      std::string(password))) {
+    LOG(ERROR) << "Failed to initialize proof source.";
+    return nullptr;
+  }
+  return CreateQuicTransportServerOnIOThread(port, std::move(proof_source));
+}
+
+QuicTransportServerInterface* QuicTransportFactoryImpl::CreateQuicTransportServerOnIOThread(
     int port,
     std::unique_ptr<::quic::ProofSource> proof_source) {
   QuicTransportServerInterface* result(nullptr);
@@ -196,7 +163,7 @@ void QuicTransportFactoryImpl::Init() {
 
 }
 
-owt::quic::QuicTransportClientInterface*
+QuicTransportClientInterface*
 QuicTransportFactoryImpl::CreateQuicTransportClient(
     const char* host, 
     int port) {
