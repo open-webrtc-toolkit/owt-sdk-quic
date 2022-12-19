@@ -9,10 +9,11 @@
 #include <memory>
 #include <string>
 
-#include "net/third_party/quiche/src/quic/core/quic_session.h"
-#include "net/third_party/quiche/src/quic/core/quic_versions.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_export.h"
-#include "net/third_party/quiche/src/quic/core/quic_crypto_server_stream.h"
+#include "net/third_party/quic/core/quic_session.h"
+#include "net/third_party/quic/core/quic_versions.h"
+#include "net/third_party/quic/platform/api/quic_export.h"
+#include "net/third_party/quic/platform/api/quic_string_piece.h"
+#include "net/third_party/quic/core/quic_crypto_server_stream.h"
 
 #include "net/tools/quic/raw/quic_raw_stream.h"
 
@@ -68,14 +69,17 @@ class QUIC_EXPORT_PRIVATE QuicRawServerSession
 
   const QuicCryptoServerStreamBase* GetCryptoStream() const override;
 
-  void OnConnectionClosed(const QuicConnectionCloseFrame& frame,
-                          ConnectionCloseSource source) override;
+  void OnCryptoHandshakeEvent(CryptoHandshakeEvent event) override;
+
+  void OnConnectionClosed(QuicErrorCode error,
+                           const std::string& error_details,
+                           ConnectionCloseSource source) override;
 
   // Override CreateIncomingStream(), CreateOutgoingBidirectionalStream() and
   // CreateOutgoingUnidirectionalStream() with QuicSpdyStream return type to
   // make sure that all data streams are QuicSpdyStreams.
   QuicRawStream* CreateIncomingStream(QuicStreamId id) override;
-  QuicRawStream* CreateIncomingStream(PendingStream* pending) override;
+  // QuicRawStream* CreateIncomingStream(PendingStream pending) override;
   virtual QuicRawStream* CreateOutgoingBidirectionalStream();
   virtual QuicRawStream* CreateOutgoingUnidirectionalStream();
 
@@ -92,11 +96,11 @@ class QUIC_EXPORT_PRIVATE QuicRawServerSession
 
 
   // Returns true if there are open dynamic streams.
-  bool ShouldKeepConnectionAlive() const override;
+  bool ShouldKeepConnectionAlive() const;
 
   bool IsConnected() { return connection()->connected(); }
 
-  virtual std::unique_ptr<QuicCryptoServerStreamBase> CreateQuicCryptoServerStream(
+  virtual QuicCryptoServerStreamBase* CreateQuicCryptoServerStream(
       const QuicCryptoServerConfig* crypto_config,
       QuicCompressedCertsCache* compressed_certs_cache);
 

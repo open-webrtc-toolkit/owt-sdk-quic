@@ -4,12 +4,14 @@
 
 #include "net/tools/quic/raw/quic_raw_client_base.h"
 
-#include "net/third_party/quiche/src/quic/core/crypto/quic_random.h"
-#include "net/third_party/quiche/src/quic/core/quic_server_id.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_flags.h"
-#include "net/third_party/quiche/src/quic/platform/api/quic_logging.h"
+#include "net/third_party/quic/core/crypto/quic_random.h"
+#include "net/third_party/quic/core/quic_server_id.h"
+#include "net/third_party/quic/platform/api/quic_flags.h"
+#include "net/third_party/quic/platform/api/quic_logging.h"
+#include "net/third_party/quic/platform/api/quic_ptr_util.h"
+#include "net/third_party/quic/platform/api/quic_text_utils.h"
 
-using std::string;
+using base::StringToInt;
 
 namespace quic {
 
@@ -20,16 +22,14 @@ QuicRawClientBase::QuicRawClientBase(
     QuicConnectionHelperInterface* helper,
     QuicAlarmFactory* alarm_factory,
     std::unique_ptr<NetworkHelper> network_helper,
-    std::unique_ptr<ProofVerifier> proof_verifier,
-    std::unique_ptr<SessionCache> session_cache)
+    std::unique_ptr<ProofVerifier> proof_verifier)
     : QuicClientBase(server_id,
                      supported_versions,
                      config,
                      helper,
                      alarm_factory,
                      std::move(network_helper),
-                     std::move(proof_verifier),
-                     std::move(session_cache)) {}
+                     std::move(proof_verifier)) {}
 
 QuicRawClientBase::~QuicRawClientBase() {
   // If we own something. We need to explicitly kill
@@ -57,7 +57,7 @@ void QuicRawClientBase::OnData(QuicRawStream* stream, char* data, size_t len) {
 std::unique_ptr<QuicSession> QuicRawClientBase::CreateQuicClientSession(
     const quic::ParsedQuicVersionVector& supported_versions,
     QuicConnection* connection) {
-  return std::make_unique<QuicRawClientSession>(
+  return QuicMakeUnique<QuicRawClientSession>(
       connection, nullptr, *config(), supported_versions, server_id(),
       crypto_config());
 }
@@ -71,17 +71,10 @@ QuicRawStream* QuicRawClientBase::CreateClientStream() {
   auto* stream = static_cast<QuicRawStream*>(
       client_session()->CreateOutgoingBidirectionalStream());
   if (stream) {
+    stream->SetPriority(QuicStream::kDefaultPriority);
     stream->set_visitor(this);
   }
   return stream;
-}
-
-bool QuicRawClientBase::EarlyDataAccepted() {
-  return client_session()->EarlyDataAccepted();
-}
-
-bool QuicRawClientBase::ReceivedInchoateReject() {
-  return client_session()->ReceivedInchoateReject();
 }
 
 int QuicRawClientBase::GetNumSentClientHellosFromSession() {
@@ -90,10 +83,6 @@ int QuicRawClientBase::GetNumSentClientHellosFromSession() {
 
 int QuicRawClientBase::GetNumReceivedServerConfigUpdatesFromSession() {
   return client_session()->GetNumReceivedServerConfigUpdates();
-}
-
-bool QuicRawClientBase::HasActiveRequests() {
-  return client_session()->HasActiveRequestStreams();
 }
 
 }  // namespace quic

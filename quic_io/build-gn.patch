@@ -1,9 +1,9 @@
 diff --git a/net/BUILD.gn b/net/BUILD.gn
-index 1f228f8cd35c..827f6f6649ed 100644
+index c2f0a78..7927d78 100644
 --- a/net/BUILD.gn
 +++ b/net/BUILD.gn
-@@ -2635,6 +2635,20 @@ source_set("simple_quic_tools") {
-     "tools/quic/quic_transport_simple_server.h",
+@@ -3326,6 +3326,20 @@ source_set("simple_quic_tools") {
+     "tools/quic/quic_simple_server_session_helper.h",
      "tools/quic/synchronous_host_resolver.cc",
      "tools/quic/synchronous_host_resolver.h",
 +    "tools/quic/raw/quic_raw_stream.cc",
@@ -23,7 +23,7 @@ index 1f228f8cd35c..827f6f6649ed 100644
    ]
    deps = [
      ":net",
-@@ -2650,6 +2664,22 @@ source_set("simple_quic_tools") {
+@@ -3337,6 +3351,22 @@ source_set("simple_quic_tools") {
  }
  
  if (!is_ios) {
@@ -44,5 +44,5 @@ index 1f228f8cd35c..827f6f6649ed 100644
 +    ]
 +  }
    executable("quic_client") {
-     testonly = true
-     sources = [ "tools/quic/quic_simple_client_bin.cc" ]
+     sources = [
+       "tools/quic/quic_simple_client_bin.cc",
