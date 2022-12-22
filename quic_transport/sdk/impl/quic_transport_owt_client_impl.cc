@@ -29,17 +29,39 @@
 #include "net/third_party/quiche/src/quiche/quic/core/quic_server_id.h"
 #include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flags.h"
 #include "net/third_party/quiche/src/quiche/quic/tools/quic_simple_client_session.h"
-//#include "net/third_party/quiche/src/spdy/core/spdy_header_block.h"
+#include "net/quic/platform/impl/quic_chromium_clock.h"
 
 using std::string;
 
 namespace net {
 
+// From
+// https://wicg.github.io/web-transport/#dom-quictransportconfiguration-server_certificate_fingerprints
+constexpr int kCustomCertificateMaxValidityDays = 14;
+
+std::unique_ptr<::quic::ProofVerifier> CreateProofVerifier(
+    quic::QuicChromiumClock* clock,
+    const std::vector<::quic::CertificateFingerprint> server_certificate_fingerprints) {
+
+  auto verifier =
+      std::make_unique<::quic::WebTransportFingerprintProofVerifier>(
+          clock, kCustomCertificateMaxValidityDays);
+  for (const ::quic::CertificateFingerprint& fingerprint :
+       server_certificate_fingerprints) {
+    bool success = verifier->AddFingerprint(fingerprint);
+    if (!success) {
+      DLOG(WARNING) << "Failed to add a certificate fingerprint: "
+                    << fingerprint.fingerprint;
+    }
+  }
+  return verifier;
+}
+
 QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
     quic::QuicSocketAddress server_address,
     const quic::QuicServerId& server_id,
     const quic::ParsedQuicVersionVector& supported_versions,
-    std::unique_ptr<quic::ProofVerifier> proof_verifier,
+    const std::vector<::quic::CertificateFingerprint> server_certificate_fingerprints,
     base::Thread* io_thread,
     base::Thread* event_thread)
     : quic::QuicTransportOwtClientBase(
@@ -49,7 +71,7 @@ QuicTransportOwtClientImpl::QuicTransportOwtClientImpl(
           CreateQuicConnectionHelper(),
           CreateQuicAlarmFactory(),
           base::WrapUnique(CreateNetworkHelper()),
-          std::move(proof_verifier),
+          CreateProofVerifier(&clock_, server_certificate_fingerprints),
           nullptr,
           io_thread->task_runner().get(),
           event_thread->task_runner().get()),

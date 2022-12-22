@@ -23,7 +23,7 @@
 #include "owt/quic_transport/sdk/impl/quic_transport_owt_client_base.h"
 #include "owt/quic/quic_transport_client_interface.h"
 #include "owt/quic/quic_transport_stream_interface.h"
-#include "owt/quic_transport/sdk/impl/proof_verifier_owt.h"
+#include "net/third_party/quiche/src/quiche/quic/core/crypto/web_transport_fingerprint_proof_verifier.h"
 #include "base/threading/thread.h"
 
 namespace net {
@@ -40,7 +40,7 @@ class QuicTransportOwtClientImpl : public quic::QuicTransportOwtClientBase,
   QuicTransportOwtClientImpl(quic::QuicSocketAddress server_address,
                    const quic::QuicServerId& server_id,
                    const quic::ParsedQuicVersionVector& supported_versions,
-                   std::unique_ptr<quic::ProofVerifier> proof_verifier,
+                   const std::vector<::quic::CertificateFingerprint> server_certificate_fingerprints,
                    base::Thread* io_thread,
                    base::Thread* event_thread);
 

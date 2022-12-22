@@ -21,7 +21,6 @@
 #include "net/quic/quic_chromium_connection_helper.h"
 #include "net/third_party/quiche/src/quiche/quic/core/crypto/proof_source.h"
 #include "net/third_party/quiche/src/quiche/quic/core/crypto/quic_crypto_server_config.h"
-#include "net/third_party/quiche/src/quiche/quic/core/quic_types.h"
 #include "url/gurl.h"
 #include "net/quic/address_utils.h"
 #include "net/tools/quic/synchronous_host_resolver.h"
@@ -161,6 +160,22 @@ void QuicTransportFactoryImpl::Init() {
   logging::InitLogging(settings);
   logging::SetMinLogLevel(1);
 
+  char* str = std::getenv("QUIC_SERVER_FINGERPRINTS");
+  if(str == NULL) {
+      LOG(ERROR) <<"No server fingerprints provided in env";
+  } else {
+    const char delimiter = ',';
+    std::stringstream ss;
+    std::string s;
+    ss << str;
+
+    while (std::getline(ss, s, delimiter)) {
+      ::quic::CertificateFingerprint quic_fingerprint;
+      quic_fingerprint.algorithm = ::quic::CertificateFingerprint::kSha256;
+      quic_fingerprint.fingerprint = s;
+      server_certificate_fingerprints.push_back(quic_fingerprint);
+    }
+  }
 }
 
 QuicTransportClientInterface*
@@ -174,10 +189,9 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
       FROM_HERE,
       base::BindOnce(
           [](const char* host, int port,
+             const std::vector<::quic::CertificateFingerprint>& fingerprints,
              base::Thread* io_thread, base::Thread* event_thread,
              owt::quic::QuicTransportClientInterface** result, base::WaitableEvent* event) {
-            std::unique_ptr<::quic::ProofVerifier> proof_verifier;
-            proof_verifier.reset(new FakeProofVerifier());
             ::quic::QuicIpAddress ip_addr;
 
             GURL url("https://www.example.org");
@@ -196,16 +210,16 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
                   net::ToQuicIpAddress(addresses[0].address());
             }
 
-            ::quic::QuicServerId server_id(url.host(), url.EffectiveIntPort(),
-                                         net::PRIVACY_MODE_DISABLED);
+            ::quic::QuicServerId server_id(host, port, false);
             ::quic::ParsedQuicVersionVector versions = ::quic::CurrentSupportedVersions();
+            printf("url host is:%s, origin host is:%s\n", url.host().c_str(), host);
 
             *result = new net::QuicTransportOwtClientImpl(
-                ::quic::QuicSocketAddress(ip_addr, port), server_id, versions, std::move(proof_verifier),
+                ::quic::QuicSocketAddress(ip_addr, port), server_id, versions, fingerprints,
                 io_thread, event_thread);
             event->Signal();
           },
-          base::Unretained(host), port, base::Unretained(io_thread_.get()),
+          base::Unretained(host), port, server_certificate_fingerprints, base::Unretained(io_thread_.get()),
           base::Unretained(event_thread_.get()), base::Unretained(&result),
           base::Unretained(&done)));
   done.Wait();

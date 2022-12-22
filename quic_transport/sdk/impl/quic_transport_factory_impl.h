@@ -13,7 +13,9 @@
 #include "owt/quic/export.h"
 #include "owt/quic/quic_transport_factory.h"
 #include "owt/quic_transport/sdk/impl/proof_source_owt.h"
-#include "owt/quic_transport/sdk/impl/proof_verifier_owt.h"
+#include "net/third_party/quiche/src/quiche/quic/platform/api/quic_default_proof_providers.h"
+#include "net/third_party/quiche/src/quiche/quic/core/quic_types.h"
+#include "quiche/quic/core/crypto/web_transport_fingerprint_proof_verifier.h"
 
 namespace quic {
 class QuicAlarmFactory;
@@ -61,6 +63,7 @@ class OWT_EXPORT QuicTransportFactoryImpl : public owt::quic::QuicTransportFacto
   std::unique_ptr<base::AtExitManager> at_exit_manager_;
   std::unique_ptr<base::Thread> io_thread_;
   std::unique_ptr<base::Thread> event_thread_;
+  std::vector<::quic::CertificateFingerprint> server_certificate_fingerprints;
 };
 
 }  // namespace quic

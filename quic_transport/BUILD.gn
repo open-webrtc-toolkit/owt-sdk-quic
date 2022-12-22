@@ -33,8 +33,6 @@ source_set("owt_quic_transport_impl") {
     "sdk/impl/logging.cc",
     "sdk/impl/proof_source_owt.cc",
     "sdk/impl/proof_source_owt.h",
-    "sdk/impl/proof_verifier_owt.cc",
-    "sdk/impl/proof_verifier_owt.h",
     "sdk/impl/quic_transport_factory_impl.cc",
     "sdk/impl/quic_transport_factory_impl.h",
     "sdk/impl/quic_transport_owt_client_base.cc",
