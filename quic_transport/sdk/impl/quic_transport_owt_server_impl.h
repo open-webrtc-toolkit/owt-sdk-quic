@@ -62,6 +62,7 @@ class QuicTransportOwtServerImpl
   // Server deletion is imminent. Start cleaning up.
   void Stop() override;
   void SetVisitor(owt::quic::QuicTransportServerInterface::Visitor* visitor) override;
+  int GetListenPort() override;
 
   //Implement quic::QuicTransportOwtDispatcher::Visitor
   void OnSessionCreated(quic::QuicTransportOwtServerSession* session) override;
@@ -90,7 +91,7 @@ class QuicTransportOwtServerImpl
   void NewSessionCreated(quic::QuicTransportOwtServerSession* session);
   void SessionClosed(quic::QuicConnectionId sessionId);
 
-  const int port_;
+  int port_;
 
   quic::QuicVersionManager version_manager_;
 

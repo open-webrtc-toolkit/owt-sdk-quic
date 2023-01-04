@@ -29,6 +29,7 @@ class OWT_EXPORT QuicTransportServerInterface {
   virtual int Start() = 0;
   virtual void Stop() = 0;
   virtual void SetVisitor(Visitor* visitor) = 0;
+  virtual int GetListenPort() = 0;
 };
 }  // namespace quic
 }

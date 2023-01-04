@@ -142,6 +142,8 @@ void QuicTransportOwtServerImpl::StartOnCurrentThread() {
 
   socket_.swap(socket);
 
+  port_ = server_address_.port();
+
   dispatcher_.reset(new quic::QuicTransportOwtDispatcher(
       &config_, &crypto_config_, &version_manager_,
       std::unique_ptr<quic::QuicConnectionHelperInterface>(helper_),
@@ -216,6 +218,10 @@ void QuicTransportOwtServerImpl::OnSessionClosed(quic::QuicConnectionId sessionI
             server->SessionClosed(sessionId);
           },
           base::Unretained(this), sessionId));
+}
+
+int QuicTransportOwtServerImpl::GetListenPort() {
+  return port_;
 }
 
 void QuicTransportOwtServerImpl::ScheduleReadPackets() {

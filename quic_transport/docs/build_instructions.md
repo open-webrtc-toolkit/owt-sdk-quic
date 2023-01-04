@@ -5,7 +5,7 @@
 - At least 50GB of free disk space.
 - High speed network connection.
 - Ubuntu 18.04 for Ubuntu build.
-- Chromium source code base 109.0.5393.1
+- Chromium source code base 109.0.5414.67
 
 ## Install dependencies
 
