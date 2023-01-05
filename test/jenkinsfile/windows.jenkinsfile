@@ -24,6 +24,7 @@ pipeline {
             }
             steps {
                 echo "$GIT_COMMIT"
+                bat "${windows_quic_script}/build.bat ${windows_quic_build} $GIT_COMMIT"
             }
           }
          }
