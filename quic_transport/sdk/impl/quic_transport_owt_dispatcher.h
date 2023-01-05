@@ -44,7 +44,7 @@ class QuicTransportOwtDispatcher : public QuicDispatcher {
 
   ~QuicTransportOwtDispatcher() override;
 
-  //Implement QuicSession::Visitor
+  // Implement QuicSession::Visitor
   // Called when the connection is closed after the streams have been closed.
   void OnConnectionClosed(QuicConnectionId server_connection_id,
                                     QuicErrorCode error,

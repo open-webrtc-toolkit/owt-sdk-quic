@@ -56,7 +56,7 @@ class QuicTransportOwtServerImpl
 
   ~QuicTransportOwtServerImpl() override;
 
-  //Implement quic::QuicTransportServerInterface
+  // Implement quic::QuicTransportServerInterface
   // Start listening on the specified address. Returns an error code.
   int Start() override;
   // Server deletion is imminent. Start cleaning up.
@@ -64,7 +64,7 @@ class QuicTransportOwtServerImpl
   void SetVisitor(owt::quic::QuicTransportServerInterface::Visitor* visitor) override;
   int GetListenPort() override;
 
-  //Implement quic::QuicTransportOwtDispatcher::Visitor
+  // Implement quic::QuicTransportOwtDispatcher::Visitor
   void OnSessionCreated(quic::QuicTransportOwtServerSession* session) override;
   void OnSessionClosed(quic::QuicConnectionId sessionId) override;
 

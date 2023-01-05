@@ -49,7 +49,7 @@ class QUIC_EXPORT_PRIVATE QuicTransportOwtServerSession
   void CloseConnectionWithDetails(QuicErrorCode error,
                                   const std::string& details);
 
-  //Implement QuicTransportSessionInterface
+  // Implement QuicTransportSessionInterface
   owt::quic::QuicTransportStreamInterface* CreateBidirectionalStream() override;
   void Stop() override;
   void SetVisitor(owt::quic::QuicTransportSessionInterface::Visitor* visitor) override;

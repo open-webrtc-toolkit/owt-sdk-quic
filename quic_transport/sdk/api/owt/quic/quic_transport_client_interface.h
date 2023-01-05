@@ -15,7 +15,6 @@ namespace quic {
 // A client manages a QuicTransport session with a QuicTransport server.
 class OWT_EXPORT QuicTransportClientInterface {
  public:
-  // https://wicg.github.io/web-transport/#dom-quictransportconfiguration-server_certificate_fingerprints.
   class Visitor {
    public:
     virtual ~Visitor() = default;
@@ -27,7 +26,7 @@ class OWT_EXPORT QuicTransportClientInterface {
     virtual void OnConnectionClosed(char*, size_t len) = 0;
     // Called when an incoming stream is received.
     virtual void OnIncomingStream(QuicTransportStreamInterface*) = 0;
-    //Called when a stream is closed
+    // Called when a stream is closed
     virtual void OnStreamClosed(uint32_t id) = 0;
   };
 
@@ -46,5 +45,4 @@ class OWT_EXPORT QuicTransportClientInterface {
 };
 }  // namespace quic
 }
-
 #endif
