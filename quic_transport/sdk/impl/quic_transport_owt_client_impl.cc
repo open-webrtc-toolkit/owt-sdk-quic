@@ -50,7 +50,7 @@ std::unique_ptr<::quic::ProofVerifier> CreateProofVerifier(
        server_certificate_fingerprints) {
     bool success = verifier->AddFingerprint(fingerprint);
     if (!success) {
-      DLOG(WARNING) << "Failed to add a certificate fingerprint: "
+      LOG(ERROR) << "Failed to add a certificate fingerprint: "
                     << fingerprint.fingerprint;
     }
   }
@@ -118,14 +118,14 @@ void QuicTransportOwtClientImpl::Start() {
 
 void QuicTransportOwtClientImpl::StartOnCurrentThread() {
   if (!Initialize()) {
-    std::cerr << "Failed to initialize client." << std::endl;
+    LOG(ERROR) << "Failed to initialize client." << std::endl;
     if(visitor_) {
       visitor_->OnConnectionFailed();
     }
     return;
   }
   if (!Connect()) {
-    std::cerr << "Failed to connect." << std::endl;
+    LOG(ERROR) << "Failed to connect." << std::endl;
     if(visitor_) {
       visitor_->OnConnectionFailed();
     }
@@ -135,10 +135,8 @@ void QuicTransportOwtClientImpl::StartOnCurrentThread() {
   session_ = client_session();
   session_->set_visitor(this);
   if(visitor_) {
-    printf("client call onConnected\n");
     visitor_->OnConnected();
   }
-  std::cerr << "client connect to quic server succeed in thread:" << base::PlatformThread::CurrentId() << std::endl;
 }
 
 void QuicTransportOwtClientImpl::Stop() {
@@ -190,7 +188,6 @@ void QuicTransportOwtClientImpl::OnStreamClosed(uint32_t id) {
 }
 
 const char* QuicTransportOwtClientImpl::Id() {
-  std::cerr << "QuicTransportOwtClientImpl Get client session id:" << client_session()->connection()->connection_id().ToString();
   const std::string& session_id_str =
       client_session()->connection()->connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];
@@ -201,7 +198,6 @@ const char* QuicTransportOwtClientImpl::Id() {
 }
 
 void QuicTransportOwtClientImpl::CloseStreamOnCurrentThread(uint32_t id) {
-  printf("QuicTransportOwtClientImpl::CloseStreamOnCurrentThread close stream:%d\n", id);
   session_->ResetStream(id, quic::QUIC_STREAM_CANCELLED);
 }
 
@@ -216,7 +212,6 @@ uint8_t QuicTransportOwtClientImpl::length() {
 }
 
 owt::quic::QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateBidirectionalStream() {
-  std::cerr << "QuicTransportOwtClientImpl::CreateBidirectionalStream" << std::endl;
   owt::quic::QuicTransportStreamInterface* result(nullptr);
   base::WaitableEvent done(base::WaitableEvent::ResetPolicy::AUTOMATIC,
                            base::WaitableEvent::InitialState::NOT_SIGNALED);
@@ -235,7 +230,6 @@ owt::quic::QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateBidir
 }
 
 owt::quic::QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateBidirectionalStreamOnCurrentThread() {
-  std::cerr << "QuicTransportOwtClientImpl::CreateBidirectionalStreamOnCurrentThread" << std::endl;
   if (!connected()) {
     return nullptr;
   }
@@ -243,7 +237,6 @@ owt::quic::QuicTransportStreamInterface* QuicTransportOwtClientImpl::CreateBidir
   auto* stream = static_cast<owt::quic::QuicTransportStreamInterface*>(
       client_session()->CreateOutgoingBidirectionalStream());
  
-  std::cerr << "QuicTransportOwtClientImpl::CreateBidirectionalStreamOnCurrentThread succeed" << std::endl;
   return stream;
 }
 

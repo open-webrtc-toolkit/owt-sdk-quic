@@ -48,9 +48,6 @@ QuicTransportOwtServerSession::~QuicTransportOwtServerSession() {
   // for (auto const& kv : dynamic_streams()) {
   //   static_cast<QuicRawStream*>(kv.second.get())->ClearSession();
   // }
-  //delete visitor_;
-  printf("We are in ~QuicTransportOwtServerSession\n");
-  //visitor_ = nullptr;
 }
 
 void QuicTransportOwtServerSession::Initialize() {
@@ -93,7 +90,6 @@ void QuicTransportOwtServerSession::StopOnCurrentThread() {
 
 void QuicTransportOwtServerSession::Stop() {
   if (task_runner_->BelongsToCurrentThread()) {
-    printf("QuicTransportOwtServerSession::Stop in current thread\n");
     return StopOnCurrentThread();
   }
   task_runner_->PostTask(
@@ -106,7 +102,6 @@ void QuicTransportOwtServerSession::SetVisitor(owt::quic::QuicTransportSessionIn
 }
 
 const char* QuicTransportOwtServerSession::Id() {
-  QUIC_DLOG(INFO) << "QuicTransportOwtServerSession Get session id:" << connection()->connection_id().ToString();
   const std::string& session_id_str =
       connection()->connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];
@@ -116,7 +111,6 @@ const char* QuicTransportOwtServerSession::Id() {
 }
 
 void QuicTransportOwtServerSession::CloseStreamOnCurrentThread(uint32_t id) {
-  printf("QuicTransportOwtServerSession::CloseStreamOnCurrentThread close stream:%d\n", id);
   ResetStream(id, QUIC_STREAM_CANCELLED);
 }
 
@@ -156,7 +150,7 @@ bool QuicTransportOwtServerSession::ShouldCreateIncomingStream(QuicStreamId id) 
 
   if (QuicUtils::IsServerInitiatedStreamId(connection()->transport_version(),
                                            id)) {
-    QUIC_DLOG(INFO) << "Invalid incoming even stream_id:" << id;
+    LOG(ERROR) << "Invalid incoming even stream_id:" << id;
     connection()->CloseConnection(
         QUIC_INVALID_STREAM_ID, "Client created even numbered stream",
         ConnectionCloseBehavior::SEND_CONNECTION_CLOSE_PACKET);

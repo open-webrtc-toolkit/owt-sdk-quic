@@ -43,7 +43,6 @@ uint32_t QuicTransportOwtStreamImpl::Id() const {
 }
 
 void QuicTransportOwtStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterface::Visitor* visitor) {
-  printf("QuicTransportOwtStreamImpl::SetVisitor\n");
   visitor_ = visitor; 
 }
 
@@ -76,10 +75,8 @@ void QuicTransportOwtStreamImpl::processData() {
     struct iovec iov;
     if (sequencer()->GetReadableRegions(&iov, 1) == 0) {
       // No more data to read.
-      printf("No more data to read\n");
       break;
     }
-    //printf("Stream: %d processd:%zu, bytes in thread:%d\n",id(), iov.iov_len, base::PlatformThread::CurrentId());
     if (visitor()) {
       visitor()->OnData(this, static_cast<char*>(iov.iov_base), iov.iov_len);
     }
@@ -96,7 +93,6 @@ void QuicTransportOwtStreamImpl::processData() {
   OnFinRead();
 
   if (write_side_closed() || fin_buffered()) {
-    printf("write side closed or fin buffered\n");
     return;
   }
 }

@@ -138,7 +138,7 @@ void QuicTransportOwtServerImpl::StartOnCurrentThread() {
     LOG(ERROR) << "GetLocalAddress() failed: " << ErrorToString(rc);
   }
 
-  DVLOG(1) << "Listening on " << server_address_.ToString();
+  LOG(INFO) << "Listening on " << server_address_.ToString();
 
   socket_.swap(socket);
 
@@ -182,7 +182,6 @@ void QuicTransportOwtServerImpl::SetVisitor(owt::quic::QuicTransportServerInterf
 }
 
 void QuicTransportOwtServerImpl::NewSessionCreated(quic::QuicTransportOwtServerSession* session) {
-  printf("QuicTransportOwtServerImpl call visitor OnSession\n");
   if (visitor_) {
     visitor_->OnSession(session);
   }
@@ -202,7 +201,6 @@ void QuicTransportOwtServerImpl::OnSessionCreated(quic::QuicTransportOwtServerSe
 void QuicTransportOwtServerImpl::SessionClosed(quic::QuicConnectionId sessionId) {
   if (visitor_) {
     const std::string& session_id_str = sessionId.ToString();
-    printf("server session:%s closed\n", session_id_str.c_str());
     char* id = new char[session_id_str.size() + 1];
     strcpy(id, session_id_str.c_str());
     visitor_->OnClosedSession(id, session_id_str.size());

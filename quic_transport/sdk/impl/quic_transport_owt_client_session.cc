@@ -44,7 +44,7 @@ void QuicTransportOwtClientSession::OnProofVerifyDetailsAvailable(
 
 bool QuicTransportOwtClientSession::ShouldCreateOutgoingBidirectionalStream() {
   if (!crypto_stream_->encryption_established()) {
-    QUIC_DLOG(INFO) << "Encryption not active so no outgoing stream created.";
+    LOG(ERROR) << "Encryption not active so no outgoing stream created.";
     return false;
   }
   // if (!GetQuicReloadableFlag(quic_use_common_stream_check) &&
@@ -132,7 +132,7 @@ bool QuicTransportOwtClientSession::ShouldCreateIncomingStream(QuicStreamId id) 
     return false;
   }
   if (transport_goaway_received() && respect_goaway_) {
-    QUIC_DLOG(INFO) << "Failed to create a new outgoing stream. "
+    LOG(INFO) << "Failed to create a new outgoing stream. "
                     << "Already received goaway.";
     return false;
   }
@@ -204,7 +204,6 @@ void QuicTransportOwtClientSession::OnStreamClosed(quic::QuicStreamId stream_id)
 void QuicTransportOwtClientSession::OnConnectionClosed(
     const quic::QuicConnectionCloseFrame& frame,
     quic::ConnectionCloseSource source) {
-  //std::cerr << "QuicTransportOwtClientSession::OnConnectionClosed and client session id:" << connection()->connection_id().ToString() << " in thread" << base::PlatformThread::CurrentId();
   const std::string& session_id_str =
       connection()->client_connection_id().ToString();
   char* id = new char[session_id_str.size() + 1];

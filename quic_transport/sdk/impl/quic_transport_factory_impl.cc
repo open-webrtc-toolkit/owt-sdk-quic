@@ -212,7 +212,6 @@ QuicTransportFactoryImpl::CreateQuicTransportClient(
 
             ::quic::QuicServerId server_id(host, port, false);
             ::quic::ParsedQuicVersionVector versions = ::quic::CurrentSupportedVersions();
-            printf("url host is:%s, origin host is:%s\n", url.host().c_str(), host);
 
             *result = new net::QuicTransportOwtClientImpl(
                 ::quic::QuicSocketAddress(ip_addr, port), server_id, versions, fingerprints,

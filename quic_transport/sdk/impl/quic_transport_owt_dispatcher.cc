@@ -39,7 +39,6 @@ std::unique_ptr<QuicSession> QuicTransportOwtDispatcher::CreateQuicSession(
     const ParsedQuicVersion& version,
     const ParsedClientHello& parsed_chlo) {
   // The QuicServerSessionBase takes ownership of |connection| below.
-  //printf("QuicTransportOwtDispatcher::CreateQuicSession in thread:%d\n", base::PlatformThread::CurrentId());
   QuicConnection* connection = 
       new QuicConnection(connection_id, self_address, peer_address, helper(),
                          alarm_factory(), writer(),
@@ -51,7 +50,6 @@ std::unique_ptr<QuicSession> QuicTransportOwtDispatcher::CreateQuicSession(
       crypto_config(), compressed_certs_cache(), task_runner_, event_runner_);
   session->Initialize();
   if (visitor_) {
-    printf("QuicTransportOwtDispatcher call visitor OnSessionCreated\n");
     visitor_->OnSessionCreated(session.get());
   }
   return session;
@@ -62,12 +60,10 @@ std::unique_ptr<QuicSession> QuicTransportOwtDispatcher::CreateQuicSession(
                                     QuicErrorCode error,
                                     const std::string& error_details,
                                     ConnectionCloseSource source) {
-    //printf("QuicTransportOwtDispatcher OnConnectionClosed for connection:%s in thread:%d\n", server_connection_id.ToString().c_str(), base::PlatformThread::CurrentId());
     if (visitor_) {
       visitor_->OnSessionClosed(server_connection_id);
     }
 
-    printf("QuicTransportOwtDispatcher OnConnectionClosed ends\n");
   }
 
 }  // namespace quic
