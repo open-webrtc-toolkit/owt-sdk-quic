@@ -47,7 +47,7 @@ void QuicTransportOwtStreamImpl::SetVisitor(owt::quic::QuicTransportStreamInterf
 
 void QuicTransportOwtStreamImpl::CloseOnCurrentThread() {
   // TODO: Post to IO runner.
-  Reset(QUIC_STREAM_CANCELLED);
+  WriteOrBufferData(absl::string_view("", 1), true, nullptr);
 }
 
 void QuicTransportOwtStreamImpl::Close() {
