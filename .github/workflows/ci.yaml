@@ -22,7 +22,10 @@ jobs:
           docker exec -w /workspace/quic/src/owt $container_id git checkout FETCH_HEAD
           docker exec -w /workspace/quic/src/owt $container_id git rev-parse HEAD >> git_sha.out
           git_sha="$(cat git_sha.out)"
-          echo "::set-output name=git_sha::$git_sha"
+          echo "git_sha=$git_sha" >> $GITHUB_OUTPUT
+          # The line below can be removed once docker image is updated.
+          docker exec $container_id apt-get update
+          docker exec $container_id apt-get install -y ninja-build
           docker exec $container_id python3 owt/test/scripts/build.py
           docker cp $container_id:/workspace/quic/packages/$git_sha.zip .
           docker stop $container_id
