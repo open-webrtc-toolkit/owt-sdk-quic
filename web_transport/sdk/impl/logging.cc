@@ -12,9 +12,9 @@ namespace owt {
 namespace quic {
 
 #ifdef _DEBUG
-LoggingSeverity Logging::min_severity_ = LoggingSeverity::kInfo;
+LoggingSeverity Logging::min_severity_ = LoggingSeverity::kVerbose;
 #else
-LoggingSeverity Logging::min_severity_ = LoggingSeverity::kError;
+LoggingSeverity Logging::min_severity_ = LoggingSeverity::kVerbose;
 #endif
 
 // Due to a defect in C++ 11, static cast to int instead of enum value.
