@@ -9,7 +9,8 @@
 FROM ubuntu:20.04
 SHELL ["/bin/bash", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y git curl wget python lsb-release tzdata
+ENV TAR_OPTIONS="--no-same-owner"
+RUN apt-get update && apt-get install -y git curl wget python lsb-release tzdata ninja-build
 RUN mkdir workspace
 WORKDIR /workspace
 RUN git clone https://chromium.googlesource.com/chromium/tools/depot_tools.git
